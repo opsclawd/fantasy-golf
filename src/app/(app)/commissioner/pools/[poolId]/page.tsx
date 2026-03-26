@@ -19,6 +19,9 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
     .select('*')
     .eq('pool_id', poolId)
 
+  const { data: allGolfers } = await supabase.from('golfers').select('*')
+  const golferMap = new Map(allGolfers?.map(g => [g.id, g.name]) || [])
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -73,13 +76,17 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             </tr>
           </thead>
           <tbody>
-            {entries?.map(entry => (
+            {entries?.length === 0 ? (
+              <tr>
+                <td colSpan={3} className="px-4 py-8 text-center text-gray-500">No entries yet</td>
+              </tr>
+            ) : entries?.map(entry => (
               <tr key={entry.id} className="border-t">
                 <td className="px-4 py-2">{entry.user_id.slice(0, 8)}</td>
                 <td className="px-4 py-2">
                   <div className="flex gap-1 flex-wrap">
                     {entry.golfer_ids.map((id: string) => (
-                      <span key={id} className="px-2 py-1 bg-gray-100 rounded text-sm">{id}</span>
+                      <span key={id} className="px-2 py-1 bg-gray-100 rounded text-sm">{golferMap.get(id) || id}</span>
                     ))}
                   </div>
                 </td>
