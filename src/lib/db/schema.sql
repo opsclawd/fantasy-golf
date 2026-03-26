@@ -57,4 +57,5 @@ CREATE TABLE tournament_scores (
 
 -- Index for faster lookups
 CREATE INDEX idx_entries_pool_id ON entries(pool_id);
+CREATE INDEX idx_entries_user_id ON entries(user_id);
 CREATE INDEX idx_tournament_scores_tournament ON tournament_scores(tournament_id);
