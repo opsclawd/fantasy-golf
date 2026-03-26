@@ -3,7 +3,19 @@ import { createClient } from '@/lib/supabase/server'
 import { getTournamentScores } from '@/lib/slash-golf/client'
 import { rankEntries } from '@/lib/scoring'
 
+let isUpdating = false
+
 export async function POST(request: Request) {
+  const authHeader = request.headers.get('Authorization')
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (isUpdating) {
+    return NextResponse.json({ message: 'Update in progress' }, { status: 409 })
+  }
+  isUpdating = true
+
   try {
     const supabase = await createClient()
     
@@ -73,6 +85,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Scoring update failed:', error)
     return NextResponse.json({ error: 'Update failed' }, { status: 500 })
+  } finally {
+    isUpdating = false
   }
 }
 

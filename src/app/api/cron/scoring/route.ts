@@ -6,6 +6,10 @@ export async function GET() {
     headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET}` }
   })
   
+  if (!res.ok) {
+    return NextResponse.json({ error: 'Scoring update failed' }, { status: 500 })
+  }
+  
   const data = await res.json()
   return NextResponse.json(data)
 }
