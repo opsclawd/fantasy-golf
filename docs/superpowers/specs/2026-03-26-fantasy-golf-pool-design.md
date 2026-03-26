@@ -127,10 +127,7 @@ Public URL (no sign-in required):
 | id | uuid | Primary key |
 | pool_id | uuid | FK to Pool |
 | user_id | uuid | FK to Supabase Auth |
-| golfer_1_id | text | |
-| golfer_2_id | text | |
-| golfer_3_id | text | |
-| golfer_4_id | text | |
+| golfer_ids | text[] | Array of golfer IDs (default: 4) |
 | total_birdies | int | Computed, for tiebreaker |
 | created_at | timestamp | |
 | updated_at | timestamp | |
