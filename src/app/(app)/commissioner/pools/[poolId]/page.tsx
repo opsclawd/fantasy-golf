@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { startPool, closePool } from './actions'
+import { StartPoolButton, ClosePoolButton } from './PoolActions'
 
 export default async function CommissionerPoolDetail({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -38,19 +38,11 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
           {pool.status}
         </span>
         { pool.status === 'open' && (
-          <form action={startPool.bind(null, pool.id)}>
-            <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
-              Start Pool (Go Live)
-            </button>
-          </form>
+          <StartPoolButton poolId={pool.id} />
         )}
 
         { pool.status === 'live' && (
-          <form action={closePool.bind(null, pool.id)}>
-            <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-              End Pool
-            </button>
-          </form>
+          <ClosePoolButton poolId={pool.id} />
         )}
       </div>
 
