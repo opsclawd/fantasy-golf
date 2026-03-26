@@ -21,6 +21,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ pool
     .select('*')
     .eq('pool_id', poolId)
 
+  if (!entries) {
+    return NextResponse.json({ entries: [], completedHoles: 0, updatedAt: new Date().toISOString() })
+  }
+
   const { data: allScores } = await supabase
     .from('tournament_scores')
     .select('*')
@@ -31,7 +35,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ pool
     golferScoresMap.set(score.golfer_id, score)
   }
 
-  const completedHoles = 18
+  const completedScores = allScores || []
+  const completedHoles = completedScores.length > 0
+    ? Math.min(...completedScores.map(s => s.thru ?? 0))
+    : 0
   const ranked = rankEntries(entries || [], golferScoresMap, completedHoles)
 
   return NextResponse.json({
