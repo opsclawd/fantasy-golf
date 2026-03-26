@@ -1,0 +1,51 @@
+export type PoolStatus = 'open' | 'live' | 'complete'
+
+export interface Pool {
+  id: string
+  name: string
+  tournament_id: string
+  tournament_name: string
+  deadline: string
+  status: PoolStatus
+  created_at: string
+}
+
+export interface Entry {
+  id: string
+  pool_id: string
+  user_id: string
+  golfer_ids: string[]
+  total_birdies: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Golfer {
+  id: string
+  name: string
+  country: string
+}
+
+export interface TournamentScore {
+  golfer_id: string
+  tournament_id: string
+  hole_1: number | null
+  hole_2: number | null
+  hole_3: number | null
+  hole_4: number | null
+  hole_5: number | null
+  hole_6: number | null
+  hole_7: number | null
+  hole_8: number | null
+  hole_9: number | null
+  hole_10: number | null
+  hole_11: number | null
+  hole_12: number | null
+  hole_13: number | null
+  hole_14: number | null
+  hole_15: number | null
+  hole_16: number | null
+  hole_17: number | null
+  hole_18: number | null
+  total_birdies: number
+}
