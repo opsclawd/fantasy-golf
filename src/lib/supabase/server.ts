@@ -18,7 +18,8 @@ export async function createClient() {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Server component - ignore
+            // Server component - setAll may fail if headers were already sent.
+            // This is safe to ignore since it's a best-effort operation.
           }
         },
       },
