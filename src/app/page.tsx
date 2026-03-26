@@ -1,5 +1,12 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+
+function createClient() {
+  return {
+    auth: {
+      getUser: async () => ({ data: { user: null }, error: null })
+    }
+  }
+}
 
 export default async function Home() {
   const supabase = createClient()
