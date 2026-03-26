@@ -4,13 +4,24 @@ import { useState } from 'react'
 import { signIn } from './actions'
 
 export default function SignIn() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(formData: FormData) {
+    setLoading(true)
+    setError(null)
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+    const result = await signIn(email, password)
+    if (result?.error) {
+      setError(result.error)
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <form className="space-y-4 w-full max-w-md p-8">
+      <form className="space-y-4 w-full max-w-md p-8" action={handleSubmit}>
         <h1 className="text-2xl font-bold">Sign In</h1>
         {error && <p className="text-red-500">{error}</p>}
         <div>
@@ -19,8 +30,6 @@ export default function SignIn() {
             id="email"
             name="email"
             type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
             className="w-full p-2 border rounded"
             required
           />
@@ -31,21 +40,16 @@ export default function SignIn() {
             id="password"
             name="password"
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
             className="w-full p-2 border rounded"
             required
           />
         </div>
         <button
           type="submit"
-          formAction={async () => {
-            const result = await signIn(email, password)
-            if (result?.error) setError(result.error)
-          }}
-          className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          disabled={loading}
+          className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          Sign In
+          {loading ? 'Signing in...' : 'Sign In'}
         </button>
         <p className="text-center text-sm">
           Don&apos;t have an account? <a href="/sign-up" className="text-blue-600">Sign up</a>
