@@ -22,6 +22,18 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
 
   const isEditable = pool.status === 'open' && new Date(pool.deadline) > new Date()
 
+  let golferNames: Record<string, string> = {}
+  if (!isEditable && existingEntry?.golfer_ids && existingEntry.golfer_ids.length > 0) {
+    const { data: golfers } = await supabase
+      .from('golfers')
+      .select('id, name')
+      .in('id', existingEntry.golfer_ids)
+    
+    if (golfers) {
+      golferNames = Object.fromEntries(golfers.map(g => [g.id, g.name]))
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-2">{pool.name}</h1>
@@ -59,7 +71,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
             <p className="text-gray-500 mb-4">Your picks:</p>
             <ul className="space-y-2">
               {(existingEntry?.golfer_ids || []).map((id: string) => (
-                <li key={id} className="p-2 bg-gray-50 rounded">{id}</li>
+                <li key={id} className="p-2 bg-gray-50 rounded">{golferNames[id] || id}</li>
               ))}
             </ul>
           </div>

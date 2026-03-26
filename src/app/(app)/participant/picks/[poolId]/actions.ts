@@ -12,6 +12,10 @@ export async function submitPicks(formData: FormData) {
   const poolId = formData.get('poolId') as string
   const golferIds = JSON.parse(formData.get('golferIds') as string)
 
+  if (!Array.isArray(golferIds) || golferIds.length !== 4) {
+    throw new Error('Please select exactly 4 golfers')
+  }
+
   const { error } = await supabase.from('entries').upsert({
     pool_id: poolId,
     user_id: user.id,
