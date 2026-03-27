@@ -5,6 +5,7 @@ export interface Pool {
   name: string
   tournament_id: string
   tournament_name: string
+  year: number
   deadline: string
   status: PoolStatus
   created_at: string

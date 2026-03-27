@@ -1,8 +1,8 @@
 export interface Tournament {
-  id: string
+  tournId: string
   name: string
-  start_date: string
-  end_date: string
+  startDate: string
+  endDate: string
 }
 
 export interface GolferScore {
