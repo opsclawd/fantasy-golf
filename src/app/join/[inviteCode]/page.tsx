@@ -36,7 +36,7 @@ export default async function JoinByInvitePage({ params }: JoinPageProps) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    redirect(`/sign-in?next=/join/${normalizedInviteCode}`)
+    redirect(`/sign-in?redirect=/join/${inviteCode}`)
   }
 
   const { data: membership } = await supabase

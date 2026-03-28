@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { insertPoolMember } from '@/lib/pool-queries'
+import { insertAuditEvent, insertPoolMember } from '@/lib/pool-queries'
 
 export type JoinPoolState = {
   error?: string
@@ -22,7 +22,7 @@ export async function joinPool(
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect(`/sign-in?next=/join/${inviteCode}`)
+    redirect(`/sign-in?redirect=/join/${inviteCode}`)
   }
 
   const { data: pool } = await supabase
@@ -50,7 +50,23 @@ export async function joinPool(
     })
 
     if (error) {
-      return { error: 'Failed to join pool. Please try again.' }
+      const normalizedError = error.toLowerCase()
+      if (normalizedError.includes('duplicate') || normalizedError.includes('unique')) {
+        redirect(`/participant/picks/${pool.id}`)
+      }
+
+      return { error: 'Failed to join pool.' }
+    }
+
+    const { error: auditError } = await insertAuditEvent(supabase, {
+      pool_id: pool.id,
+      user_id: user.id,
+      action: 'playerJoined',
+      details: {},
+    })
+
+    if (auditError) {
+      return { error: 'Failed to join pool.' }
     }
   }
 
