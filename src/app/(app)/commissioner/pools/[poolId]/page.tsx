@@ -32,16 +32,42 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
   }
 
   const members = await getPoolMembers(supabase, poolId)
-  const entries = (await getEntriesForPool(supabase, poolId)) as PoolEntry[]
+  const entries = await getEntriesForPool(supabase, poolId)
+  const normalizedEntries: PoolEntry[] = entries.flatMap(entry => {
+    if (typeof entry !== 'object' || entry === null) return []
+
+    const candidate = entry as Record<string, unknown>
+    if (
+      typeof candidate.id !== 'string' ||
+      typeof candidate.user_id !== 'string' ||
+      typeof candidate.created_at !== 'string'
+    ) {
+      return []
+    }
+
+    return [
+      {
+        id: candidate.id,
+        user_id: candidate.user_id,
+        created_at: candidate.created_at,
+        golfer_ids: Array.isArray(candidate.golfer_ids)
+          ? candidate.golfer_ids.filter((id): id is string => typeof id === 'string')
+          : [],
+      },
+    ]
+  })
 
   const { data: allGolfers } = await supabase.from('golfers').select('*')
   const golferMap = new Map(allGolfers?.map(g => [g.id, g.name]) || [])
 
-  const playersWithEntries = new Set(entries.map(e => e.user_id))
+  const playersWithEntries = new Set(normalizedEntries.map(e => e.user_id))
   const playerMembers = members.filter(m => m.role === 'player')
   const membersWithoutEntries = playerMembers.filter(m => !playersWithEntries.has(m.user_id))
 
-  const isLocked = pool.status !== 'open' || new Date(pool.deadline) <= new Date()
+  const parsedDeadline = typeof pool.deadline === 'string' ? new Date(pool.deadline) : null
+  const isInvalidDeadline = !parsedDeadline || Number.isNaN(parsedDeadline.getTime())
+  const isDeadlineLocked = isInvalidDeadline || parsedDeadline <= new Date()
+  const isLocked = pool.status !== 'open' || isDeadlineLocked
 
   return (
     <div className="space-y-6">
@@ -62,7 +88,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
       <PoolStatusSection
         pool={pool}
         memberCount={playerMembers.length}
-        entryCount={entries.length}
+        entryCount={normalizedEntries.length}
         isLocked={isLocked}
         pendingCount={membersWithoutEntries.length}
       />
@@ -77,7 +103,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="p-4 border-b">
           <div className="flex justify-between items-center">
-            <h2 className="font-semibold">Entries ({entries.length})</h2>
+            <h2 className="font-semibold">Entries ({normalizedEntries.length})</h2>
             <Link href={`/spectator/pools/${poolId}`} className="text-blue-600 hover:text-blue-800 text-sm">
               View Leaderboard
             </Link>
@@ -92,14 +118,14 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             </tr>
           </thead>
           <tbody>
-            {entries.length === 0 ? (
+            {normalizedEntries.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
                   No entries yet. Share the invite link to get started.
                 </td>
               </tr>
             ) : (
-              entries.map(entry => (
+              normalizedEntries.map(entry => (
                 <tr key={entry.id} className="border-t">
                   <td className="px-4 py-2 text-sm">{entry.user_id.slice(0, 8)}</td>
                   <td className="px-4 py-2">

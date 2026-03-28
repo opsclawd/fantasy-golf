@@ -15,8 +15,6 @@ export function PoolStatusSection({
   isLocked,
   pendingCount,
 }: PoolStatusSectionProps) {
-  const deadlinePassed = new Date(pool.deadline) <= new Date()
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div className="bg-white p-4 rounded-lg shadow">
