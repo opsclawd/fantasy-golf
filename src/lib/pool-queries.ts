@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Pool, PoolMember, AuditEvent } from './supabase/types'
+import type { Pool, PoolMember, AuditEvent, PoolStatus } from './supabase/types'
 
 export async function insertPool(
   supabase: SupabaseClient,
@@ -89,7 +89,7 @@ export async function isPoolMember(
 export async function updatePoolStatus(
   supabase: SupabaseClient,
   poolId: string,
-  status: string
+  status: PoolStatus
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('pools')
@@ -122,14 +122,16 @@ export async function updatePoolConfig(
 export async function insertAuditEvent(
   supabase: SupabaseClient,
   event: Omit<AuditEvent, 'id' | 'created_at'>
-): Promise<void> {
-  await supabase.from('audit_events').insert(event)
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('audit_events').insert(event)
+  if (error) return { error: error.message }
+  return { error: null }
 }
 
 export async function getEntriesForPool(
   supabase: SupabaseClient,
   poolId: string
-) {
+): Promise<unknown[]> {
   const { data } = await supabase
     .from('entries')
     .select('*')
