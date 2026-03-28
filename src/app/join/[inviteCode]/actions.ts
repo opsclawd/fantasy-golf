@@ -25,25 +25,33 @@ export async function joinPool(
     redirect(`/sign-in?redirect=/join/${inviteCode}`)
   }
 
-  const { data: pool } = await supabase
+  const { data: pool, error: poolLookupError } = await supabase
     .from('pools')
     .select('*')
     .eq('invite_code', inviteCode)
     .single()
 
+  if (poolLookupError && poolLookupError.code !== 'PGRST116') {
+    return { error: 'Unable to process invite right now.' }
+  }
+
   if (!pool) {
     return { error: 'This invite link is invalid or expired.' }
   }
 
-  const { data: existingMembership } = await supabase
+  const { data: existingMembership, error: membershipLookupError } = await supabase
     .from('pool_members')
     .select('id, role')
     .eq('pool_id', pool.id)
     .eq('user_id', user.id)
     .single()
 
+  if (membershipLookupError && membershipLookupError.code !== 'PGRST116') {
+    return { error: 'Unable to verify membership right now.' }
+  }
+
   if (!existingMembership) {
-    const { error } = await insertPoolMember(supabase, {
+    const { error, code } = await insertPoolMember(supabase, {
       pool_id: pool.id,
       user_id: user.id,
       role: 'player',
@@ -51,7 +59,10 @@ export async function joinPool(
 
     if (error) {
       const normalizedError = error.toLowerCase()
-      if (normalizedError.includes('duplicate') || normalizedError.includes('unique')) {
+      const hasDuplicateCode = code === '23505'
+      const hasDuplicateMessage = normalizedError.includes('duplicate') || normalizedError.includes('unique')
+
+      if (hasDuplicateCode || hasDuplicateMessage) {
         redirect(`/participant/picks/${pool.id}`)
       }
 
@@ -66,7 +77,11 @@ export async function joinPool(
     })
 
     if (auditError) {
-      return { error: 'Failed to join pool.' }
+      console.error('Failed to insert join-pool audit event', {
+        poolId: pool.id,
+        userId: user.id,
+        error: auditError,
+      })
     }
   }
 

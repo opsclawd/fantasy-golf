@@ -18,10 +18,10 @@ export async function insertPool(
 export async function insertPoolMember(
   supabase: SupabaseClient,
   member: Omit<PoolMember, 'id' | 'joined_at'>
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; code: string | null }> {
   const { error } = await supabase.from('pool_members').insert(member)
-  if (error) return { error: error.message }
-  return { error: null }
+  if (error) return { error: error.message, code: error.code ?? null }
+  return { error: null, code: null }
 }
 
 export async function getPoolById(
