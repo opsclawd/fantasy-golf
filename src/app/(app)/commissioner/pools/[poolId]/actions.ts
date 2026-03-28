@@ -4,76 +4,81 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { canTransitionStatus, validateCreatePoolInput, validatePoolFormat } from '@/lib/pool'
 import { getPoolById, updatePoolStatus, updatePoolConfig as updatePoolConfigQuery, insertAuditEvent } from '@/lib/pool-queries'
-import type { PoolFormat } from '@/lib/supabase/types'
+import type { PoolFormat, PoolStatus } from '@/lib/supabase/types'
 
-export async function startPool(_prevState: unknown, formData: FormData) {
+// --- Status transition actions ---
+
+export type PoolActionState = {
+  error?: string
+} | null
+
+export async function startPool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
   const poolId = formData.get('poolId') as string
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/sign-in')
-  }
+  if (!user) redirect('/sign-in')
 
   const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can start this pool.' }
 
-  if (!pool) {
-    return { error: 'Pool cannot be started' }
-  }
-
-  if (pool.commissioner_id !== user.id) {
-    return { error: 'Only the commissioner can start this pool.' }
-  }
-
-  if (!canTransitionStatus(pool.status, 'live')) {
-    return { error: 'Pool cannot be started' }
+  if (!canTransitionStatus(pool.status as PoolStatus, 'live')) {
+    return { error: 'Pool cannot be started from its current state.' }
   }
 
   const { error } = await updatePoolStatus(supabase, poolId, 'live')
+  if (error) return { error: 'Failed to start pool.' }
 
-  if (error) {
-    console.error('Failed to start pool:', error)
-    return { error: 'Failed to start pool' }
-  }
+  await insertAuditEvent(supabase, {
+    pool_id: poolId,
+    user_id: user.id,
+    action: 'poolStarted',
+    details: { previousStatus: pool.status },
+  })
 
   redirect(`/commissioner/pools/${poolId}`)
 }
 
-export async function closePool(_prevState: unknown, formData: FormData) {
+export async function closePool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
   const poolId = formData.get('poolId') as string
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    redirect('/sign-in')
-  }
+  if (!user) redirect('/sign-in')
 
   const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can close this pool.' }
 
-  if (!pool) {
-    return { error: 'Pool cannot be closed' }
-  }
-
-  if (pool.commissioner_id !== user.id) {
-    return { error: 'Only the commissioner can close this pool.' }
-  }
-
-  if (!canTransitionStatus(pool.status, 'complete')) {
-    return { error: 'Pool cannot be closed' }
+  if (!canTransitionStatus(pool.status as PoolStatus, 'complete')) {
+    return { error: 'Pool cannot be closed from its current state.' }
   }
 
   const { error } = await updatePoolStatus(supabase, poolId, 'complete')
+  if (error) return { error: 'Failed to close pool.' }
 
-  if (error) {
-    console.error('Failed to close pool:', error)
-    return { error: 'Failed to close pool' }
-  }
+  await insertAuditEvent(supabase, {
+    pool_id: poolId,
+    user_id: user.id,
+    action: 'poolClosed',
+    details: { previousStatus: pool.status },
+  })
 
   redirect(`/commissioner/pools/${poolId}`)
 }
 
+// --- Config update action ---
+
 export type UpdatePoolConfigState = {
   error?: string
+  success?: boolean
 } | null
 
 export async function updatePoolConfigAction(
@@ -82,74 +87,22 @@ export async function updatePoolConfigAction(
 ): Promise<UpdatePoolConfigState> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
 
-  if (!user) {
-    redirect('/sign-in')
-  }
-
-  const poolId = (formData.get('poolId') as string) ?? ''
-  if (!poolId) {
-    return { error: 'Pool ID is required.' }
-  }
-
+  const poolId = formData.get('poolId') as string
   const pool = await getPoolById(supabase, poolId)
-  if (!pool) {
-    return { error: 'Pool not found.' }
-  }
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can update this pool.' }
+  if (pool.status !== 'open') return { error: 'Pool configuration can only be changed while the pool is open.' }
 
-  if (pool.commissioner_id !== user.id) {
-    return { error: 'You are not authorized to update this pool.' }
-  }
-
-  if (pool.status !== 'open') {
-    return { error: 'Pool configuration can only be updated while the pool is open.' }
-  }
-
-  const tournamentId = ((formData.get('tournamentId') as string) ?? '').trim()
-  const submittedTournamentName = ((formData.get('tournamentName') as string) ?? '').trim()
-  const submittedDeadline = (formData.get('deadline') as string) ?? ''
-  const submittedYearStr = ((formData.get('year') as string) ?? '').trim()
-  const format: PoolFormat = 'best_ball'
-  const picksPerEntryStr = ((formData.get('picksPerEntry') as string) ?? '').trim()
-
-  if (!/^\d+$/.test(picksPerEntryStr)) {
-    return { error: 'Picks per entry must be a whole number.' }
-  }
-
-  const picksPerEntry = Number.parseInt(picksPerEntryStr, 10)
-
-  const isTournamentUnchanged = tournamentId === pool.tournament_id
-
-  let tournamentName: string
-  let deadline: string
-  let year: number
-
-  if (isTournamentUnchanged) {
-    tournamentName = pool.tournament_name
-    deadline = pool.deadline
-    year = pool.year
-  } else {
-    tournamentName = submittedTournamentName
-    deadline = submittedDeadline
-
-    if (tournamentName.trim().length === 0) {
-      return { error: 'Tournament name is required.' }
-    }
-
-    const parsedDeadline = new Date(deadline)
-    if (Number.isNaN(parsedDeadline.getTime())) {
-      return { error: 'Tournament deadline must be a valid date.' }
-    }
-
-    if (!/^\d{4}$/.test(submittedYearStr)) {
-      return { error: 'Tournament year must be a valid year between 2000 and 2100.' }
-    }
-
-    year = Number.parseInt(submittedYearStr, 10)
-    if (year < 2000 || year > 2100) {
-      return { error: 'Tournament year must be a valid year between 2000 and 2100.' }
-    }
-  }
+  const tournamentId = (formData.get('tournamentId') as string) ?? pool.tournament_id
+  const tournamentName = (formData.get('tournamentName') as string) ?? pool.tournament_name
+  const deadline = (formData.get('deadline') as string) ?? pool.deadline
+  const yearStr = (formData.get('year') as string) ?? String(pool.year)
+  const format = ((formData.get('format') as string) ?? pool.format) as PoolFormat
+  const picksPerEntryStr = (formData.get('picksPerEntry') as string) ?? String(pool.picks_per_entry)
+  const year = parseInt(yearStr, 10)
+  const picksPerEntry = parseInt(picksPerEntryStr, 10)
 
   const inputValidation = validateCreatePoolInput({
     name: pool.name,
@@ -159,16 +112,12 @@ export async function updatePoolConfigAction(
     deadline,
   })
 
-  if (!inputValidation.ok) {
-    return { error: inputValidation.error }
-  }
+  if (!inputValidation.ok) return { error: inputValidation.error }
 
   const formatValidation = validatePoolFormat(format, picksPerEntry)
-  if (!formatValidation.ok) {
-    return { error: formatValidation.error }
-  }
+  if (!formatValidation.ok) return { error: formatValidation.error }
 
-  const { error: updateError } = await updatePoolConfigQuery(supabase, poolId, {
+  const { error } = await updatePoolConfigQuery(supabase, poolId, {
     tournament_id: tournamentId,
     tournament_name: tournamentName,
     year,
@@ -177,37 +126,14 @@ export async function updatePoolConfigAction(
     picks_per_entry: picksPerEntry,
   })
 
-  if (updateError) {
-    return { error: updateError }
-  }
+  if (error) return { error }
 
-  const { error: auditError } = await insertAuditEvent(supabase, {
+  await insertAuditEvent(supabase, {
     pool_id: poolId,
     user_id: user.id,
     action: 'poolConfigUpdated',
-    details: {
-      previous: {
-        tournament_id: pool.tournament_id,
-        tournament_name: pool.tournament_name,
-        year: pool.year,
-        deadline: pool.deadline,
-        format: pool.format,
-        picks_per_entry: pool.picks_per_entry,
-      },
-      updated: {
-        tournament_id: tournamentId,
-        tournament_name: tournamentName,
-        year,
-        deadline,
-        format,
-        picks_per_entry: picksPerEntry,
-      },
-    },
+    details: { tournament_id: tournamentId, format, picks_per_entry: picksPerEntry },
   })
-
-  if (auditError) {
-    return { error: `Pool updated, but audit logging failed: ${auditError}` }
-  }
 
   redirect(`/commissioner/pools/${poolId}`)
 }
