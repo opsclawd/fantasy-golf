@@ -1,12 +1,27 @@
 -- Pools table
 CREATE TABLE pools (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  commissioner_id UUID REFERENCES auth.users(id) NOT NULL,
   name TEXT NOT NULL,
   tournament_id TEXT NOT NULL,
   tournament_name TEXT NOT NULL,
+  year INTEGER NOT NULL,
   deadline TIMESTAMPTZ NOT NULL,
+  format TEXT DEFAULT 'best_ball' CHECK (format IN ('best_ball')),
+  picks_per_entry INTEGER DEFAULT 4 CHECK (picks_per_entry >= 1 AND picks_per_entry <= 10),
+  invite_code TEXT UNIQUE NOT NULL,
   status TEXT DEFAULT 'open' CHECK (status IN ('open', 'live', 'complete')),
   created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Pool members table (tracks who has joined a pool)
+CREATE TABLE pool_members (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pool_id UUID REFERENCES pools(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  role TEXT DEFAULT 'player' CHECK (role IN ('commissioner', 'player')),
+  joined_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(pool_id, user_id)
 );
 
 -- Entries table
@@ -55,7 +70,22 @@ CREATE TABLE tournament_scores (
   UNIQUE(golfer_id, tournament_id)
 );
 
--- Index for faster lookups
+-- Audit events table
+CREATE TABLE audit_events (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  pool_id UUID REFERENCES pools(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id),
+  action TEXT NOT NULL,
+  details JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Indexes
+CREATE INDEX idx_pools_commissioner_id ON pools(commissioner_id);
+CREATE INDEX idx_pools_invite_code ON pools(invite_code);
+CREATE INDEX idx_pool_members_pool_id ON pool_members(pool_id);
+CREATE INDEX idx_pool_members_user_id ON pool_members(user_id);
 CREATE INDEX idx_entries_pool_id ON entries(pool_id);
 CREATE INDEX idx_entries_user_id ON entries(user_id);
 CREATE INDEX idx_tournament_scores_tournament ON tournament_scores(tournament_id);
+CREATE INDEX idx_audit_events_pool_id ON audit_events(pool_id);
