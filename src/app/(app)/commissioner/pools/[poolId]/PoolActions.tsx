@@ -1,7 +1,35 @@
 'use client'
 
-import { useFormState } from 'react-dom'
+import { useFormState, useFormStatus } from 'react-dom'
 import { startPool, closePool, type PoolActionState } from './actions'
+
+function StartSubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none disabled:opacity-50"
+    >
+      {pending ? 'Starting...' : 'Start Pool (Go Live)'}
+    </button>
+  )
+}
+
+function CloseSubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none disabled:opacity-50"
+    >
+      {pending ? 'Ending...' : 'End Pool'}
+    </button>
+  )
+}
 
 function StartPoolButton({ poolId }: { poolId: string }) {
   const [state, formAction] = useFormState<PoolActionState, FormData>(startPool, null)
@@ -13,12 +41,7 @@ function StartPoolButton({ poolId }: { poolId: string }) {
       )}
       <form action={formAction}>
         <input type="hidden" name="poolId" value={poolId} />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
-        >
-          Start Pool (Go Live)
-        </button>
+        <StartSubmitButton />
       </form>
     </div>
   )
@@ -34,12 +57,7 @@ function ClosePoolButton({ poolId }: { poolId: string }) {
       )}
       <form action={formAction}>
         <input type="hidden" name="poolId" value={poolId} />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none"
-        >
-          End Pool
-        </button>
+        <CloseSubmitButton />
       </form>
     </div>
   )

@@ -30,7 +30,7 @@ export async function startPool(
     return { error: 'Pool cannot be started from its current state.' }
   }
 
-  const { error } = await updatePoolStatus(supabase, poolId, 'live')
+  const { error } = await updatePoolStatus(supabase, poolId, 'live', 'open')
   if (error) return { error: 'Failed to start pool.' }
 
   await insertAuditEvent(supabase, {
@@ -61,7 +61,7 @@ export async function closePool(
     return { error: 'Pool cannot be closed from its current state.' }
   }
 
-  const { error } = await updatePoolStatus(supabase, poolId, 'complete')
+  const { error } = await updatePoolStatus(supabase, poolId, 'complete', 'live')
   if (error) return { error: 'Failed to close pool.' }
 
   await insertAuditEvent(supabase, {
@@ -98,9 +98,18 @@ export async function updatePoolConfigAction(
   const tournamentId = (formData.get('tournamentId') as string) ?? pool.tournament_id
   const tournamentName = (formData.get('tournamentName') as string) ?? pool.tournament_name
   const deadline = (formData.get('deadline') as string) ?? pool.deadline
-  const yearStr = (formData.get('year') as string) ?? String(pool.year)
+  const yearStr = ((formData.get('year') as string) ?? String(pool.year)).trim()
   const format = ((formData.get('format') as string) ?? pool.format) as PoolFormat
-  const picksPerEntryStr = (formData.get('picksPerEntry') as string) ?? String(pool.picks_per_entry)
+  const picksPerEntryStr = ((formData.get('picksPerEntry') as string) ?? String(pool.picks_per_entry)).trim()
+
+  if (!/^\d{4}$/.test(yearStr)) {
+    return { error: 'Year must be a 4-digit number.' }
+  }
+
+  if (!/^\d+$/.test(picksPerEntryStr)) {
+    return { error: 'Picks per entry must be a whole number.' }
+  }
+
   const year = parseInt(yearStr, 10)
   const picksPerEntry = parseInt(picksPerEntryStr, 10)
 
@@ -126,7 +135,7 @@ export async function updatePoolConfigAction(
     picks_per_entry: picksPerEntry,
   })
 
-  if (error) return { error }
+  if (error) return { error: 'Failed to update pool configuration.' }
 
   await insertAuditEvent(supabase, {
     pool_id: poolId,

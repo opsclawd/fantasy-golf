@@ -89,13 +89,25 @@ export async function isPoolMember(
 export async function updatePoolStatus(
   supabase: SupabaseClient,
   poolId: string,
-  status: PoolStatus
+  status: PoolStatus,
+  expectedCurrentStatus?: PoolStatus
 ): Promise<{ error: string | null }> {
-  const { error } = await supabase
+  let query = supabase
     .from('pools')
     .update({ status })
     .eq('id', poolId)
+
+  if (expectedCurrentStatus) {
+    query = query.eq('status', expectedCurrentStatus)
+  }
+
+  const { data, error } = await query.select('id')
+
   if (error) return { error: error.message }
+  if (expectedCurrentStatus && (!data || data.length === 0)) {
+    return { error: 'Pool state changed. Please refresh and try again.' }
+  }
+
   return { error: null }
 }
 
