@@ -14,6 +14,13 @@ describe('generateInviteCode', () => {
     expect(code).toMatch(/^[a-z0-9]{8}$/)
   })
 
+  it('produces only lowercase alphanumeric characters', () => {
+    for (let i = 0; i < 50; i++) {
+      const code = generateInviteCode()
+      expect(code).toMatch(/^[a-z0-9]+$/)
+    }
+  })
+
   it('generates unique codes on successive calls', () => {
     const codes = new Set(Array.from({ length: 100 }, () => generateInviteCode()))
     expect(codes.size).toBe(100)
