@@ -1,0 +1,42 @@
+generated: 2026-03-28
+last_updated: '2026-03-28'
+project: fantasy-golf
+project_key: NOKEY
+tracking_system: file-system
+story_location: /home/gary/.openclaw/workspace/fantasy-golf/_bmad-output/implementation-artifacts
+development_status:
+  epic-1: in-progress
+  1-1-create-a-private-pool: ready-for-dev
+  1-2-select-the-tournament-and-configure-format: ready-for-dev
+  1-3-share-a-join-link: ready-for-dev
+  1-4-review-pool-status-and-participation: ready-for-dev
+  1-5-perform-commissioner-only-actions: ready-for-dev
+  1-6-reuse-the-pool-for-a-future-tournament: ready-for-dev
+  epic-1-retrospective: optional
+  epic-2: in-progress
+  2-1-join-a-pool-from-an-invite-link: ready-for-dev
+  2-2-sign-in-on-mobile: ready-for-dev
+  2-3-submit-required-golfer-picks: ready-for-dev
+  2-4-track-remaining-picks-while-building-an-entry: ready-for-dev
+  2-5-edit-picks-before-the-lock-deadline: ready-for-dev
+  2-6-see-submission-confirmation-and-current-picks: ready-for-dev
+  epic-2-retrospective: optional
+  epic-3: in-progress
+  3-1-lock-entries-at-tee-time: ready-for-dev
+  3-2-refresh-scores-on-a-recurring-cadence: ready-for-dev
+  3-3-display-the-live-leaderboard: ready-for-dev
+  3-4-show-current-versus-stale-data: ready-for-dev
+  3-5-surface-score-changes-ties-and-withdrawals: ready-for-dev
+  epic-3-retrospective: optional
+  epic-4: in-progress
+  4-1-view-golfer-detail-information: ready-for-dev
+  4-2-see-how-a-golfer-affects-my-standing: ready-for-dev
+  4-3-inspect-golfer-related-pool-details-as-a-commissioner: ready-for-dev
+  epic-4-retrospective: optional
+  epic-5: in-progress
+  5-1-record-scoring-changes-and-audit-trails: ready-for-dev
+  5-2-investigate-scoring-issues-with-admin-tools: ready-for-dev
+  5-3-show-fallback-or-failure-states-clearly: ready-for-dev
+  5-4-keep-lock-state-and-freshness-messaging-consistent: ready-for-dev
+  5-5-provide-a-responsive-accessible-pwa-experience: ready-for-dev
+  epic-5-retrospective: optional
