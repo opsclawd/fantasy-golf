@@ -18,7 +18,7 @@ export function PoolCard({ pool, href, entryCount }: PoolCardProps) {
         </div>
         <p className="text-gray-500 text-sm">{pool.tournament_name}</p>
         <div className="mt-3 flex items-center gap-4 text-sm text-gray-500">
-          <span>Deadline: {new Date(pool.deadline).toLocaleDateString()}</span>
+          <span>Deadline: {pool.deadline ? new Date(pool.deadline).toLocaleDateString() : 'TBD'}</span>
           {entryCount !== undefined && <span>{entryCount} entries</span>}
         </div>
       </div>
