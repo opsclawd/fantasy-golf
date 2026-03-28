@@ -1,14 +1,30 @@
 export type PoolStatus = 'open' | 'live' | 'complete'
 
+export type PoolFormat = 'best_ball'
+
+export type MemberRole = 'commissioner' | 'player'
+
 export interface Pool {
   id: string
+  commissioner_id: string
   name: string
   tournament_id: string
   tournament_name: string
   year: number
   deadline: string
+  format: PoolFormat
+  picks_per_entry: number
+  invite_code: string
   status: PoolStatus
   created_at: string
+}
+
+export interface PoolMember {
+  id: string
+  pool_id: string
+  user_id: string
+  role: MemberRole
+  joined_at: string
 }
 
 export interface Entry {
@@ -49,4 +65,13 @@ export interface TournamentScore {
   hole_17: number | null
   hole_18: number | null
   total_birdies: number
+}
+
+export interface AuditEvent {
+  id: string
+  pool_id: string
+  user_id: string | null
+  action: string
+  details: Record<string, unknown>
+  created_at: string
 }
