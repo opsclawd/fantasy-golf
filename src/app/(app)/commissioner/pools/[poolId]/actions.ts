@@ -17,7 +17,15 @@ export async function startPool(_prevState: unknown, formData: FormData) {
 
   const pool = await getPoolById(supabase, poolId)
 
-  if (!pool || !canTransitionStatus(pool.status, 'live')) {
+  if (!pool) {
+    return { error: 'Pool cannot be started' }
+  }
+
+  if (pool.commissioner_id !== user.id) {
+    return { error: 'Only the commissioner can start this pool.' }
+  }
+
+  if (!canTransitionStatus(pool.status, 'live')) {
     return { error: 'Pool cannot be started' }
   }
 
@@ -42,7 +50,15 @@ export async function closePool(_prevState: unknown, formData: FormData) {
 
   const pool = await getPoolById(supabase, poolId)
 
-  if (!pool || !canTransitionStatus(pool.status, 'complete')) {
+  if (!pool) {
+    return { error: 'Pool cannot be closed' }
+  }
+
+  if (pool.commissioner_id !== user.id) {
+    return { error: 'Only the commissioner can close this pool.' }
+  }
+
+  if (!canTransitionStatus(pool.status, 'complete')) {
     return { error: 'Pool cannot be closed' }
   }
 
@@ -90,22 +106,49 @@ export async function updatePoolConfigAction(
   }
 
   const tournamentId = ((formData.get('tournamentId') as string) ?? '').trim()
-  const tournamentName = ((formData.get('tournamentName') as string) ?? '').trim()
-  const deadline = (formData.get('deadline') as string) ?? ''
-  const yearStr = (formData.get('year') as string) ?? ''
-  const format = ((formData.get('format') as string) ?? 'best_ball') as PoolFormat
-  const picksPerEntryStr = (formData.get('picksPerEntry') as string) ?? ''
+  const submittedTournamentName = ((formData.get('tournamentName') as string) ?? '').trim()
+  const submittedDeadline = (formData.get('deadline') as string) ?? ''
+  const submittedYearStr = ((formData.get('year') as string) ?? '').trim()
+  const format: PoolFormat = 'best_ball'
+  const picksPerEntryStr = ((formData.get('picksPerEntry') as string) ?? '').trim()
 
-  const year = Number.parseInt(yearStr, 10)
-  const picksPerEntry = Number.parseInt(picksPerEntryStr, 10)
-
-  if (!Number.isFinite(year) || !Number.isInteger(year) || year < 2000 || year > 2100) {
-    return { error: 'Tournament year must be a valid year between 2000 and 2100.' }
+  if (!/^\d+$/.test(picksPerEntryStr)) {
+    return { error: 'Picks per entry must be a whole number.' }
   }
 
-  const parsedDeadline = new Date(deadline)
-  if (Number.isNaN(parsedDeadline.getTime())) {
-    return { error: 'Tournament deadline must be a valid date.' }
+  const picksPerEntry = Number.parseInt(picksPerEntryStr, 10)
+
+  const isTournamentUnchanged = tournamentId === pool.tournament_id
+
+  let tournamentName: string
+  let deadline: string
+  let year: number
+
+  if (isTournamentUnchanged) {
+    tournamentName = pool.tournament_name
+    deadline = pool.deadline
+    year = pool.year
+  } else {
+    tournamentName = submittedTournamentName
+    deadline = submittedDeadline
+
+    if (tournamentName.trim().length === 0) {
+      return { error: 'Tournament name is required.' }
+    }
+
+    const parsedDeadline = new Date(deadline)
+    if (Number.isNaN(parsedDeadline.getTime())) {
+      return { error: 'Tournament deadline must be a valid date.' }
+    }
+
+    if (!/^\d{4}$/.test(submittedYearStr)) {
+      return { error: 'Tournament year must be a valid year between 2000 and 2100.' }
+    }
+
+    year = Number.parseInt(submittedYearStr, 10)
+    if (year < 2000 || year > 2100) {
+      return { error: 'Tournament year must be a valid year between 2000 and 2100.' }
+    }
   }
 
   const inputValidation = validateCreatePoolInput({
