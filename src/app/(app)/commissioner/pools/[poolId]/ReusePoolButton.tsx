@@ -25,7 +25,14 @@ export function ReusePoolButton({ poolId }: { poolId: string }) {
       {state?.error && (
         <p className="text-sm text-red-600 mb-1" role="alert">{state.error}</p>
       )}
-      <form action={formAction}>
+      <form
+        action={formAction}
+        onSubmit={(event) => {
+          if (!confirm('Reuse this pool for the next tournament?')) {
+            event.preventDefault()
+          }
+        }}
+      >
         <input type="hidden" name="poolId" value={poolId} />
         <ReuseSubmitButton />
       </form>

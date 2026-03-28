@@ -107,23 +107,40 @@ export async function reusePool(
   }
 
   const cloneInput = buildClonePoolInput(sourcePool)
-  const inviteCode = generateInviteCode()
+  let clonedPool: Awaited<ReturnType<typeof getPoolById>> | null = null
 
-  const { data: clonedPool, error: cloneError } = await insertPool(supabase, {
-    commissioner_id: user.id,
-    name: cloneInput.name,
-    tournament_id: sourcePool.tournament_id,
-    tournament_name: sourcePool.tournament_name,
-    year: sourcePool.year,
-    deadline: sourcePool.deadline,
-    format: cloneInput.format,
-    picks_per_entry: cloneInput.picks_per_entry,
-    invite_code: inviteCode,
-    status: 'open',
-  })
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const inviteCode = generateInviteCode()
+    const { data, error: cloneError } = await insertPool(supabase, {
+      commissioner_id: user.id,
+      name: cloneInput.name,
+      tournament_id: '',
+      tournament_name: '',
+      year: new Date().getFullYear(),
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      format: cloneInput.format,
+      picks_per_entry: cloneInput.picks_per_entry,
+      invite_code: inviteCode,
+      status: 'open',
+    })
 
-  if (cloneError || !clonedPool) {
-    return { error: cloneError ?? 'Failed to clone pool.' }
+    if (!cloneError && data) {
+      clonedPool = data
+      break
+    }
+
+    const isUniqueViolation =
+      cloneError?.includes('23505')
+      || cloneError?.toLowerCase().includes('unique')
+      || cloneError?.toLowerCase().includes('duplicate')
+
+    if (!isUniqueViolation) {
+      return { error: 'Failed to clone pool.' }
+    }
+  }
+
+  if (!clonedPool) {
+    return { error: 'Failed to clone pool.' }
   }
 
   const { error: memberError } = await insertPoolMember(supabase, {
@@ -132,7 +149,7 @@ export async function reusePool(
     role: 'commissioner',
   })
   if (memberError) {
-    return { error: `Pool cloned, but commissioner membership setup failed: ${memberError}` }
+    return { error: 'Failed to initialize commissioner membership for cloned pool.' }
   }
 
   const { error: auditError } = await insertAuditEvent(supabase, {
@@ -142,7 +159,7 @@ export async function reusePool(
     details: { source_pool_id: sourcePool.id },
   })
   if (auditError) {
-    return { error: `Pool cloned, but audit logging failed: ${auditError}` }
+    return { error: 'Pool was cloned, but audit logging failed.' }
   }
 
   redirect(`/commissioner/pools/${clonedPool.id}`)
