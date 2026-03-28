@@ -17,6 +17,14 @@ interface LeaderboardProps {
   poolId: string
 }
 
+type ScoreBroadcastPayload = {
+  payload: {
+    ranked?: RankedEntry[]
+    completedHoles?: number
+    updatedAt?: string
+  }
+}
+
 export function Leaderboard({ poolId }: LeaderboardProps) {
   const [entries, setEntries] = useState<RankedEntry[]>([])
   const [completedHoles, setCompletedHoles] = useState(0)
@@ -29,11 +37,11 @@ export function Leaderboard({ poolId }: LeaderboardProps) {
 
     const channel = supabase
       .channel('pool_updates')
-      .on('broadcast', { event: 'scores' }, (payload) => {
+      .on('broadcast', { event: 'scores' }, (payload: ScoreBroadcastPayload) => {
         if (payload.payload.ranked) {
           setEntries(payload.payload.ranked)
-          setCompletedHoles(payload.payload.completedHoles)
-          setUpdatedAt(payload.payload.updatedAt)
+          setCompletedHoles(payload.payload.completedHoles ?? 0)
+          setUpdatedAt(payload.payload.updatedAt ?? null)
         }
       })
       .subscribe()
