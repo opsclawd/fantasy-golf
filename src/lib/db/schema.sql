@@ -5,11 +5,11 @@ CREATE TABLE pools (
   name TEXT NOT NULL,
   tournament_id TEXT NOT NULL,
   tournament_name TEXT NOT NULL,
-  year INTEGER NOT NULL,
+  year INTEGER NOT NULL CHECK (year >= 2000 AND year <= 2100),
   deadline TIMESTAMPTZ NOT NULL,
   format TEXT DEFAULT 'best_ball' CHECK (format IN ('best_ball')),
-  picks_per_entry INTEGER DEFAULT 4,
-  invite_code TEXT UNIQUE,
+  picks_per_entry INTEGER DEFAULT 4 CHECK (picks_per_entry >= 1 AND picks_per_entry <= 10),
+  invite_code TEXT UNIQUE NOT NULL,
   status TEXT DEFAULT 'open' CHECK (status IN ('open', 'live', 'complete')),
   created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -89,3 +89,4 @@ CREATE INDEX idx_entries_pool_id ON entries(pool_id);
 CREATE INDEX idx_entries_user_id ON entries(user_id);
 CREATE INDEX idx_tournament_scores_tournament ON tournament_scores(tournament_id);
 CREATE INDEX idx_audit_events_pool_id ON audit_events(pool_id);
+CREATE INDEX idx_audit_events_user_id ON audit_events(user_id);
