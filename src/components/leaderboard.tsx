@@ -25,6 +25,10 @@ type ScoreBroadcastPayload = {
   }
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 export function Leaderboard({ poolId }: LeaderboardProps) {
   const [entries, setEntries] = useState<RankedEntry[]>([])
   const [completedHoles, setCompletedHoles] = useState(0)
@@ -37,12 +41,19 @@ export function Leaderboard({ poolId }: LeaderboardProps) {
 
     const channel = supabase
       .channel('pool_updates')
-      .on('broadcast', { event: 'scores' }, (payload: ScoreBroadcastPayload) => {
-        if (payload.payload.ranked) {
-          setEntries(payload.payload.ranked)
-          setCompletedHoles(payload.payload.completedHoles ?? 0)
-          setUpdatedAt(payload.payload.updatedAt ?? null)
+      .on('broadcast', { event: 'scores' }, (payload: unknown) => {
+        if (!isObject(payload) || !isObject(payload.payload)) {
+          return
         }
+
+        const typedPayload = payload as ScoreBroadcastPayload
+        if (!Array.isArray(typedPayload.payload.ranked)) {
+          return
+        }
+
+        setEntries(typedPayload.payload.ranked)
+        setCompletedHoles(typedPayload.payload.completedHoles ?? 0)
+        setUpdatedAt(typedPayload.payload.updatedAt ?? null)
       })
       .subscribe()
 

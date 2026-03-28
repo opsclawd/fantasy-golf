@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { Leaderboard } from '@/components/leaderboard'
+import { notFound } from 'next/navigation'
 
 export default async function SpectatorPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -12,7 +13,7 @@ export default async function SpectatorPage({ params }: { params: Promise<{ pool
     .single()
 
   if (!pool) {
-    return <div className="p-8 text-center text-gray-500">Pool not found</div>
+    notFound()
   }
 
   return (
