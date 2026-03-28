@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getPoolById, getPoolMembers, getEntriesForPool } from '@/lib/pool-queries'
 import { StatusChip } from '@/components/StatusChip'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
+import { ReusePoolButton } from './ReusePoolButton'
 import InviteLinkSection from './InviteLinkSection'
 import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
@@ -81,6 +82,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
           <StatusChip status={pool.status} />
           {pool.status === 'open' && <StartPoolButton poolId={pool.id} />}
           {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
+          {pool.status === 'complete' && <ReusePoolButton poolId={pool.id} />}
         </div>
       </div>
 
