@@ -35,11 +35,25 @@ export async function createPool(
   const picksPerEntryStr = (formData.get('picksPerEntry') as string) ?? '4'
   const year = parseInt(yearStr, 10)
   const picksPerEntry = parseInt(picksPerEntryStr, 10)
+  const normalizedTournamentName = tournamentName.trim()
+
+  if (!Number.isFinite(year) || !Number.isInteger(year) || year < 2000 || year > 2100) {
+    return { error: 'Tournament year must be a valid year between 2000 and 2100.' }
+  }
+
+  if (!normalizedTournamentName) {
+    return { error: 'Tournament name is required.' }
+  }
+
+  const parsedDeadline = new Date(deadline)
+  if (Number.isNaN(parsedDeadline.getTime())) {
+    return { error: 'Tournament deadline must be a valid date.' }
+  }
 
   const inputValidation = validateCreatePoolInput({
     name,
     tournamentId,
-    tournamentName,
+    tournamentName: normalizedTournamentName,
     year,
     deadline,
   })
@@ -58,7 +72,7 @@ export async function createPool(
     commissioner_id: user.id,
     name: name.trim(),
     tournament_id: tournamentId,
-    tournament_name: tournamentName,
+    tournament_name: normalizedTournamentName,
     year,
     deadline,
     format,
@@ -71,18 +85,26 @@ export async function createPool(
     return { error: error ?? 'Failed to create pool.' }
   }
 
-  await insertPoolMember(supabase, {
+  const { error: poolMemberError } = await insertPoolMember(supabase, {
     pool_id: pool.id,
     user_id: user.id,
     role: 'commissioner',
   })
 
-  await insertAuditEvent(supabase, {
+  if (poolMemberError) {
+    return { error: `Pool created, but commissioner membership setup failed: ${poolMemberError}` }
+  }
+
+  const { error: auditEventError } = await insertAuditEvent(supabase, {
     pool_id: pool.id,
     user_id: user.id,
     action: 'poolCreated',
     details: { name: pool.name, tournament_id: pool.tournament_id, format: pool.format },
   })
+
+  if (auditEventError) {
+    return { error: `Pool created, but audit logging failed: ${auditEventError}` }
+  }
 
   redirect(`/commissioner/pools/${pool.id}`)
 }

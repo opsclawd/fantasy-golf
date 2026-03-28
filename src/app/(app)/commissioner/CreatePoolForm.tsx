@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useFormState } from 'react-dom'
+import { useFormState, useFormStatus } from 'react-dom'
 import { createPool, type CreatePoolState } from './actions'
 
 interface TournamentOption {
@@ -30,6 +30,20 @@ function setCachedTournaments(year: string, tournaments: TournamentOption[]) {
   localStorage.setItem(`${CACHE_KEY}_${year}`, JSON.stringify(tournaments))
 }
 
+function SubmitButton() {
+  const { pending } = useFormStatus()
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    >
+      {pending ? 'Creating Pool...' : 'Create Pool'}
+    </button>
+  )
+}
+
 export function CreatePoolForm() {
   const currentYear = new Date().getFullYear().toString()
   const [state, formAction] = useFormState<CreatePoolState, FormData>(createPool, null)
@@ -41,12 +55,14 @@ export function CreatePoolForm() {
   const [tournaments, setTournaments] = useState<TournamentOption[]>([])
   const [availableTournaments, setAvailableTournaments] = useState<TournamentOption[]>([])
   const [loadingTournaments, setLoadingTournaments] = useState(false)
+  const [tournamentError, setTournamentError] = useState('')
 
   useEffect(() => {
     const cached = getCachedTournaments(currentYear)
     if (cached) {
       setTournaments(cached)
       setAvailableTournaments(filterUpcoming(cached))
+      setTournamentError('')
     } else {
       fetchTournaments()
     }
@@ -61,21 +77,38 @@ export function CreatePoolForm() {
     setLoadingTournaments(true)
     try {
       const res = await fetch(`/api/tournaments?year=${currentYear}`)
-      const data = await res.json()
-      if (Array.isArray(data)) {
-        const mapped = data.map((t: any) => ({
-          id: t.tournId,
-          name: t.name,
-          startDate: t.date?.start?.$date?.$numberLong
-            ? new Date(parseInt(t.date.start.$date.$numberLong)).toISOString().slice(0, 16)
-            : ''
-        }))
-        setTournaments(mapped)
-        setCachedTournaments(currentYear, mapped)
-        setAvailableTournaments(filterUpcoming(mapped))
+      if (!res.ok) {
+        setTournamentError('Unable to load tournaments right now. Please try again.')
+        return
       }
+
+      const data = await res.json()
+      if (!Array.isArray(data)) {
+        setTournamentError('Received invalid tournament data. Please refresh and try again.')
+        return
+      }
+
+      const mapped = data.map((t: any) => ({
+        id: typeof t.tournId === 'string' ? t.tournId : '',
+        name: typeof t.name === 'string' ? t.name : '',
+        startDate: t.date?.start?.$date?.$numberLong
+          ? new Date(parseInt(t.date.start.$date.$numberLong, 10)).toISOString().slice(0, 16)
+          : ''
+      }))
+
+      const hasInvalidTournament = mapped.some(t => !t.id || !t.name)
+      if (hasInvalidTournament) {
+        setTournamentError('Received invalid tournament data. Please refresh and try again.')
+        return
+      }
+
+      setTournamentError('')
+      setTournaments(mapped)
+      setCachedTournaments(currentYear, mapped)
+      setAvailableTournaments(filterUpcoming(mapped))
     } catch (err) {
       console.error(err)
+      setTournamentError('Unable to load tournaments right now. Please try again.')
     } finally {
       setLoadingTournaments(false)
     }
@@ -132,6 +165,9 @@ export function CreatePoolForm() {
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
           </select>
+          {tournamentError && (
+            <p className="mt-2 text-sm text-red-700" role="alert">{tournamentError}</p>
+          )}
           <input type="hidden" name="tournamentName" value={tournamentName} />
           <input type="hidden" name="year" value={currentYear} />
         </div>
@@ -165,12 +201,7 @@ export function CreatePoolForm() {
 
         <input type="hidden" name="format" value="best_ball" />
 
-        <button
-          type="submit"
-          className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-        >
-          Create Pool
-        </button>
+        <SubmitButton />
       </form>
     </div>
   )
