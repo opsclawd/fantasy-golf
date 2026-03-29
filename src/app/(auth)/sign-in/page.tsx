@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { signIn } from './actions'
 
 export default function SignIn() {
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <SignInForm />
+    </Suspense>
+  )
+}
+
+function SignInForm() {
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
