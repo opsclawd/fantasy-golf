@@ -1,3 +1,5 @@
+import { getDataAlertLiveRegion } from './data-alert-a11y'
+
 type DataAlertVariant = 'error' | 'warning' | 'info'
 
 interface DataAlertProps {
@@ -34,6 +36,7 @@ const VARIANT_CONFIG: Record<
 
 export function DataAlert({ variant, title, message, className }: DataAlertProps) {
   const config = VARIANT_CONFIG[variant]
+  const liveRegionProps = getDataAlertLiveRegion(variant)
   const classes = [
     'rounded-lg border px-3 py-2 text-sm inline-flex items-start gap-2',
     config.classes,
@@ -43,7 +46,7 @@ export function DataAlert({ variant, title, message, className }: DataAlertProps
     .join(' ')
 
   return (
-    <div className={classes} role="alert" aria-live="polite">
+    <div className={classes} {...liveRegionProps}>
       <span aria-hidden="true" className="font-semibold leading-5">
         {config.icon}
       </span>
