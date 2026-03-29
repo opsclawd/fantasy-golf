@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { rankEntries } from '@/lib/scoring'
+import { deriveCompletedHoles, rankEntries } from '@/lib/scoring'
 import { classifyFreshness } from '@/lib/freshness'
 import type { TournamentScore } from '@/lib/supabase/types'
 
@@ -103,21 +103,7 @@ export async function GET(
       golferCountries[g.id] = g.country ?? ''
     }
 
-    // Calculate completed holes from DB scores
-    const completedScores = allScores.filter(s => s.hole_1 !== null)
-    const completedHoles =
-      completedScores.length > 0
-        ? Math.min(
-            ...completedScores.map(s => {
-              let thru = 0
-              for (let i = 1; i <= 18; i++) {
-                if ((s as any)[`hole_${i}`] !== null) thru = i
-                else break
-              }
-              return thru
-            })
-          )
-        : 0
+    const completedHoles = deriveCompletedHoles(allScores as TournamentScore[])
 
     const ranked = rankEntries(entries, golferScoresMap, completedHoles)
 

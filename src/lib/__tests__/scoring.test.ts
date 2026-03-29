@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { getHoleScore, getEntryHoleScore, calculateEntryTotalScore, calculateEntryBirdies, rankEntries } from '../scoring'
+import {
+  getHoleScore,
+  getEntryHoleScore,
+  calculateEntryTotalScore,
+  calculateEntryBirdies,
+  rankEntries,
+  deriveCompletedHoles,
+} from '../scoring'
 import type { TournamentScore, Entry, GolferStatus } from '../supabase/types'
 
 describe('scoring', () => {
@@ -249,6 +256,79 @@ describe('scoring', () => {
       expect(ranked[0].totalScore).toBe(-2)
       expect(ranked[1].id).toBe('e1')
       expect(ranked[1].totalScore).toBe(0)
+    })
+  })
+
+  describe('deriveCompletedHoles', () => {
+    it('returns 0 when no golfers have started', () => {
+      const allScores: TournamentScore[] = [
+        {
+          ...createScore('g1', []),
+          hole_1: null,
+          hole_2: null,
+          hole_3: null,
+          hole_4: null,
+          hole_5: null,
+          hole_6: null,
+          hole_7: null,
+          hole_8: null,
+          hole_9: null,
+          hole_10: null,
+          hole_11: null,
+          hole_12: null,
+          hole_13: null,
+          hole_14: null,
+          hole_15: null,
+          hole_16: null,
+          hole_17: null,
+          hole_18: null,
+        },
+      ]
+
+      expect(deriveCompletedHoles(allScores)).toBe(0)
+    })
+
+    it('uses minimum contiguous thru value among started golfers', () => {
+      const allScores: TournamentScore[] = [
+        {
+          ...createScore('g1', [0, -1, 1, 0]),
+          hole_5: null,
+          hole_6: null,
+          hole_7: null,
+          hole_8: null,
+          hole_9: null,
+          hole_10: null,
+          hole_11: null,
+          hole_12: null,
+          hole_13: null,
+          hole_14: null,
+          hole_15: null,
+          hole_16: null,
+          hole_17: null,
+          hole_18: null,
+        },
+        {
+          ...createScore('g2', [0, 0]),
+          hole_3: null,
+          hole_4: null,
+          hole_5: null,
+          hole_6: null,
+          hole_7: null,
+          hole_8: null,
+          hole_9: null,
+          hole_10: null,
+          hole_11: null,
+          hole_12: null,
+          hole_13: null,
+          hole_14: null,
+          hole_15: null,
+          hole_16: null,
+          hole_17: null,
+          hole_18: null,
+        },
+      ]
+
+      expect(deriveCompletedHoles(allScores)).toBe(2)
     })
   })
 })

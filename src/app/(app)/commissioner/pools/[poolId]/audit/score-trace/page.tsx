@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ScoreDisplay } from '@/components/score-display'
 import { getPoolById } from '@/lib/pool-queries'
-import { getEntryHoleScore, rankEntries, getHoleScore } from '@/lib/scoring'
+import { deriveCompletedHoles, getEntryHoleScore, rankEntries, getHoleScore } from '@/lib/scoring'
 import { createClient } from '@/lib/supabase/server'
 import type { Entry, TournamentScore } from '@/lib/supabase/types'
 
@@ -16,22 +16,6 @@ type HoleTrace = {
     status: TournamentScore['status'] | 'missing'
     contributes: boolean
   }>
-}
-
-function getCompletedHoles(allScores: TournamentScore[]): number {
-  const completedScores = allScores.filter((score) => score.hole_1 !== null)
-  if (completedScores.length === 0) return 0
-
-  return Math.min(
-    ...completedScores.map((score) => {
-      let thru = 0
-      for (let i = 1; i <= 18; i++) {
-        if ((score as unknown as Record<string, number | null>)[`hole_${i}`] !== null) thru = i
-        else break
-      }
-      return thru
-    })
-  )
 }
 
 function buildHoleTrace(
@@ -137,7 +121,7 @@ export default async function CommissionerPoolAuditScoreTracePage({
     golferNameById.set(golfer.id, golfer.name)
   }
 
-  const completedHoles = getCompletedHoles(allScores)
+  const completedHoles = deriveCompletedHoles(allScores)
   const ranked = rankEntries(entries, golferScores, completedHoles)
 
   return (

@@ -72,6 +72,25 @@ export function calculateEntryBirdies(
   return totalBirdies
 }
 
+export function deriveCompletedHoles(allScores: TournamentScore[]): number {
+  const startedScores = allScores.filter((score) => score.hole_1 !== null)
+  if (startedScores.length === 0) return 0
+
+  return Math.min(
+    ...startedScores.map((score) => {
+      let thru = 0
+      for (let hole = 1; hole <= 18; hole++) {
+        if (getHoleScore(score, hole) !== null) {
+          thru = hole
+          continue
+        }
+        break
+      }
+      return thru
+    })
+  )
+}
+
 export function rankEntries(
   entries: Entry[],
   golferScores: Map<string, TournamentScore>,
