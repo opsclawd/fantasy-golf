@@ -6,6 +6,7 @@ import { ScoreDisplay } from './score-display'
 import { FreshnessChip } from './FreshnessChip'
 import { LeaderboardEmptyState } from './LeaderboardEmptyState'
 import { GolferDetailSheet } from './GolferDetailSheet'
+import { DataAlert } from './DataAlert'
 import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib/supabase/types'
 
 interface RankedEntry {
@@ -120,8 +121,7 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
   if (fetchError) {
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center" role="alert">
-        <p className="text-red-600 font-medium">Unable to load leaderboard</p>
-        <p className="text-sm text-gray-500 mt-1">{fetchError}</p>
+        <DataAlert variant="error" title="Unable to load leaderboard" message={fetchError} />
       </div>
     )
   }
