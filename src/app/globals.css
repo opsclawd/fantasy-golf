@@ -3,9 +3,26 @@
 @tailwind utilities;
 
 @layer base {
-  :where(a[href], button, input:not([type='hidden']), select, textarea, summary, [role='button']) {
-    min-inline-size: 44px;
+  :where(
+    a[href],
+    button,
+    input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea,
+    summary,
+    [role='button']
+  ) {
     min-block-size: 44px;
+  }
+
+  :where(
+    button,
+    input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea,
+    [role='button']
+  ) {
+    min-inline-size: 44px;
   }
 
   :where(a[href], button, input:not([type='hidden']), select, textarea, summary, [role='button']):focus-visible {
@@ -14,7 +31,7 @@
     border-radius: 0.375rem;
   }
 
-  :where(a[href]:not([class]), [data-inline-link], [role='status']) {
+  :where(a[href]:not([class]), [data-inline-link]) {
     min-inline-size: auto;
     min-block-size: auto;
   }
