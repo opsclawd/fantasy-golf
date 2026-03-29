@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { TournamentScore, GolferStatus, Golfer } from '../supabase/types'
-import { getGolferScorecard, getGolferContribution, getEntryGolferSummaries } from '../golfer-detail'
+import type { TournamentScore, GolferStatus, Golfer, Entry } from '../supabase/types'
+import { getGolferScorecard, getGolferContribution, getEntryGolferSummaries, getGolferPoolContext } from '../golfer-detail'
 
 function createScore(
   golferId: string,
@@ -174,6 +174,55 @@ describe('golfer-detail', () => {
 
       // Hole 1: g1=-1 best, Hole 2: g1=-2 best, Hole 3: g2=-1 best, Hole 4: tied -1 → g1 contributing
       expect(contribution.totalContributingHoles).toBe(3)
+    })
+  })
+
+  describe('getGolferPoolContext', () => {
+    function createEntry(id: string, golferIds: string[]): Entry {
+      return {
+        id,
+        pool_id: 'p1',
+        user_id: id,
+        golfer_ids: golferIds,
+        total_birdies: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    }
+
+    it('finds all entries containing a given golfer', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g1', 'g2']),
+        createEntry('e2', ['g3', 'g4']),
+        createEntry('e3', ['g1', 'g4']),
+      ]
+
+      const context = getGolferPoolContext('g1', entries)
+
+      expect(context.totalEntries).toBe(3)
+      expect(context.entriesWithGolfer).toBe(2)
+      expect(context.entryIds).toEqual(['e1', 'e3'])
+      expect(context.pickRate).toBeCloseTo(2 / 3)
+    })
+
+    it('returns zero when no entries contain the golfer', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g2', 'g3']),
+      ]
+
+      const context = getGolferPoolContext('g1', entries)
+
+      expect(context.entriesWithGolfer).toBe(0)
+      expect(context.entryIds).toEqual([])
+      expect(context.pickRate).toBe(0)
+    })
+
+    it('handles empty entries list', () => {
+      const context = getGolferPoolContext('g1', [])
+
+      expect(context.totalEntries).toBe(0)
+      expect(context.entriesWithGolfer).toBe(0)
+      expect(context.pickRate).toBe(0)
     })
   })
 })

@@ -1,4 +1,4 @@
-import type { TournamentScore, GolferStatus, Golfer } from './supabase/types'
+import type { TournamentScore, GolferStatus, Golfer, Entry } from './supabase/types'
 import { getHoleScore, getEntryHoleScore } from './scoring'
 
 export interface HoleResult {
@@ -131,4 +131,25 @@ export function getEntryGolferSummaries(
       contributingHoles: contribution.totalContributingHoles,
     }
   })
+}
+
+export interface GolferPoolContext {
+  totalEntries: number
+  entriesWithGolfer: number
+  entryIds: string[]
+  pickRate: number
+}
+
+export function getGolferPoolContext(
+  golferId: string,
+  entries: Entry[]
+): GolferPoolContext {
+  const matchingEntries = entries.filter(e => e.golfer_ids.includes(golferId))
+
+  return {
+    totalEntries: entries.length,
+    entriesWithGolfer: matchingEntries.length,
+    entryIds: matchingEntries.map(e => e.id),
+    pickRate: entries.length > 0 ? matchingEntries.length / entries.length : 0,
+  }
 }
