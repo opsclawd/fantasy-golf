@@ -41,6 +41,7 @@ export function FreshnessChip({ status, refreshedAt }: FreshnessChipProps) {
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.classes}`}
       role="status"
+      aria-live="polite"
       aria-label={config.srText}
     >
       <span aria-hidden="true">{config.icon}</span>

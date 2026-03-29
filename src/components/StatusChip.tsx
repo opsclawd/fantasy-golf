@@ -24,6 +24,7 @@ export function StatusChip({ status }: { status: PoolStatus }) {
     <span
       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${config.classes}`}
       role="status"
+      aria-label={`Pool status: ${config.label}`}
     >
       <span aria-hidden="true">{config.icon}</span>
       {config.label}
