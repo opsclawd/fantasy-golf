@@ -207,6 +207,49 @@ describe('scoring', () => {
       expect(ranked[1].id).toBe('e1')
       expect(ranked[1].totalScore).toBe(-2)
     })
+
+    it('returns empty array when no entries are provided', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0, 1])],
+      ])
+
+      const ranked = rankEntries([], golferScores, 3)
+      expect(ranked).toEqual([])
+    })
+
+    it('ranks a single entry as rank 1', () => {
+      const entries: Entry[] = [createEntry('e1', ['g1'])]
+
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScoreWithBirdies('g1', [-1, 0, 1], 1)],
+      ])
+
+      const ranked = rankEntries(entries, golferScores, 3)
+      expect(ranked).toHaveLength(1)
+      expect(ranked[0].rank).toBe(1)
+      expect(ranked[0].totalScore).toBe(0)
+    })
+
+    it('handles entry where all golfers are withdrawn', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g1', 'g2']),
+        createEntry('e2', ['g3']),
+      ]
+
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScoreWithBirdies('g1', [-1, 0, 0], 1, 'withdrawn')],
+        ['g2', createScoreWithBirdies('g2', [-1, 0, 0], 1, 'withdrawn')],
+        ['g3', createScoreWithBirdies('g3', [-1, -1, 0], 2)],
+      ])
+
+      const ranked = rankEntries(entries, golferScores, 3)
+      // e1 has totalScore = 0 (no active golfers → all null holes → break immediately)
+      // e2 has totalScore = -2
+      expect(ranked[0].id).toBe('e2')
+      expect(ranked[0].totalScore).toBe(-2)
+      expect(ranked[1].id).toBe('e1')
+      expect(ranked[1].totalScore).toBe(0)
+    })
   })
 })
 
