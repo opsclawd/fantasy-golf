@@ -140,6 +140,15 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
               <span>Last refresh error: {pool.last_refresh_error}</span>
             </div>
           )}
+
+          <div className="pt-2 border-t border-gray-100">
+            <Link
+              href={`/commissioner/pools/${poolId}/audit`}
+              className="text-sm font-medium text-blue-600 hover:text-blue-800"
+            >
+              View Audit Log
+            </Link>
+          </div>
         </div>
       )}
 
