@@ -131,7 +131,7 @@ export default async function CommissionerPoolAuditPage({
   if (!pool) redirect('/commissioner')
   if (pool.commissioner_id !== user.id) redirect('/commissioner')
 
-  const events = await getAuditEventsForPool(supabase, poolId)
+  const events = await getAuditEventsForPool(supabase, poolId, { limit: 100 })
 
   return (
     <div className="space-y-6">
