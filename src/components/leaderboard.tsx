@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ScoreDisplay } from './score-display'
 import { TrustStatusBar } from './TrustStatusBar'
@@ -55,7 +55,7 @@ export function Leaderboard({
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [selectedGolferId, setSelectedGolferId] = useState<string | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const fetchLeaderboard = useCallback(async () => {
     try {

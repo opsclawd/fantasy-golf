@@ -84,18 +84,54 @@ export async function POST(request: Request) {
     }
 
     // Step 4: Upsert scores into DB
+    const upsertFailures: Array<{ golfer_id: string; error: string }> = []
     for (const score of slashScores) {
       const holeScores: Record<string, number | null> = {}
       for (let i = 1; i <= 18; i++) {
         holeScores[`hole_${i}`] = score.hole_scores[i - 1] ?? null
       }
 
-      await upsertTournamentScore(supabase, {
+      const upsertResult = await upsertTournamentScore(supabase, {
         golfer_id: score.golfer_id,
         tournament_id: pool.tournament_id,
         ...holeScores,
         total_birdies: countBirdies(score.hole_scores),
       } as any)
+
+      if (upsertResult.error) {
+        upsertFailures.push({ golfer_id: score.golfer_id, error: upsertResult.error })
+      }
+    }
+
+    if (upsertFailures.length > 0) {
+      const failureMessage = `Upsert failed for ${upsertFailures.length} golfer(s): ${upsertFailures
+        .map(failure => `${failure.golfer_id} (${failure.error})`)
+        .join(', ')}`
+
+      await updatePoolRefreshMetadata(supabase, pool.id, {
+        last_refresh_error: failureMessage,
+      })
+
+      await insertAuditEvent(supabase, {
+        pool_id: pool.id,
+        user_id: null,
+        action: 'scoreRefreshFailed',
+        details: {
+          error: failureMessage,
+          failures: upsertFailures,
+        },
+      })
+
+      return NextResponse.json(
+        {
+          data: null,
+          error: {
+            code: 'UPSERT_FAILED',
+            message: 'Failed to persist one or more golfer scores',
+          },
+        },
+        { status: 500 }
+      )
     }
 
     // Step 5: Update refresh metadata (success)

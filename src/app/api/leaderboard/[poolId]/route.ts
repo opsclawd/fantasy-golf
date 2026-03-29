@@ -56,9 +56,11 @@ export async function GET(
       .eq('tournament_id', pool.tournament_id)
 
     if (!allScores || allScores.length === 0) {
+      const rankedWithoutScores = rankEntries(entries, new Map(), 0)
+
       return NextResponse.json({
         data: {
-          entries: [],
+          entries: rankedWithoutScores,
           completedHoles: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
