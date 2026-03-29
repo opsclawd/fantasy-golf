@@ -51,7 +51,7 @@ describe('submitPicks', () => {
     formData.set('poolId', 'pool-1')
     formData.set('golferIds', '[]')
 
-    await expect(submitPicks(formData)).rejects.toThrow(redirectError)
+    await expect(submitPicks(null, formData)).rejects.toThrow(redirectError)
     expect(redirect).toHaveBeenCalledWith('/sign-in')
   })
 })

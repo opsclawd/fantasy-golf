@@ -4,7 +4,7 @@ import { GolferPicker } from '@/components/golfer-picker'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
 import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
-import { submitPicks } from './actions'
+import { submitPicks, type SubmitPicksState } from './actions'
 
 type PicksFormProps = {
   poolId: string
@@ -37,8 +37,7 @@ export function PicksForm({
   existingGolferNames,
   isLocked,
 }: PicksFormProps) {
-  // @ts-expect-error submitPicks accepts FormData and ignores previous state.
-  const [state, formAction] = useFormState(submitPicks, null)
+  const [state, formAction] = useFormState<SubmitPicksState, FormData>(submitPicks, null)
   const [selectedIds, setSelectedIds] = useState<string[]>(existingGolferIds)
 
   const hasEnoughPicks = selectedIds.length === picksPerEntry
@@ -64,9 +63,20 @@ export function PicksForm({
 
   return (
     <form action={formAction} className="space-y-4">
-      <h2 className="text-lg font-semibold">
-        {existingGolferIds.length > 0 ? 'Edit your picks' : 'Select your picks'}
-      </h2>
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-4">
+          {existingGolferIds.length > 0 ? 'Edit Your Picks' : 'Select Your Golfers'}
+        </h2>
+        <GolferPicker
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          maxSelections={picksPerEntry}
+        />
+
+        <div className="mt-6">
+          <SubmitButton hasEnoughPicks={hasEnoughPicks} isEdit={existingGolferIds.length > 0} />
+        </div>
+      </div>
       <input type="hidden" name="poolId" value={poolId} />
       <input type="hidden" name="golferIds" value={JSON.stringify(selectedIds)} />
 
@@ -75,14 +85,6 @@ export function PicksForm({
           {state.error}
         </div>
       ) : null}
-
-      <GolferPicker
-        selectedIds={selectedIds}
-        onSelectionChange={setSelectedIds}
-        maxSelections={picksPerEntry}
-      />
-
-      <SubmitButton hasEnoughPicks={hasEnoughPicks} isEdit={existingGolferIds.length > 0} />
     </form>
   )
 }

@@ -11,7 +11,10 @@ export type SubmitPicksState = {
   success?: boolean
 } | null
 
-export async function submitPicks(formData: FormData): Promise<SubmitPicksState> {
+export async function submitPicks(
+  _prevState: SubmitPicksState,
+  formData: FormData,
+): Promise<SubmitPicksState> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const saveErrorMessage = 'Failed to save picks. Please try again.'
