@@ -6,14 +6,11 @@ import {
 } from '../picks'
 
 describe('validatePickSubmission', () => {
-  const futureDeadline = '2099-04-10T08:00:00Z'
-
   it('returns ok for exact picks count', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g3', 'g4'],
       picksPerEntry: 4,
-      status: 'open',
-      deadline: futureDeadline,
+      isLocked: false,
     })
 
     expect(result).toEqual({ ok: true })
@@ -23,8 +20,7 @@ describe('validatePickSubmission', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g3'],
       picksPerEntry: 4,
-      status: 'open',
-      deadline: futureDeadline,
+      isLocked: false,
     })
 
     expect(result).toEqual({
@@ -37,8 +33,7 @@ describe('validatePickSubmission', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g3', 'g4', 'g5'],
       picksPerEntry: 4,
-      status: 'open',
-      deadline: futureDeadline,
+      isLocked: false,
     })
 
     expect(result).toEqual({
@@ -51,8 +46,7 @@ describe('validatePickSubmission', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g3', 'g4'],
       picksPerEntry: 4,
-      status: 'live',
-      deadline: futureDeadline,
+      isLocked: true,
     })
 
     expect(result).toEqual({
@@ -65,8 +59,7 @@ describe('validatePickSubmission', () => {
     const result = validatePickSubmission({
       golferIds: [],
       picksPerEntry: 4,
-      status: 'open',
-      deadline: futureDeadline,
+      isLocked: false,
     })
 
     expect(result).toEqual({
@@ -79,8 +72,7 @@ describe('validatePickSubmission', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g1', 'g4'],
       picksPerEntry: 4,
-      status: 'open',
-      deadline: futureDeadline,
+      isLocked: false,
     })
 
     expect(result).toEqual({
@@ -93,8 +85,7 @@ describe('validatePickSubmission', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'],
       picksPerEntry: 6,
-      status: 'open',
-      deadline: futureDeadline,
+      isLocked: false,
     })
 
     expect(result).toEqual({ ok: true })

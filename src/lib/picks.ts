@@ -3,8 +3,7 @@ import type { PoolStatus } from './supabase/types'
 export interface PickSubmissionInput {
   golferIds: string[]
   picksPerEntry: number
-  status: PoolStatus
-  deadline: string
+  isLocked: boolean
 }
 
 export type PickValidationResult =
@@ -14,7 +13,7 @@ export type PickValidationResult =
 export function validatePickSubmission(
   input: PickSubmissionInput
 ): PickValidationResult {
-  if (isPoolLocked(input.status, input.deadline)) {
+  if (input.isLocked) {
     return { ok: false, error: 'This pool is locked. Picks can no longer be changed.' }
   }
 
