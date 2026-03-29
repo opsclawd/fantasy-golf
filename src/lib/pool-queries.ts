@@ -155,11 +155,20 @@ export async function getAuditEventsForPool(
     query = query.in('action', options.actionFilter)
   }
 
-  if (typeof options?.limit === 'number') {
+  if (
+    typeof options?.limit === 'number' &&
+    Number.isFinite(options.limit) &&
+    Number.isInteger(options.limit) &&
+    options.limit > 0
+  ) {
     query = query.limit(options.limit)
   }
 
-  const { data } = await query
+  const { data, error } = await query
+  if (error) {
+    throw new Error(`Failed to fetch audit events for pool ${poolId}: ${error.message}`)
+  }
+
   return (data as AuditEvent[]) || []
 }
 
