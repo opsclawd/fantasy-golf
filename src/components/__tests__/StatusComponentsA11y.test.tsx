@@ -1,20 +1,26 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { createElement } from 'react'
 import { describe, expect, it } from 'vitest'
-
-const freshnessChipPath = resolve(process.cwd(), 'src/components/FreshnessChip.tsx')
-const statusChipPath = resolve(process.cwd(), 'src/components/StatusChip.tsx')
+import { FreshnessChip } from '@/components/FreshnessChip'
+import { StatusChip } from '@/components/StatusChip'
 
 describe('status component accessibility attributes', () => {
-  it('adds polite live region to FreshnessChip outer span', () => {
-    const source = readFileSync(freshnessChipPath, 'utf8')
+  it('renders FreshnessChip with polite live region and accessible label', () => {
+    const markup = renderToStaticMarkup(
+      createElement(FreshnessChip, { status: 'current', refreshedAt: null }),
+    )
 
-    expect(source).toContain("aria-live=\"polite\"")
+    expect(markup).toContain('role="status"')
+    expect(markup).toContain('aria-live="polite"')
+    expect(markup).toContain('aria-label="Data is current"')
   })
 
-  it('adds explicit aria-label to StatusChip', () => {
-    const source = readFileSync(statusChipPath, 'utf8')
+  it('renders StatusChip with explicit pool-status aria-label', () => {
+    const markup = renderToStaticMarkup(
+      createElement(StatusChip, { status: 'live' }),
+    )
 
-    expect(source).toContain("aria-label={`Pool status: ${config.label}`}")
+    expect(markup).toContain('role="status"')
+    expect(markup).toContain('aria-label="Pool status: Live"')
   })
 })
