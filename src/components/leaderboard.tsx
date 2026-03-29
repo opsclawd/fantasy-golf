@@ -120,7 +120,7 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
 
   if (fetchError) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center" role="alert">
+      <div className="bg-white rounded-lg shadow p-8 text-center">
         <DataAlert variant="error" title="Unable to load leaderboard" message={fetchError} />
       </div>
     )
