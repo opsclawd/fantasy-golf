@@ -4,35 +4,46 @@ interface PickProgressProps {
 }
 
 export function PickProgress({ current, required }: PickProgressProps) {
-  const safeRequired = Number.isFinite(required) && required > 0 ? Math.floor(required) : 1
-  const safeCurrent = Math.max(0, Math.min(safeRequired, Math.floor(current)))
-  const remaining = Math.max(0, safeRequired - safeCurrent)
+  const remaining = Math.max(0, required - current)
   const isComplete = remaining === 0
-  const progressPercent = Math.round((safeCurrent / safeRequired) * 100)
-
-  const detailText = `${safeCurrent} of ${safeRequired}`
-  const message = isComplete
-    ? 'All required picks selected. Ready to submit.'
-    : `${remaining} pick${remaining === 1 ? '' : 's'} remaining`
+  const percentage = required > 0 ? Math.min(100, (current / required) * 100) : 0
 
   return (
-    <section aria-label="Pick progress" className="space-y-2" role="status" aria-live="polite">
-      <p className="text-sm font-medium text-gray-800">{detailText}</p>
-      <p className="text-sm text-gray-700">{message}</p>
+    <div className="space-y-2" role="status" aria-live="polite">
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium">
+          {isComplete ? (
+            <span className="text-green-700">
+              <span aria-hidden="true">&#x2713; </span>
+              All {required} golfers selected - ready to submit
+            </span>
+          ) : (
+            <span>
+              {current} of {required} golfers selected
+            </span>
+          )}
+        </span>
+        {!isComplete && (
+          <span className="text-amber-700 font-medium">
+            {remaining} remaining
+          </span>
+        )}
+      </div>
       <div
-        aria-label="Selected picks progress"
-        aria-valuemax={safeRequired}
-        aria-valuemin={0}
-        aria-valuenow={safeCurrent}
-        aria-valuetext={`${safeCurrent} of ${safeRequired}`}
-        className="h-2 w-full overflow-hidden rounded-full bg-gray-200"
+        className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
         role="progressbar"
+        aria-valuenow={current}
+        aria-valuemin={0}
+        aria-valuemax={required}
+        aria-label={`${current} of ${required} golfers selected`}
       >
         <div
-          className={`h-full rounded-full transition-all ${isComplete ? 'bg-green-600' : 'bg-blue-600'}`}
-          style={{ width: `${progressPercent}%` }}
+          className={`h-full rounded-full transition-all duration-300 ${
+            isComplete ? 'bg-green-600' : 'bg-blue-600'
+          }`}
+          style={{ width: `${percentage}%` }}
         />
       </div>
-    </section>
+    </div>
   )
 }

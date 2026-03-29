@@ -4,46 +4,50 @@ interface LockBannerProps {
   poolStatus: string
 }
 
-function formatDeadline(deadline: string) {
-  if (!deadline) {
-    return 'TBD'
-  }
-
-  const parsed = new Date(deadline)
-  if (Number.isNaN(parsed.getTime())) {
-    return 'TBD'
-  }
-
-  return parsed.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  })
-}
-
 export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) {
-  const formattedDeadline = formatDeadline(deadline)
-  const icon = isLocked ? 'LOCKED' : 'OPEN'
-  const title = isLocked ? 'Picks are locked' : 'Picks are open'
-  const details = isLocked
-    ? poolStatus === 'live'
-      ? 'This pool is live and no longer accepts picks.'
-      : poolStatus === 'complete'
-        ? 'This pool is complete and no longer accepts picks.'
-        : 'The submission deadline has passed.'
-    : `Deadline: ${formattedDeadline}`
-  const classes = isLocked
-    ? 'border-amber-200 bg-amber-50 text-amber-900'
-    : 'border-green-200 bg-green-50 text-green-900'
+  if (isLocked) {
+    return (
+      <div
+        className="mb-4 p-3 bg-gray-100 border border-gray-300 rounded-lg flex items-center gap-2"
+        role="status"
+      >
+        <span aria-hidden="true" className="text-lg">&#x1F512;</span>
+        <div>
+          <p className="font-medium text-gray-800">Picks are locked</p>
+          <p className="text-sm text-gray-600">
+            {poolStatus === 'live'
+              ? 'The tournament is live. No changes allowed.'
+              : poolStatus === 'complete'
+                ? 'This tournament is complete.'
+                : 'The picks deadline has passed.'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const deadlineDate = new Date(deadline)
+  const formattedDeadline = deadlineDate.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
 
   return (
-    <div className={`rounded-md border px-4 py-3 ${classes}`} role="status">
-      <p className="text-sm font-semibold">
-        <span aria-hidden="true" className="mr-2">
-          {icon}
-        </span>
-        {title}
-      </p>
-      <p className="mt-1 text-sm">{details}</p>
+    <div
+      className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2"
+      role="status"
+    >
+      <span aria-hidden="true" className="text-lg">&#x1F513;</span>
+      <div>
+        <p className="font-medium text-green-800">Picks are open</p>
+        <p className="text-sm text-green-700">
+          Deadline: {formattedDeadline}
+        </p>
+      </div>
     </div>
   )
 }
