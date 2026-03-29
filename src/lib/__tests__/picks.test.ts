@@ -1,0 +1,157 @@
+import { describe, it, expect } from 'vitest'
+import {
+  validatePickSubmission,
+  isPoolLocked,
+  calculateRemainingPicks,
+} from '../picks'
+
+describe('validatePickSubmission', () => {
+  const futureDeadline = '2099-04-10T08:00:00Z'
+
+  it('returns ok for exact picks count', () => {
+    const result = validatePickSubmission({
+      golferIds: ['g1', 'g2', 'g3', 'g4'],
+      picksPerEntry: 4,
+      status: 'open',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({ ok: true })
+  })
+
+  it('rejects too few picks', () => {
+    const result = validatePickSubmission({
+      golferIds: ['g1', 'g2', 'g3'],
+      picksPerEntry: 4,
+      status: 'open',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Please select exactly 4 golfers. You have selected 3.',
+    })
+  })
+
+  it('rejects too many picks', () => {
+    const result = validatePickSubmission({
+      golferIds: ['g1', 'g2', 'g3', 'g4', 'g5'],
+      picksPerEntry: 4,
+      status: 'open',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Please select exactly 4 golfers. You have selected 5.',
+    })
+  })
+
+  it('rejects locked pools', () => {
+    const result = validatePickSubmission({
+      golferIds: ['g1', 'g2', 'g3', 'g4'],
+      picksPerEntry: 4,
+      status: 'live',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'This pool is locked. Picks can no longer be changed.',
+    })
+  })
+
+  it('rejects empty picks list', () => {
+    const result = validatePickSubmission({
+      golferIds: [],
+      picksPerEntry: 4,
+      status: 'open',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Please select exactly 4 golfers. You have selected 0.',
+    })
+  })
+
+  it('rejects duplicate golfer picks', () => {
+    const result = validatePickSubmission({
+      golferIds: ['g1', 'g2', 'g1', 'g4'],
+      picksPerEntry: 4,
+      status: 'open',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Duplicate golfer selections are not allowed.',
+    })
+  })
+
+  it('returns ok for non-default picks_per_entry', () => {
+    const result = validatePickSubmission({
+      golferIds: ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'],
+      picksPerEntry: 6,
+      status: 'open',
+      deadline: futureDeadline,
+    })
+
+    expect(result).toEqual({ ok: true })
+  })
+})
+
+describe('isPoolLocked', () => {
+  it('returns false for open pool with future deadline', () => {
+    expect(
+      isPoolLocked('open', '2099-04-10T08:00:00Z', new Date('2099-04-09T08:00:00Z'))
+    ).toBe(false)
+  })
+
+  it('returns true for live pool', () => {
+    expect(
+      isPoolLocked('live', '2099-04-10T08:00:00Z', new Date('2099-04-09T08:00:00Z'))
+    ).toBe(true)
+  })
+
+  it('returns true for complete pool', () => {
+    expect(
+      isPoolLocked(
+        'complete',
+        '2099-04-10T08:00:00Z',
+        new Date('2099-04-09T08:00:00Z')
+      )
+    ).toBe(true)
+  })
+
+  it('returns true for open pool with past deadline', () => {
+    expect(
+      isPoolLocked('open', '2099-04-10T08:00:00Z', new Date('2099-04-11T08:00:00Z'))
+    ).toBe(true)
+  })
+
+  it('supports explicit now parameter', () => {
+    const deadline = '2099-04-10T08:00:00Z'
+
+    expect(isPoolLocked('open', deadline, new Date('2099-04-10T07:59:59Z'))).toBe(false)
+    expect(isPoolLocked('open', deadline, new Date('2099-04-10T08:00:00Z'))).toBe(true)
+  })
+})
+
+describe('calculateRemainingPicks', () => {
+  it('returns remaining picks for partial selection', () => {
+    expect(calculateRemainingPicks(2, 4)).toBe(2)
+  })
+
+  it('returns zero when picks are filled', () => {
+    expect(calculateRemainingPicks(4, 4)).toBe(0)
+  })
+
+  it('returns full picks_per_entry when selection is empty', () => {
+    expect(calculateRemainingPicks(0, 4)).toBe(4)
+  })
+
+  it('returns zero when selection is overfilled', () => {
+    expect(calculateRemainingPicks(6, 4)).toBe(0)
+  })
+})
