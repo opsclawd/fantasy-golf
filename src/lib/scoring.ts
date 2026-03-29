@@ -73,8 +73,19 @@ export function rankEntries(
     return b.totalBirdies - a.totalBirdies
   })
 
-  return withScores.map((entry, index) => ({
-    ...entry,
-    rank: index + 1
-  }))
+  const ranked: (Entry & { totalScore: number; totalBirdies: number; rank: number })[] = []
+  for (let i = 0; i < withScores.length; i++) {
+    let rank: number
+    if (
+      i > 0 &&
+      withScores[i].totalScore === withScores[i - 1].totalScore &&
+      withScores[i].totalBirdies === withScores[i - 1].totalBirdies
+    ) {
+      rank = ranked[i - 1].rank
+    } else {
+      rank = i + 1
+    }
+    ranked.push({ ...withScores[i], rank })
+  }
+  return ranked
 }

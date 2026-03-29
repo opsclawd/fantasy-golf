@@ -80,6 +80,74 @@ describe('scoring', () => {
       expect(ranked[1].totalScore).toBe(-2)
       expect(ranked[1].totalBirdies).toBe(0)
     })
+
+    it('assigns shared rank when entries have identical score and birdies', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g1']),
+        createEntry('e2', ['g2']),
+        createEntry('e3', ['g3']),
+      ]
+
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScoreWithBirdies('g1', [-2, -1, 0], 3)],
+        ['g2', createScoreWithBirdies('g2', [-2, -1, 0], 3)],
+        ['g3', createScoreWithBirdies('g3', [0, 0, 0], 0)],
+      ])
+
+      const ranked = rankEntries(entries, golferScores, 3)
+
+      // e1 and e2 are tied: same score (-3) and same birdies (3)
+      expect(ranked[0].rank).toBe(1)
+      expect(ranked[0].totalScore).toBe(-3)
+      expect(ranked[1].rank).toBe(1)
+      expect(ranked[1].totalScore).toBe(-3)
+      // e3 skips to rank 3 (not 2)
+      expect(ranked[2].rank).toBe(3)
+      expect(ranked[2].totalScore).toBe(0)
+    })
+
+    it('does not share rank when score matches but birdies differ', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g1']),
+        createEntry('e2', ['g2']),
+      ]
+
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScoreWithBirdies('g1', [-2, 0, 0], 2)],
+        ['g2', createScoreWithBirdies('g2', [-2, 0, 0], 1)],
+      ])
+
+      const ranked = rankEntries(entries, golferScores, 3)
+
+      // Same score but different birdies → different ranks
+      expect(ranked[0].rank).toBe(1)
+      expect(ranked[0].totalBirdies).toBe(2)
+      expect(ranked[1].rank).toBe(2)
+      expect(ranked[1].totalBirdies).toBe(1)
+    })
+
+    it('handles three-way tie correctly', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g1']),
+        createEntry('e2', ['g2']),
+        createEntry('e3', ['g3']),
+        createEntry('e4', ['g4']),
+      ]
+
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScoreWithBirdies('g1', [-1, 0, 0], 1)],
+        ['g2', createScoreWithBirdies('g2', [-1, 0, 0], 1)],
+        ['g3', createScoreWithBirdies('g3', [-1, 0, 0], 1)],
+        ['g4', createScoreWithBirdies('g4', [0, 0, 0], 0)],
+      ])
+
+      const ranked = rankEntries(entries, golferScores, 3)
+
+      expect(ranked[0].rank).toBe(1)
+      expect(ranked[1].rank).toBe(1)
+      expect(ranked[2].rank).toBe(1)
+      expect(ranked[3].rank).toBe(4) // skips 2 and 3
+    })
   })
 })
 
