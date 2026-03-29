@@ -63,3 +63,20 @@ export function calculateRemainingPicks(
 ): number {
   return Math.max(0, picksPerEntry - currentCount)
 }
+
+/**
+ * Determines if a pool should be automatically locked (transitioned to 'live').
+ * Only returns true for 'open' pools whose deadline has passed.
+ */
+export function shouldAutoLock(
+  status: PoolStatus,
+  deadline: string,
+  now: Date = new Date()
+): boolean {
+  if (status !== 'open') return false
+
+  const deadlineTime = Date.parse(deadline)
+  if (Number.isNaN(deadlineTime)) return false
+
+  return now.getTime() >= deadlineTime
+}

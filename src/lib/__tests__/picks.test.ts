@@ -3,6 +3,7 @@ import {
   validatePickSubmission,
   isPoolLocked,
   calculateRemainingPicks,
+  shouldAutoLock,
 } from '../picks'
 
 describe('validatePickSubmission', () => {
@@ -207,5 +208,43 @@ describe('calculateRemainingPicks', () => {
 
   it('returns zero when selection is overfilled', () => {
     expect(calculateRemainingPicks(6, 4)).toBe(0)
+  })
+})
+
+describe('shouldAutoLock', () => {
+  it('returns true when pool is open and deadline has passed', () => {
+    expect(
+      shouldAutoLock('open', '2026-04-10T08:00:00Z', new Date('2026-04-10T09:00:00Z'))
+    ).toBe(true)
+  })
+
+  it('returns false when pool is open and deadline is in the future', () => {
+    expect(
+      shouldAutoLock('open', '2026-04-10T08:00:00Z', new Date('2026-04-10T07:00:00Z'))
+    ).toBe(false)
+  })
+
+  it('returns false when pool is already live', () => {
+    expect(
+      shouldAutoLock('live', '2026-04-10T08:00:00Z', new Date('2026-04-10T09:00:00Z'))
+    ).toBe(false)
+  })
+
+  it('returns false when pool is complete', () => {
+    expect(
+      shouldAutoLock('complete', '2026-04-10T08:00:00Z', new Date('2026-04-10T09:00:00Z'))
+    ).toBe(false)
+  })
+
+  it('returns false when deadline is invalid', () => {
+    expect(
+      shouldAutoLock('open', 'not-a-date', new Date('2026-04-10T09:00:00Z'))
+    ).toBe(false)
+  })
+
+  it('returns true at exact deadline moment', () => {
+    expect(
+      shouldAutoLock('open', '2026-04-10T08:00:00Z', new Date('2026-04-10T08:00:00Z'))
+    ).toBe(true)
   })
 })
