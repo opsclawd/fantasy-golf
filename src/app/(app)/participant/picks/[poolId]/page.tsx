@@ -24,52 +24,57 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
 
   const existingEntry = await getEntryByPoolAndUser(supabase, poolId, user.id)
   const isLocked = isPoolLocked(pool.status, pool.deadline)
-  const selectedIds = existingEntry?.golfer_ids ?? []
+  const hasEntry = Boolean(existingEntry)
+  const existingGolferIds = existingEntry?.golfer_ids ?? []
 
-  let golferNames: Record<string, string> = {}
-  if (selectedIds.length > 0) {
+  let existingGolferNames: Record<string, string> = {}
+  if (existingGolferIds.length > 0) {
     const { data: golfers } = await supabase
       .from('golfers')
       .select('id, name')
-      .in('id', selectedIds)
+      .in('id', existingGolferIds)
 
     if (golfers) {
-      golferNames = Object.fromEntries(golfers.map((golfer) => [golfer.id, golfer.name]))
+      existingGolferNames = Object.fromEntries(golfers.map((golfer) => [golfer.id, golfer.name]))
     }
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold mb-2">{pool.name}</h1>
-      <p className="text-gray-500 mb-6">{pool.tournament_name}</p>
+    <div className="max-w-2xl mx-auto">
+      <div>
+        <h1 className="text-2xl font-bold">{pool.name}</h1>
+        <p className="text-gray-500">{pool.tournament_name}</p>
+      </div>
 
       <LockBanner isLocked={isLocked} deadline={pool.deadline} poolStatus={pool.status} />
 
-      <div className="bg-white p-6 rounded-lg shadow max-w-2xl">
-        <h2 className="text-lg font-semibold mb-4">Your Entry</h2>
-
-        {isLocked && existingEntry ? (
+      {isLocked && hasEntry ? (
+        <div className="bg-white p-6 rounded-lg shadow">
           <SubmissionConfirmation
-            golferNames={golferNames}
-            golferIds={selectedIds}
+            golferNames={existingGolferNames}
+            golferIds={existingGolferIds}
             isLocked={isLocked}
             poolName={pool.name}
           />
-        ) : isLocked ? (
+        </div>
+      ) : isLocked && !hasEntry ? (
+        <div className="bg-white p-6 rounded-lg shadow">
           <p className="text-sm text-gray-600">
             Picks are locked for this pool. You did not submit an entry before the deadline.
           </p>
-        ) : (
+        </div>
+      ) : (
+        <div className="bg-white p-6 rounded-lg shadow">
           <PicksForm
             poolId={poolId}
             poolName={pool.name}
             picksPerEntry={pool.picks_per_entry}
-            initialSelectedIds={selectedIds}
-            initialGolferNames={golferNames}
-            initiallySubmitted={Boolean(existingEntry)}
+            existingGolferIds={existingGolferIds}
+            existingGolferNames={existingGolferNames}
+            isLocked={isLocked}
           />
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

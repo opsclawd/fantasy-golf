@@ -2,22 +2,20 @@
 
 import { GolferPicker } from '@/components/golfer-picker'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
-import { submitPicks, type SubmitPicksState } from './actions'
-
-const initialState: SubmitPicksState = null
+import { submitPicks } from './actions'
 
 type PicksFormProps = {
   poolId: string
   poolName: string
   picksPerEntry: number
-  initialSelectedIds: string[]
-  initialGolferNames: Record<string, string>
-  initiallySubmitted: boolean
+  existingGolferIds: string[]
+  existingGolferNames: Record<string, string>
+  isLocked: boolean
 }
 
-function SubmitButton({ hasEnoughPicks }: { hasEnoughPicks: boolean }) {
+function SubmitButton({ hasEnoughPicks, isEdit }: { hasEnoughPicks: boolean; isEdit: boolean }) {
   const { pending } = useFormStatus()
 
   return (
@@ -26,7 +24,7 @@ function SubmitButton({ hasEnoughPicks }: { hasEnoughPicks: boolean }) {
       disabled={pending || !hasEnoughPicks}
       className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? 'Submitting...' : 'Submit Picks'}
+      {pending ? 'Saving...' : isEdit ? 'Update Picks' : 'Submit Picks'}
     </button>
   )
 }
@@ -35,40 +33,28 @@ export function PicksForm({
   poolId,
   poolName,
   picksPerEntry,
-  initialSelectedIds,
-  initialGolferNames,
-  initiallySubmitted,
+  existingGolferIds,
+  existingGolferNames,
+  isLocked,
 }: PicksFormProps) {
-  const [state, formAction] = useFormState<SubmitPicksState, FormData>(
-    async (_prevState, formData) => submitPicks(formData),
-    initialState,
-  )
-  const [selectedIds, setSelectedIds] = useState<string[]>(initialSelectedIds)
-  const [showConfirmation, setShowConfirmation] = useState(initiallySubmitted)
+  // @ts-expect-error submitPicks accepts FormData and ignores previous state.
+  const [state, formAction] = useFormState(submitPicks, null)
+  const [selectedIds, setSelectedIds] = useState<string[]>(existingGolferIds)
 
   const hasEnoughPicks = selectedIds.length === picksPerEntry
-  const submitSucceeded = state?.success === true
-  const golferNames = initialGolferNames
-
-  useEffect(() => {
-    if (submitSucceeded) {
-      setShowConfirmation(true)
-    }
-  }, [submitSucceeded])
-
-  if (showConfirmation && (initiallySubmitted || submitSucceeded)) {
+  if (state?.success) {
     return (
       <div className="space-y-4">
         <SubmissionConfirmation
-          golferNames={golferNames}
+          golferNames={existingGolferNames}
           golferIds={selectedIds}
-          isLocked={false}
+          isLocked={isLocked}
           poolName={poolName}
         />
         <button
           type="button"
           className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
-          onClick={() => setShowConfirmation(false)}
+          onClick={() => window.location.reload()}
         >
           Edit picks
         </button>
@@ -78,6 +64,9 @@ export function PicksForm({
 
   return (
     <form action={formAction} className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        {existingGolferIds.length > 0 ? 'Edit your picks' : 'Select your picks'}
+      </h2>
       <input type="hidden" name="poolId" value={poolId} />
       <input type="hidden" name="golferIds" value={JSON.stringify(selectedIds)} />
 
@@ -93,7 +82,7 @@ export function PicksForm({
         maxSelections={picksPerEntry}
       />
 
-      <SubmitButton hasEnoughPicks={hasEnoughPicks} />
+      <SubmitButton hasEnoughPicks={hasEnoughPicks} isEdit={existingGolferIds.length > 0} />
     </form>
   )
 }
