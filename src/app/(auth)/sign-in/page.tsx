@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signIn } from './actions'
 
 export default function SignIn() {
+  const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -12,7 +14,8 @@ export default function SignIn() {
     setError(null)
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    const result = await signIn(email, password)
+    const redirectTo = searchParams.get('redirect') ?? undefined
+    const result = await signIn(email, password, redirectTo)
     if (result?.error) {
       setError(result.error)
       setLoading(false)

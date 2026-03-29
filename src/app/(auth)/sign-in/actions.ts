@@ -3,7 +3,15 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export async function signIn(email: string, password: string) {
+function getSafeRedirectPath(redirectTo?: string): string {
+  if (redirectTo?.startsWith('/') && !redirectTo.startsWith('//')) {
+    return redirectTo
+  }
+
+  return '/participant/pools'
+}
+
+export async function signIn(email: string, password: string, redirectTo?: string) {
   const supabase = await createClient()
   
   const { error } = await supabase.auth.signInWithPassword({
@@ -15,5 +23,5 @@ export async function signIn(email: string, password: string) {
     return { error: error.message }
   }
 
-  redirect('/participant/pools')
+  redirect(getSafeRedirectPath(redirectTo))
 }
