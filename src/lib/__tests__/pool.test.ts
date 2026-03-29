@@ -155,6 +155,8 @@ describe('buildClonePoolInput', () => {
       invite_code: 'oldcode1',
       status: 'complete',
       created_at: '2025-01-01T00:00:00Z',
+      refreshed_at: null,
+      last_refresh_error: null,
     }
 
     const result = buildClonePoolInput(source)

@@ -122,6 +122,8 @@ export async function reusePool(
       picks_per_entry: cloneInput.picks_per_entry,
       invite_code: inviteCode,
       status: 'open',
+      refreshed_at: null,
+      last_refresh_error: null,
     })
 
     if (!cloneError && data) {

@@ -79,6 +79,8 @@ export async function createPool(
     picks_per_entry: picksPerEntry,
     invite_code: inviteCode,
     status: 'open',
+    refreshed_at: null,
+    last_refresh_error: null,
   })
 
   if (error || !pool) {
