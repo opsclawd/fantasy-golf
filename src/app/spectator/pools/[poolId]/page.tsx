@@ -1,8 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { Leaderboard } from '@/components/leaderboard'
+import { StatusChip } from '@/components/StatusChip'
 import { notFound } from 'next/navigation'
 
-export default async function SpectatorPage({ params }: { params: Promise<{ poolId: string }> }) {
+export default async function SpectatorPage({
+  params,
+}: {
+  params: Promise<{ poolId: string }>
+}) {
   const { poolId } = await params
   const supabase = await createClient()
 
@@ -20,8 +25,13 @@ export default async function SpectatorPage({ params }: { params: Promise<{ pool
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold">{pool.name}</h1>
-          <p className="text-gray-500">{pool.tournament_name}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">{pool.name}</h1>
+              <p className="text-gray-500">{pool.tournament_name}</p>
+            </div>
+            <StatusChip status={pool.status} />
+          </div>
         </div>
       </header>
 
