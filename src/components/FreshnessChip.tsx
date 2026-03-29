@@ -39,15 +39,17 @@ export function FreshnessChip({ status, refreshedAt }: FreshnessChipProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.classes}`}
+      className={`inline-flex min-w-0 shrink items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.classes}`}
       role="status"
       aria-live="polite"
       aria-label={config.srText}
     >
-      <span aria-hidden="true">{config.icon}</span>
-      <span>{config.label}</span>
+      <span aria-hidden="true" className="shrink-0">
+        {config.icon}
+      </span>
+      <span className="truncate">{config.label}</span>
       {timeLabel && (
-        <span className="text-xs opacity-75 ml-1">{timeLabel}</span>
+        <span className="ml-1 min-w-0 truncate text-xs opacity-75">{timeLabel}</span>
       )}
     </span>
   )

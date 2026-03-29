@@ -38,7 +38,7 @@ export function DataAlert({ variant, title, message, className }: DataAlertProps
   const config = VARIANT_CONFIG[variant]
   const liveRegionProps = getDataAlertLiveRegion(variant)
   const classes = [
-    'rounded-lg border px-3 py-2 text-sm inline-flex items-start gap-2',
+    'inline-flex items-start gap-2 rounded-lg border px-3 py-2 text-sm',
     config.classes,
     className,
   ]
@@ -50,12 +50,12 @@ export function DataAlert({ variant, title, message, className }: DataAlertProps
       <span aria-hidden="true" className="font-semibold leading-5">
         {config.icon}
       </span>
-      <span className="flex flex-col gap-0.5">
+      <span className="flex min-w-0 flex-col gap-0.5">
         <span>
           <span className="sr-only">{config.srPrefix} </span>
-          <span className="font-semibold">{title}</span>
+          <span className="break-words font-semibold">{title}</span>
         </span>
-        {message ? <span>{message}</span> : null}
+        {message ? <span className="break-words">{message}</span> : null}
       </span>
     </div>
   )
