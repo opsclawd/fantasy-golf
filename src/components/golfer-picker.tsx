@@ -22,7 +22,7 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
   const [countryFilter, setCountryFilter] = useState('')
   const [fetchError, setFetchError] = useState<string | null>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     let isMounted = true
