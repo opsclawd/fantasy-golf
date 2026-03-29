@@ -12,11 +12,11 @@ interface Golfer {
 
 interface GolferPickerProps {
   selectedIds: string[]
-  onChange: (ids: string[]) => void
-  maxSelections?: number
+  onSelectionChange: (ids: string[]) => void
+  maxSelections: number
 }
 
-export function GolferPicker({ selectedIds, onChange, maxSelections = 4 }: GolferPickerProps) {
+export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: GolferPickerProps) {
   const [golfers, setGolfers] = useState<Golfer[]>([])
   const [search, setSearch] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
@@ -49,9 +49,9 @@ export function GolferPicker({ selectedIds, onChange, maxSelections = 4 }: Golfe
 
   const toggleGolfer = (id: string) => {
     if (selectedIds.includes(id)) {
-      onChange(selectedIds.filter((i) => i !== id))
+      onSelectionChange(selectedIds.filter((i) => i !== id))
     } else if (selectedIds.length < maxSelections) {
-      onChange([...selectedIds, id])
+      onSelectionChange([...selectedIds, id])
     }
   }
 
@@ -136,11 +136,13 @@ export function GolferPicker({ selectedIds, onChange, maxSelections = 4 }: Golfe
               const isDisabled = !isSelected && selectedIds.length >= maxSelections
 
               return (
-                <li key={golfer.id} role="option" aria-selected={isSelected}>
+                <li key={golfer.id}>
                   <button
                     type="button"
                     onClick={() => toggleGolfer(golfer.id)}
                     disabled={isDisabled}
+                    role="option"
+                    aria-selected={isSelected}
                     aria-disabled={isDisabled}
                     aria-label={`${isSelected ? 'Remove' : 'Select'} ${golfer.name} from ${golfer.country}`}
                     className={`flex w-full items-center justify-between px-3 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
