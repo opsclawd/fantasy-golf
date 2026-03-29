@@ -1,9 +1,13 @@
 import { LockBanner } from '@/components/LockBanner'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
+import { EntryGolferBreakdown } from '@/components/EntryGolferBreakdown'
 import { getEntryByPoolAndUser } from '@/lib/entry-queries'
 import { isPoolLocked } from '@/lib/picks'
 import { getPoolById, isPoolMember } from '@/lib/pool-queries'
+import { getScoresForTournament } from '@/lib/scoring-queries'
+import { getGolfersByIds } from '@/lib/golfer-queries'
 import { createClient } from '@/lib/supabase/server'
+import type { TournamentScore, Golfer } from '@/lib/supabase/types'
 import { redirect } from 'next/navigation'
 import { PicksForm } from './PicksForm'
 
@@ -39,6 +43,21 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
     }
   }
 
+  let golferScoresMap = new Map<string, TournamentScore>()
+  let golfersList: Golfer[] = []
+
+  const showBreakdown = hasEntry && (pool.status === 'live' || pool.status === 'complete')
+
+  if (showBreakdown) {
+    const [scores, golfers] = await Promise.all([
+      getScoresForTournament(supabase, pool.tournament_id),
+      getGolfersByIds(supabase, existingGolferIds),
+    ])
+
+    golferScoresMap = new Map(scores.map(s => [s.golfer_id, s]))
+    golfersList = golfers
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold mb-1">{pool.name}</h1>
@@ -47,12 +66,23 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
       <LockBanner isLocked={isLocked} deadline={pool.deadline} poolStatus={pool.status} />
 
       {isLocked && hasEntry ? (
+        <>
         <SubmissionConfirmation
           golferNames={existingGolferNames}
           golferIds={existingGolferIds}
           isLocked={true}
           poolName={pool.name}
         />
+        {showBreakdown && (
+          <div className="mt-6">
+            <EntryGolferBreakdown
+              golferIds={existingGolferIds}
+              golfers={golfersList}
+              golferScoresRecord={Object.fromEntries(golferScoresMap)}
+            />
+          </div>
+        )}
+        </>
       ) : isLocked && !hasEntry ? (
         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg" role="status">
           <p className="text-gray-600">
