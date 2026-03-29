@@ -2,7 +2,8 @@
 
 import { GolferPicker } from '@/components/golfer-picker'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
-import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import { submitPicks, type SubmitPicksState } from './actions'
 
@@ -39,13 +40,37 @@ export function PicksForm({
 }: PicksFormProps) {
   const [state, formAction] = useFormState<SubmitPicksState, FormData>(submitPicks, null)
   const [selectedIds, setSelectedIds] = useState<string[]>(existingGolferIds)
+  const [golferNames, setGolferNames] = useState<Record<string, string>>(existingGolferNames)
+
+  useEffect(() => {
+    if (selectedIds.length === 0) return
+
+    let active = true
+    const supabase = createClient()
+
+    supabase
+      .from('golfers')
+      .select('id, name')
+      .in('id', selectedIds)
+      .then(({ data }: { data: Array<{ id: string; name: string }> | null }) => {
+        if (!active || !data) return
+        setGolferNames((prev) => ({
+          ...prev,
+          ...Object.fromEntries(data.map((golfer: { id: string; name: string }) => [golfer.id, golfer.name])),
+        }))
+      })
+
+    return () => {
+      active = false
+    }
+  }, [selectedIds])
 
   const hasEnoughPicks = selectedIds.length === picksPerEntry
   if (state?.success) {
     return (
       <div className="space-y-4">
         <SubmissionConfirmation
-          golferNames={existingGolferNames}
+          golferNames={golferNames}
           golferIds={selectedIds}
           isLocked={isLocked}
           poolName={poolName}
