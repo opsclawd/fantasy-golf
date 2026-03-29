@@ -150,3 +150,40 @@ export async function getEntriesForPool(
     .eq('pool_id', poolId)
   return data || []
 }
+
+export async function updatePoolRefreshMetadata(
+  supabase: SupabaseClient,
+  poolId: string,
+  metadata: { refreshed_at?: string; last_refresh_error?: string | null }
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('pools')
+    .update(metadata)
+    .eq('id', poolId)
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+export async function getActivePool(
+  supabase: SupabaseClient
+): Promise<Pool | null> {
+  const { data } = await supabase
+    .from('pools')
+    .select('*')
+    .eq('status', 'live')
+    .limit(1)
+    .maybeSingle()
+  return data as Pool | null
+}
+
+export async function getOpenPoolsPastDeadline(
+  supabase: SupabaseClient,
+  now: Date = new Date()
+): Promise<Pool[]> {
+  const { data } = await supabase
+    .from('pools')
+    .select('*')
+    .eq('status', 'open')
+    .lte('deadline', now.toISOString())
+  return (data as Pool[]) || []
+}
