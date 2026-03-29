@@ -1,4 +1,4 @@
-import type { TournamentScore, GolferStatus } from './supabase/types'
+import type { TournamentScore, GolferStatus, Golfer } from './supabase/types'
 import { getHoleScore, getEntryHoleScore } from './scoring'
 
 export interface HoleResult {
@@ -90,4 +90,45 @@ export function getGolferContribution(
     holes,
     totalContributingHoles,
   }
+}
+
+export interface GolferSummary {
+  golferId: string
+  name: string
+  country: string
+  status: GolferStatus
+  totalScore: number
+  totalBirdies: number
+  completedHoles: number
+  contributingHoles: number
+}
+
+export function getEntryGolferSummaries(
+  entryGolferIds: string[],
+  golferScores: Map<string, TournamentScore>,
+  golfers: Golfer[]
+): GolferSummary[] {
+  const golferMap = new Map(golfers.map(g => [g.id, g]))
+
+  return entryGolferIds.map(golferId => {
+    const golfer = golferMap.get(golferId)
+    const score = golferScores.get(golferId)
+
+    const scorecard = score
+      ? getGolferScorecard(score)
+      : { completedHoles: 0, totalScore: 0, totalBirdies: 0, status: 'active' as GolferStatus }
+
+    const contribution = getGolferContribution(golferId, entryGolferIds, golferScores)
+
+    return {
+      golferId,
+      name: golfer?.name ?? golferId,
+      country: golfer?.country ?? '',
+      status: scorecard.status,
+      totalScore: scorecard.totalScore,
+      totalBirdies: score?.total_birdies ?? 0,
+      completedHoles: scorecard.completedHoles,
+      contributingHoles: contribution.totalContributingHoles,
+    }
+  })
 }

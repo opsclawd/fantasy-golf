@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import type { TournamentScore, GolferStatus } from '../supabase/types'
-import { getGolferScorecard, getGolferContribution } from '../golfer-detail'
+import type { TournamentScore, GolferStatus, Golfer } from '../supabase/types'
+import { getGolferScorecard, getGolferContribution, getEntryGolferSummaries } from '../golfer-detail'
 
 function createScore(
   golferId: string,
@@ -56,6 +56,60 @@ describe('golfer-detail', () => {
       expect(card.status).toBe('withdrawn')
       expect(card.completedHoles).toBe(2)
       expect(card.totalScore).toBe(-1)
+    })
+  })
+
+  describe('getEntryGolferSummaries', () => {
+    it('returns a summary for each golfer in the entry', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0, -1], 'active', 2)],
+        ['g2', createScore('g2', [0, -1, 0], 'active', 1)],
+      ])
+
+      const golfers: Golfer[] = [
+        { id: 'g1', name: 'Tiger Woods', country: 'USA' },
+        { id: 'g2', name: 'Rory McIlroy', country: 'NIR' },
+      ]
+
+      const summaries = getEntryGolferSummaries(
+        ['g1', 'g2'],
+        golferScores,
+        golfers
+      )
+
+      expect(summaries).toHaveLength(2)
+      expect(summaries[0].golferId).toBe('g1')
+      expect(summaries[0].name).toBe('Tiger Woods')
+      expect(summaries[0].totalScore).toBe(-2)
+      expect(summaries[0].status).toBe('active')
+      expect(summaries[0].contributingHoles).toBeGreaterThanOrEqual(0)
+
+      expect(summaries[1].golferId).toBe('g2')
+      expect(summaries[1].name).toBe('Rory McIlroy')
+    })
+
+    it('handles golfer with no score data', () => {
+      const golferScores = new Map<string, TournamentScore>()
+      const golfers: Golfer[] = [
+        { id: 'g1', name: 'Tiger Woods', country: 'USA' },
+      ]
+
+      const summaries = getEntryGolferSummaries(['g1'], golferScores, golfers)
+
+      expect(summaries).toHaveLength(1)
+      expect(summaries[0].totalScore).toBe(0)
+      expect(summaries[0].status).toBe('active')
+      expect(summaries[0].contributingHoles).toBe(0)
+    })
+
+    it('handles golfer not in golfers list', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1], 'active', 1)],
+      ])
+
+      const summaries = getEntryGolferSummaries(['g1'], golferScores, [])
+
+      expect(summaries[0].name).toBe('g1')
     })
   })
 
