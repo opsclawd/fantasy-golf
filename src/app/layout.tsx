@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: 'Fantasy Golf Pool',
   description: 'Private golf pools with live scoring',
   manifest: '/manifest.json',
+  icons: {
+    apple: '/icon-192.png',
+  },
   appleWebApp: {
     capable: true,
     title: 'Fantasy Golf Pool',
