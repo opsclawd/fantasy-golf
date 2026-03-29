@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getTournamentScores } from '@/lib/slash-golf/client'
 import { rankEntries } from '@/lib/scoring'
-import { shouldAutoLock } from '@/lib/picks'
 import {
   getActivePool,
   getOpenPoolsPastDeadline,
