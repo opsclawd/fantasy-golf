@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { ScoreDisplay } from './score-display'
 import { FreshnessChip } from './FreshnessChip'
 import { LeaderboardEmptyState } from './LeaderboardEmptyState'
-import type { FreshnessStatus, PoolStatus } from '@/lib/supabase/types'
+import { GolferDetailSheet } from './GolferDetailSheet'
+import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib/supabase/types'
 
 interface RankedEntry {
   id: string
@@ -24,6 +25,9 @@ interface LeaderboardData {
   poolStatus: PoolStatus
   lastRefreshError: string | null
   golferStatuses: Record<string, string>
+  golferNames: Record<string, string>
+  golferCountries: Record<string, string>
+  golferScores: Record<string, TournamentScore>
 }
 
 interface LeaderboardProps {
@@ -42,6 +46,7 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
   const [data, setData] = useState<LeaderboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [selectedGolferId, setSelectedGolferId] = useState<string | null>(null)
   const supabase = createClient()
 
   const fetchLeaderboard = useCallback(async () => {
@@ -65,6 +70,9 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
             poolStatus: 'live',
             lastRefreshError: null,
             golferStatuses: {},
+            golferNames: {},
+            golferCountries: {},
+            golferScores: {},
           })
         }
       }
@@ -130,6 +138,19 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
       .filter(([, status]) => status === 'withdrawn' || status === 'cut')
       .map(([id]) => id)
   )
+
+  const selectedGolfer: Golfer | null = selectedGolferId && data
+    ? {
+        id: selectedGolferId,
+        name: data.golferNames[selectedGolferId] ?? selectedGolferId,
+        country: data.golferCountries?.[selectedGolferId] ?? '',
+      }
+    : null
+
+  const selectedGolferScore: TournamentScore | null =
+    selectedGolferId && data?.golferScores?.[selectedGolferId]
+      ? data.golferScores[selectedGolferId]
+      : null
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -204,15 +225,29 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
                       </span>
                     </td>
                     <td className="px-4 py-2">
-                      <div className="text-sm text-gray-700">
+                      <div className="text-sm text-gray-700 mb-1">
                         {entry.user_id.slice(0, 8)}
                       </div>
-                      {entryHasWithdrawnGolfer && (
-                        <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-amber-700">
-                          <span aria-hidden="true">{'\u26A0'}</span>
-                          WD
-                        </span>
-                      )}
+                      <div className="flex gap-1 flex-wrap">
+                        {entry.golfer_ids.map(id => {
+                          const isWd = withdrawnGolferIds.has(id)
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => setSelectedGolferId(id)}
+                              className={`px-1.5 py-0.5 rounded text-xs hover:ring-1 hover:ring-blue-400 ${
+                                isWd
+                                  ? 'bg-amber-50 text-amber-700 line-through'
+                                  : 'bg-gray-100 text-gray-700'
+                              }`}
+                              aria-label={`View details for ${data?.golferNames?.[id] ?? id}`}
+                            >
+                              {data?.golferNames?.[id] ?? id.slice(0, 8)}
+                            </button>
+                          )
+                        })}
+                      </div>
                     </td>
                     <td className="px-4 py-2 text-right font-mono">
                       <ScoreDisplay score={entry.totalScore} />
@@ -224,6 +259,14 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedGolfer && (
+        <GolferDetailSheet
+          golfer={selectedGolfer}
+          score={selectedGolferScore}
+          onClose={() => setSelectedGolferId(null)}
+        />
       )}
     </div>
   )
