@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { getHoleScore, getEntryHoleScore, calculateEntryTotalScore, calculateEntryBirdies, rankEntries } from '../scoring'
-import type { TournamentScore, Entry } from '../supabase/types'
+import type { TournamentScore, Entry, GolferStatus } from '../supabase/types'
 
 describe('scoring', () => {
   describe('getHoleScore', () => {
@@ -15,7 +15,8 @@ describe('scoring', () => {
         hole_5: 0, hole_6: 0, hole_7: 0, hole_8: 0, hole_9: 0,
         hole_10: 0, hole_11: 0, hole_12: 0, hole_13: 0, hole_14: 0,
         hole_15: 0, hole_16: 0, hole_17: 0, hole_18: 0,
-        total_birdies: 2
+        total_birdies: 2,
+        status: 'active'
       }
       
       expect(getHoleScore(score, 1)).toBe(-1)
@@ -33,7 +34,8 @@ describe('scoring', () => {
         hole_4: null, hole_5: null, hole_6: null, hole_7: null, hole_8: null, hole_9: null,
         hole_10: null, hole_11: null, hole_12: null, hole_13: null, hole_14: null,
         hole_15: null, hole_16: null, hole_17: null, hole_18: null,
-        total_birdies: 1
+        total_birdies: 1,
+        status: 'active'
       }
       
       expect(getHoleScore(score, 2)).toBe(null)
@@ -149,13 +151,71 @@ describe('scoring', () => {
       expect(ranked[3].rank).toBe(4) // skips 2 and 3
     })
   })
+
+  describe('withdrawal handling', () => {
+    it('skips withdrawn golfer when computing best-ball hole score', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0, 1])],
+        ['g2', createScore('g2', [0, -1, 0], 'withdrawn')],
+      ])
+
+      // g2 is withdrawn — only g1's scores should be used
+      expect(getEntryHoleScore(golferScores, ['g1', 'g2'], 1)).toBe(-1)
+      expect(getEntryHoleScore(golferScores, ['g1', 'g2'], 2)).toBe(0)
+    })
+
+    it('returns null if all golfers in entry are withdrawn', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0], 'withdrawn')],
+        ['g2', createScore('g2', [0, -1], 'withdrawn')],
+      ])
+
+      expect(getEntryHoleScore(golferScores, ['g1', 'g2'], 1)).toBe(null)
+    })
+
+    it('still includes withdrawn golfer birdies earned before withdrawal', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScoreWithBirdies('g1', [-1, 0, 0], 1)],
+        ['g2', createScoreWithBirdies('g2', [-1, 0, 0], 1, 'withdrawn')],
+      ])
+
+      // Birdies include ALL golfers regardless of status — birdies were earned
+      expect(calculateEntryBirdies(golferScores, ['g1', 'g2'])).toBe(2)
+    })
+
+    it('ranks entries with withdrawn golfers correctly', () => {
+      const entries: Entry[] = [
+        createEntry('e1', ['g1', 'g2']),
+        createEntry('e2', ['g3', 'g4']),
+      ]
+
+      const golferScores = new Map<string, TournamentScore>([
+        // e1: g1 active (-2 total), g2 withdrawn (scores ignored for holes)
+        ['g1', createScoreWithBirdies('g1', [-1, -1, 0], 2)],
+        ['g2', createScoreWithBirdies('g2', [-2, 0, 0], 1, 'withdrawn')],
+        // e2: both active, best ball = -1 per hole = -3 total
+        ['g3', createScoreWithBirdies('g3', [-1, 0, -1], 2)],
+        ['g4', createScoreWithBirdies('g4', [0, -1, 0], 1)],
+      ])
+
+      const ranked = rankEntries(entries, golferScores, 3)
+
+      // e2 best-ball: min(-1,0), min(0,-1), min(-1,0) = -1, -1, -1 = -3
+      // e1 best-ball: only g1 active: -1, -1, 0 = -2
+      expect(ranked[0].id).toBe('e2')
+      expect(ranked[0].totalScore).toBe(-3)
+      expect(ranked[1].id).toBe('e1')
+      expect(ranked[1].totalScore).toBe(-2)
+    })
+  })
 })
 
-function createScore(golferId: string, holes: number[]): TournamentScore {
+function createScore(golferId: string, holes: number[], status: GolferStatus = 'active'): TournamentScore {
   const score: any = {
     golfer_id: golferId,
     tournament_id: 't1',
-    total_birdies: 0
+    total_birdies: 0,
+    status
   }
   for (let i = 1; i <= 18; i++) {
     score[`hole_${i}`] = i <= holes.length ? holes[i - 1] : 0
@@ -163,9 +223,9 @@ function createScore(golferId: string, holes: number[]): TournamentScore {
   return score as TournamentScore
 }
 
-function createScoreWithBirdies(golferId: string, holes: number[], birdies: number): TournamentScore {
+function createScoreWithBirdies(golferId: string, holes: number[], birdies: number, status: GolferStatus = 'active'): TournamentScore {
   return {
-    ...createScore(golferId, holes),
+    ...createScore(golferId, holes, status),
     total_birdies: birdies
   }
 }

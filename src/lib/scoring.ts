@@ -11,16 +11,33 @@ export function getEntryHoleScore(
   hole: number
 ): number | null {
   const scores: number[] = []
-  
+  let hasActiveGolferWithoutScore = false
+
   for (const id of golferIds) {
     const golferScore = golferScores.get(id)
-    if (!golferScore) return null
+
+    // Golfer not in scores map at all — no data received yet
+    if (!golferScore) {
+      hasActiveGolferWithoutScore = true
+      continue
+    }
+
+    // Skip withdrawn/cut golfers entirely — they don't contribute to best-ball
+    if (golferScore.status === 'withdrawn' || golferScore.status === 'cut') continue
+
     const holeScore = getHoleScore(golferScore, hole)
-    if (holeScore === null) return null
+    if (holeScore === null) {
+      hasActiveGolferWithoutScore = true
+      continue
+    }
     scores.push(holeScore)
   }
-  
-  return Math.min(...scores)
+
+  // If we collected at least one valid score, use it (best ball among available)
+  if (scores.length > 0) return Math.min(...scores)
+
+  // No scores at all — either all withdrawn or no data
+  return null
 }
 
 export function calculateEntryTotalScore(
