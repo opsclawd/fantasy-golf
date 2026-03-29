@@ -33,11 +33,17 @@ export async function getEntryByPoolAndUser(
 
 export async function upsertEntry(
   supabase: SupabaseClient,
-  entry: Pick<Entry, 'pool_id' | 'user_id' | 'golfer_ids' | 'updated_at'>
+  entry: Pick<Entry, 'pool_id' | 'user_id' | 'golfer_ids'>
 ): Promise<{ data: Entry | null; error: string | null }> {
   const { data, error } = await supabase
     .from('entries')
-    .upsert(entry, { onConflict: 'pool_id,user_id' })
+    .upsert(
+      {
+        ...entry,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'pool_id,user_id' }
+    )
     .select()
     .single()
 
@@ -52,7 +58,7 @@ export async function getPoolsForMember(
   Array<{
     pool_id: string
     role: MemberRole
-    pool: MemberPool | null
+    pool: MemberPool
     entry: EntrySummary | null
   }>
 > {
@@ -60,6 +66,7 @@ export async function getPoolsForMember(
     .from('pool_members')
     .select('pool_id, role, pools(id, name, tournament_name, status, deadline, picks_per_entry)')
     .eq('user_id', userId)
+    .order('joined_at', { ascending: false })
 
   if (membersError || !memberRows) return []
 
@@ -79,10 +86,12 @@ export async function getPoolsForMember(
     entryByPoolId.set(row.pool_id, { golfer_ids: row.golfer_ids })
   }
 
-  return members.map((member) => {
+  return members.flatMap((member) => {
     const poolValue = Array.isArray(member.pools)
       ? member.pools[0] ?? null
       : member.pools
+
+    if (!poolValue) return []
 
     return {
       pool_id: member.pool_id,
