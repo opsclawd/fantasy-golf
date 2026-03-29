@@ -140,6 +140,29 @@ export async function insertAuditEvent(
   return { error: null }
 }
 
+export async function getAuditEventsForPool(
+  supabase: SupabaseClient,
+  poolId: string,
+  options?: { actionFilter?: string[]; limit?: number }
+): Promise<AuditEvent[]> {
+  let query = supabase
+    .from('audit_events')
+    .select('*')
+    .eq('pool_id', poolId)
+    .order('created_at', { ascending: false })
+
+  if (options?.actionFilter?.length) {
+    query = query.in('action', options.actionFilter)
+  }
+
+  if (typeof options?.limit === 'number') {
+    query = query.limit(options.limit)
+  }
+
+  const { data } = await query
+  return (data as AuditEvent[]) || []
+}
+
 export async function getEntriesForPool(
   supabase: SupabaseClient,
   poolId: string
