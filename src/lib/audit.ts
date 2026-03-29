@@ -1,10 +1,10 @@
-import type { TournamentScore } from './supabase/types'
+import type { GolferStatus, TournamentScore } from './supabase/types'
 import { getHoleScore } from './scoring'
 
 export interface ScoreDiff {
   changed: boolean
   holes: Record<string, { old: number | null; new: number | null }>
-  statusChange?: { old: string; new: string }
+  statusChange?: { old: GolferStatus; new: GolferStatus }
   birdiesChange?: { old: number; new: number }
 }
 
@@ -55,8 +55,8 @@ export function buildRefreshAuditDetails(
   completedHoles: number,
   golferCount: number
 ): RefreshAuditDetails {
-  const changedGolfers: string[] = []
-  const newGolfers: string[] = []
+  const changedGolferIds = new Set<string>()
+  const newGolferIds = new Set<string>()
   const droppedGolfers: string[] = []
   const diffs: Record<string, ScoreDiff> = {}
 
@@ -66,13 +66,13 @@ export function buildRefreshAuditDetails(
     seenGolferIds.add(newScore.golfer_id)
     const oldScore = oldScores.get(newScore.golfer_id)
     if (!oldScore) {
-      newGolfers.push(newScore.golfer_id)
-      changedGolfers.push(newScore.golfer_id)
+      newGolferIds.add(newScore.golfer_id)
+      changedGolferIds.add(newScore.golfer_id)
       continue
     }
     const diff = computeScoreDiff(oldScore, newScore)
     if (diff.changed) {
-      changedGolfers.push(newScore.golfer_id)
+      changedGolferIds.add(newScore.golfer_id)
       diffs[newScore.golfer_id] = diff
     }
   }
@@ -83,5 +83,12 @@ export function buildRefreshAuditDetails(
     }
   })
 
-  return { completedHoles, golferCount, changedGolfers, newGolfers, droppedGolfers, diffs }
+  return {
+    completedHoles,
+    golferCount,
+    changedGolfers: Array.from(changedGolferIds),
+    newGolfers: Array.from(newGolferIds),
+    droppedGolfers,
+    diffs,
+  }
 }

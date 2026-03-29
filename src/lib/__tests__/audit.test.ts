@@ -113,5 +113,35 @@ describe('audit', () => {
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
       expect(details.droppedGolfers).toEqual(['g2'])
     })
+
+    it('dedupes changed golfers when duplicate incoming rows exist', () => {
+      const oldScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0])],
+      ])
+      const newScores: TournamentScore[] = [
+        createScore('g1', [-1, -1]),
+        createScore('g1', [-1, -1]),
+      ]
+
+      const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
+
+      expect(details.changedGolfers).toEqual(['g1'])
+      expect(details.newGolfers).toEqual([])
+      expect(details.diffs.g1.holes).toEqual({ hole_2: { old: 0, new: -1 } })
+    })
+
+    it('dedupes new golfers when duplicate incoming rows exist', () => {
+      const oldScores = new Map<string, TournamentScore>()
+      const newScores: TournamentScore[] = [
+        createScore('g3', [-1, 0]),
+        createScore('g3', [-1, 0]),
+      ]
+
+      const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
+
+      expect(details.newGolfers).toEqual(['g3'])
+      expect(details.changedGolfers).toEqual(['g3'])
+      expect(details.diffs).toEqual({})
+    })
   })
 })
