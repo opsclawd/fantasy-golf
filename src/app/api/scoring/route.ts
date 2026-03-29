@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getTournamentScores } from '@/lib/slash-golf/client'
 import { rankEntries } from '@/lib/scoring'
+import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getActivePool,
   getOpenPoolsPastDeadline,
@@ -49,6 +50,12 @@ export async function POST(request: Request) {
     const pool = await getActivePool(supabase)
     if (!pool) {
       return NextResponse.json({ data: { message: 'No live pool' }, error: null })
+    }
+
+    const existingScores = await getScoresForTournament(supabase, pool.tournament_id)
+    const oldScoresMap = new Map<string, TournamentScore>()
+    for (const score of existingScores) {
+      oldScoresMap.set(score.golfer_id, score)
     }
 
     // Step 3: Fetch scores from external API
@@ -128,7 +135,12 @@ export async function POST(request: Request) {
       pool_id: pool.id,
       user_id: null,
       action: 'scoreRefreshCompleted',
-      details: { completedHoles, entryCount: (entries || []).length },
+      details: buildRefreshAuditDetails(
+        oldScoresMap,
+        allScores,
+        completedHoles,
+        (entries || []).length
+      ) as unknown as Record<string, unknown>,
     })
 
     return NextResponse.json({
