@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { PickProgress } from './PickProgress'
 
@@ -20,15 +20,62 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
   const [golfers, setGolfers] = useState<Golfer[]>([])
   const [search, setSearch] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
   const supabase = createClient()
 
   useEffect(() => {
-    fetchGolfers()
-  }, [])
+    let isMounted = true
 
-  const fetchGolfers = async () => {
-    const { data } = await supabase.from('golfers').select('*').order('name')
-    if (data) setGolfers(data)
+    const runFetch = async () => {
+      try {
+        const { data, error } = await supabase.from('golfers').select('*').order('name')
+
+        if (!isMounted) {
+          return
+        }
+
+        if (error) {
+          setFetchError('Unable to load golfers right now. Please refresh and try again.')
+          setGolfers([])
+          return
+        }
+
+        setFetchError(null)
+        setGolfers(data ?? [])
+      } catch {
+        if (!isMounted) {
+          return
+        }
+
+        setFetchError('Unable to load golfers right now. Please refresh and try again.')
+        setGolfers([])
+      }
+    }
+
+    void runFetch()
+
+    return () => {
+      isMounted = false
+    }
+  }, [supabase])
+
+  const focusNextOption = (startIndex: number, step: 1 | -1) => {
+    if (optionRefs.current.length === 0) {
+      return
+    }
+
+    let index = startIndex
+
+    for (let i = 0; i < optionRefs.current.length; i += 1) {
+      index = (index + step + optionRefs.current.length) % optionRefs.current.length
+      const button = optionRefs.current[index]
+
+      if (button && !button.disabled) {
+        button.focus()
+        break
+      }
+    }
   }
 
   const filteredGolfers = golfers.filter((g) => {
@@ -127,19 +174,35 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
         aria-multiselectable="true"
         aria-label="Available golfers"
       >
-        {filteredGolfers.length === 0 ? (
+        {fetchError ? (
+          <p className="p-3 text-sm text-red-600" role="alert">
+            {fetchError}
+          </p>
+        ) : filteredGolfers.length === 0 ? (
           <p className="p-3 text-sm text-gray-500">No golfers match your filters.</p>
         ) : (
           <ul>
-            {filteredGolfers.map((golfer) => {
+            {filteredGolfers.map((golfer, index) => {
               const isSelected = selectedIds.includes(golfer.id)
               const isDisabled = !isSelected && selectedIds.length >= maxSelections
 
               return (
                 <li key={golfer.id}>
                   <button
+                    ref={(element) => {
+                      optionRefs.current[index] = element
+                    }}
                     type="button"
                     onClick={() => toggleGolfer(golfer.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault()
+                        focusNextOption(index, 1)
+                      } else if (event.key === 'ArrowUp') {
+                        event.preventDefault()
+                        focusNextOption(index, -1)
+                      }
+                    }}
                     disabled={isDisabled}
                     role="option"
                     aria-selected={isSelected}
