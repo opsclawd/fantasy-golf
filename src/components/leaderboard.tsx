@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ScoreDisplay } from './score-display'
+import { FreshnessChip } from './FreshnessChip'
+import { LeaderboardEmptyState } from './LeaderboardEmptyState'
+import type { FreshnessStatus, PoolStatus } from '@/lib/supabase/types'
 
 interface RankedEntry {
   id: string
@@ -13,114 +16,213 @@ interface RankedEntry {
   user_id: string
 }
 
-interface LeaderboardProps {
-  poolId: string
+interface LeaderboardData {
+  entries: RankedEntry[]
+  completedHoles: number
+  refreshedAt: string | null
+  freshness: FreshnessStatus
+  poolStatus: PoolStatus
+  lastRefreshError: string | null
+  golferStatuses: Record<string, string>
 }
 
-type ScoreBroadcastPayload = {
-  payload: {
-    ranked?: RankedEntry[]
-    completedHoles?: number
-    updatedAt?: string
-  }
+interface LeaderboardProps {
+  poolId: string
+  /** Polling interval in milliseconds. Default: 30 seconds */
+  pollInterval?: number
 }
+
+const DEFAULT_POLL_INTERVAL = 30_000
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-export function Leaderboard({ poolId }: LeaderboardProps) {
-  const [entries, setEntries] = useState<RankedEntry[]>([])
-  const [completedHoles, setCompletedHoles] = useState(0)
-  const [updatedAt, setUpdatedAt] = useState<string | null>(null)
+export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: LeaderboardProps) {
+  const [data, setData] = useState<LeaderboardData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const supabase = createClient()
+
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/leaderboard/${poolId}`)
+      const json = await res.json()
+
+      if (json.data) {
+        setData(json.data)
+        setFetchError(null)
+      } else if (json.error) {
+        setFetchError(json.error.message || 'Failed to load leaderboard')
+      } else {
+        // Legacy response format (backwards compat during rollout)
+        if (json.entries) {
+          setData({
+            entries: json.entries,
+            completedHoles: json.completedHoles ?? 0,
+            refreshedAt: json.updatedAt ?? null,
+            freshness: 'unknown',
+            poolStatus: 'live',
+            lastRefreshError: null,
+            golferStatuses: {},
+          })
+        }
+      }
+    } catch {
+      setFetchError('Network error loading leaderboard')
+    } finally {
+      setLoading(false)
+    }
+  }, [poolId])
 
   useEffect(() => {
     fetchLeaderboard()
 
+    // Polling: refetch on interval
+    const intervalId = setInterval(fetchLeaderboard, pollInterval)
+
+    // Real-time: supplementary live updates
     const channel = supabase
       .channel('pool_updates')
       .on('broadcast', { event: 'scores' }, (payload: unknown) => {
-        if (!isObject(payload) || !isObject(payload.payload)) {
-          return
-        }
+        if (!isObject(payload) || !isObject(payload.payload)) return
 
-        const typedPayload = payload as ScoreBroadcastPayload
-        if (!Array.isArray(typedPayload.payload.ranked)) {
-          return
-        }
+        const p = payload.payload as Record<string, unknown>
+        if (!Array.isArray(p.ranked)) return
 
-        setEntries(typedPayload.payload.ranked)
-        setCompletedHoles(typedPayload.payload.completedHoles ?? 0)
-        setUpdatedAt(typedPayload.payload.updatedAt ?? null)
+        // On broadcast, trigger a fresh fetch to get full metadata
+        fetchLeaderboard()
       })
       .subscribe()
 
     return () => {
+      clearInterval(intervalId)
       supabase.removeChannel(channel)
     }
-  }, [poolId])
+  }, [poolId, pollInterval, fetchLeaderboard, supabase])
 
-  const fetchLeaderboard = async () => {
-    const res = await fetch(`/api/leaderboard/${poolId}`)
-    const data = await res.json()
-    if (data.entries) {
-      setEntries(data.entries)
-      setCompletedHoles(data.completedHoles)
-      setUpdatedAt(data.updatedAt)
-    }
-    setLoading(false)
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500" role="status">
+        Loading leaderboard...
+      </div>
+    )
   }
 
-  if (loading) return <div>Loading leaderboard...</div>
+  if (fetchError) {
+    return (
+      <div className="bg-white rounded-lg shadow p-8 text-center" role="alert">
+        <p className="text-red-600 font-medium">Unable to load leaderboard</p>
+        <p className="text-sm text-gray-500 mt-1">{fetchError}</p>
+      </div>
+    )
+  }
+
+  if (!data) return null
+
+  const { entries, completedHoles, refreshedAt, freshness, poolStatus, lastRefreshError, golferStatuses } = data
+  const hasEntries = entries.length > 0
+  const hasScores = completedHoles > 0
+
+  // Detect which golfer IDs in entries are withdrawn
+  const withdrawnGolferIds = new Set(
+    Object.entries(golferStatuses)
+      .filter(([, status]) => status === 'withdrawn' || status === 'cut')
+      .map(([id]) => id)
+  )
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Leaderboard</h2>
-        <div className="text-sm text-gray-500">
-          {updatedAt && `Updated ${new Date(updatedAt).toLocaleTimeString()}`}
-          {completedHoles > 0 && ` • Thru ${completedHoles} holes`}
+      {/* Header */}
+      <div className="p-4 border-b">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <h2 className="text-lg font-semibold">Leaderboard</h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <FreshnessChip status={freshness} refreshedAt={refreshedAt} />
+            {completedHoles > 0 && (
+              <span className="text-sm text-gray-500">
+                Thru {completedHoles} holes
+              </span>
+            )}
+          </div>
         </div>
+        {lastRefreshError && poolStatus === 'live' && (
+          <div
+            className="mt-2 flex items-center gap-1.5 text-sm text-amber-700"
+            role="alert"
+          >
+            <span aria-hidden="true">{'\u26A0'}</span>
+            <span>Scores may be delayed: {lastRefreshError}</span>
+          </div>
+        )}
       </div>
 
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-4 py-2 text-left">Rank</th>
-            <th className="px-4 py-2 text-left">Entry</th>
-            <th className="px-4 py-2 text-right">Score</th>
-            <th className="px-4 py-2 text-right">Birdies</th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry) => (
-            <tr key={entry.id} className="border-t">
-              <td className="px-4 py-2">
-                <span className={`inline-block w-6 h-6 text-center rounded ${
-                  entry.rank === 1 ? 'bg-yellow-100 text-yellow-800' :
-                  entry.rank === 2 ? 'bg-gray-100 text-gray-800' :
-                  entry.rank === 3 ? 'bg-orange-100 text-orange-800' : ''
-                }`}>
-                  {entry.rank}
-                </span>
-              </td>
-              <td className="px-4 py-2">
-                <div className="text-sm text-gray-500">{entry.user_id.slice(0, 8)}</div>
-              </td>
-              <td className="px-4 py-2 text-right font-mono">
-                <ScoreDisplay score={entry.totalScore} />
-              </td>
-              <td className="px-4 py-2 text-right">{entry.totalBirdies}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Content */}
+      {!hasEntries || !hasScores ? (
+        <LeaderboardEmptyState
+          poolStatus={poolStatus}
+          hasEntries={hasEntries}
+          hasScores={hasScores}
+          lastRefreshError={lastRefreshError}
+        />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-sm">Rank</th>
+                <th className="px-4 py-2 text-left text-sm">Entry</th>
+                <th className="px-4 py-2 text-right text-sm">Score</th>
+                <th className="px-4 py-2 text-right text-sm">Birdies</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((entry, index) => {
+                const isTied =
+                  (index > 0 && entries[index - 1].rank === entry.rank) ||
+                  (index < entries.length - 1 && entries[index + 1]?.rank === entry.rank)
 
-      {entries.length === 0 && (
-        <div className="p-8 text-center text-gray-500">
-          No entries yet
+                const entryHasWithdrawnGolfer = entry.golfer_ids.some(id =>
+                  withdrawnGolferIds.has(id)
+                )
+
+                return (
+                  <tr key={entry.id} className="border-t">
+                    <td className="px-4 py-2">
+                      <span
+                        className={`inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1 text-center rounded text-sm ${
+                          entry.rank === 1
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : entry.rank === 2
+                              ? 'bg-gray-100 text-gray-800'
+                              : entry.rank === 3
+                                ? 'bg-orange-100 text-orange-800'
+                                : ''
+                        }`}
+                      >
+                        {isTied ? `T${entry.rank}` : entry.rank}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="text-sm text-gray-700">
+                        {entry.user_id.slice(0, 8)}
+                      </div>
+                      {entryHasWithdrawnGolfer && (
+                        <span className="inline-flex items-center gap-1 mt-0.5 text-xs text-amber-700">
+                          <span aria-hidden="true">{'\u26A0'}</span>
+                          WD
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-right font-mono">
+                      <ScoreDisplay score={entry.totalScore} />
+                    </td>
+                    <td className="px-4 py-2 text-right">{entry.totalBirdies}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
