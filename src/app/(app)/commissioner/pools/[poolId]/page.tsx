@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getPoolById, getPoolMembers, getEntriesForPool } from '@/lib/pool-queries'
+import { getScoresForTournament } from '@/lib/scoring-queries'
 import { StatusChip } from '@/components/StatusChip'
 import { FreshnessChip } from '@/components/FreshnessChip'
+import { CommissionerGolferPanel } from '@/components/CommissionerGolferPanel'
 import { classifyFreshness } from '@/lib/freshness'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReusePoolButton } from './ReusePoolButton'
@@ -10,6 +12,7 @@ import InviteLinkSection from './InviteLinkSection'
 import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
 import Link from 'next/link'
+import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
 
 type PoolEntry = {
   id: string
@@ -62,6 +65,27 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
   const { data: allGolfers } = await supabase.from('golfers').select('*')
   const golferMap = new Map(allGolfers?.map(g => [g.id, g.name]) || [])
+
+  const showGolferPanel = pool.status === 'live' || pool.status === 'complete'
+
+  let golferScoresRecord: Record<string, TournamentScore> = {}
+  let allGolfersList: Golfer[] = []
+  let typedEntries: Entry[] = []
+
+  if (showGolferPanel) {
+    const scores = await getScoresForTournament(supabase, pool.tournament_id)
+    golferScoresRecord = Object.fromEntries(scores.map(s => [s.golfer_id, s]))
+    allGolfersList = (allGolfers as Golfer[]) || []
+    typedEntries = normalizedEntries.map(e => ({
+      id: e.id,
+      pool_id: poolId,
+      user_id: e.user_id,
+      golfer_ids: e.golfer_ids,
+      total_birdies: 0,
+      created_at: e.created_at,
+      updated_at: e.created_at,
+    }))
+  }
 
   const playersWithEntries = new Set(normalizedEntries.map(e => e.user_id))
   const playerMembers = members.filter(m => m.role === 'player')
@@ -172,6 +196,15 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
           </tbody>
         </table>
       </div>
+
+      {/* Golfer Overview (live/complete pools only) */}
+      {showGolferPanel && (
+        <CommissionerGolferPanel
+          golfers={allGolfersList}
+          golferScoresRecord={golferScoresRecord}
+          entries={typedEntries}
+        />
+      )}
 
       {/* Pending Members */}
       {membersWithoutEntries.length > 0 && (
