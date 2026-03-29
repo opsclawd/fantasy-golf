@@ -7,6 +7,7 @@ import { TrustStatusBar } from './TrustStatusBar'
 import { LeaderboardEmptyState } from './LeaderboardEmptyState'
 import { GolferDetailSheet } from './GolferDetailSheet'
 import { DataAlert } from './DataAlert'
+import { shouldRenderLeaderboardTrustStatus } from './leaderboard-trust-status'
 import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib/supabase/types'
 
 interface RankedEntry {
@@ -35,6 +36,8 @@ interface LeaderboardProps {
   poolId: string
   /** Polling interval in milliseconds. Default: 30 seconds */
   pollInterval?: number
+  /** Hide the TrustStatusBar in the leaderboard header */
+  hideTrustStatusHeader?: boolean
 }
 
 const DEFAULT_POLL_INTERVAL = 30_000
@@ -43,7 +46,11 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: LeaderboardProps) {
+export function Leaderboard({
+  poolId,
+  pollInterval = DEFAULT_POLL_INTERVAL,
+  hideTrustStatusHeader = false,
+}: LeaderboardProps) {
   const [data, setData] = useState<LeaderboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -164,7 +171,7 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
             </span>
           )}
         </div>
-        {(poolStatus === 'live' || poolStatus === 'complete') && (
+        {shouldRenderLeaderboardTrustStatus(poolStatus, hideTrustStatusHeader) && (
           <TrustStatusBar
             className="mt-3"
             isLocked={true}

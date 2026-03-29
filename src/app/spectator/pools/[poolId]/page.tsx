@@ -45,7 +45,7 @@ export default async function SpectatorPage({
             lastRefreshError={pool.last_refresh_error}
           />
         )}
-        <Leaderboard poolId={poolId} />
+        <Leaderboard poolId={poolId} hideTrustStatusHeader={true} />
       </main>
     </div>
   )
