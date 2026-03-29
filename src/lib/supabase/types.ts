@@ -2,6 +2,9 @@ export type PoolStatus = 'open' | 'live' | 'complete'
 
 export type PoolFormat = 'best_ball'
 
+export type GolferStatus = 'active' | 'withdrawn' | 'cut'
+export type FreshnessStatus = 'current' | 'stale' | 'unknown'
+
 export type MemberRole = 'commissioner' | 'player'
 
 export interface Pool {
@@ -17,6 +20,8 @@ export interface Pool {
   invite_code: string
   status: PoolStatus
   created_at: string
+  refreshed_at: string | null
+  last_refresh_error: string | null
 }
 
 export interface PoolMember {
@@ -65,6 +70,7 @@ export interface TournamentScore {
   hole_17: number | null
   hole_18: number | null
   total_birdies: number
+  status: GolferStatus
 }
 
 export interface AuditEvent {

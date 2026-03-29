@@ -90,3 +90,10 @@ CREATE INDEX idx_entries_user_id ON entries(user_id);
 CREATE INDEX idx_tournament_scores_tournament ON tournament_scores(tournament_id);
 CREATE INDEX idx_audit_events_pool_id ON audit_events(pool_id);
 CREATE INDEX idx_audit_events_user_id ON audit_events(user_id);
+
+-- Epic 3: Add refresh metadata to pools
+ALTER TABLE pools ADD COLUMN refreshed_at TIMESTAMPTZ;
+ALTER TABLE pools ADD COLUMN last_refresh_error TEXT;
+
+-- Epic 3: Add golfer status to tournament_scores
+ALTER TABLE tournament_scores ADD COLUMN status TEXT DEFAULT 'active' CHECK (status IN ('active', 'withdrawn', 'cut'));
