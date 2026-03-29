@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getPoolById, getPoolMembers, getEntriesForPool } from '@/lib/pool-queries'
 import { StatusChip } from '@/components/StatusChip'
+import { FreshnessChip } from '@/components/FreshnessChip'
+import { classifyFreshness } from '@/lib/freshness'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReusePoolButton } from './ReusePoolButton'
 import InviteLinkSection from './InviteLinkSection'
@@ -94,6 +96,28 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
         isLocked={isLocked}
         pendingCount={membersWithoutEntries.length}
       />
+
+      {/* Scoring Refresh Status (only for live/complete pools) */}
+      {pool.status !== 'open' && (
+        <div className="bg-white rounded-lg shadow p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-gray-700">Scoring Status</h3>
+            <FreshnessChip
+              status={classifyFreshness(pool.refreshed_at)}
+              refreshedAt={pool.refreshed_at}
+            />
+          </div>
+          {pool.last_refresh_error && (
+            <div
+              className="flex items-center gap-1.5 text-sm text-amber-700 bg-amber-50 rounded-lg p-3"
+              role="alert"
+            >
+              <span aria-hidden="true">{'\u26A0'}</span>
+              <span>Last refresh error: {pool.last_refresh_error}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Invite Link */}
       <InviteLinkSection inviteCode={pool.invite_code} />
