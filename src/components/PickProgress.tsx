@@ -7,6 +7,8 @@ export function PickProgress({ current, required }: PickProgressProps) {
   const remaining = Math.max(0, required - current)
   const isComplete = remaining === 0
   const percentage = required > 0 ? Math.min(100, (current / required) * 100) : 0
+  const ariaValueMax = Math.max(required, 0)
+  const ariaValueNow = Math.min(Math.max(current, 0), ariaValueMax)
 
   return (
     <div className="space-y-2" role="status" aria-live="polite">
@@ -32,9 +34,9 @@ export function PickProgress({ current, required }: PickProgressProps) {
       <div
         className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
         role="progressbar"
-        aria-valuenow={current}
+        aria-valuenow={ariaValueNow}
         aria-valuemin={0}
-        aria-valuemax={required}
+        aria-valuemax={ariaValueMax}
         aria-label={`${current} of ${required} golfers selected`}
       >
         <div

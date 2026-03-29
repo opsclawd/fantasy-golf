@@ -4,7 +4,41 @@ interface LockBannerProps {
   poolStatus: string
 }
 
+function getLockedMessage(poolStatus: string): string {
+  switch (poolStatus) {
+    case 'live':
+      return 'The tournament is live. No changes allowed.'
+    case 'complete':
+      return 'This tournament is complete.'
+    default:
+      return 'The picks deadline has passed.'
+  }
+}
+
+function formatDeadline(deadline: string): string {
+  const fallback = 'Deadline not available'
+  if (!deadline.trim()) {
+    return fallback
+  }
+
+  const deadlineDate = new Date(deadline)
+  if (Number.isNaN(deadlineDate.getTime())) {
+    return fallback
+  }
+
+  return deadlineDate.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+}
+
 export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) {
+  const lockedMessage = getLockedMessage(poolStatus)
+
   if (isLocked) {
     return (
       <div
@@ -14,27 +48,13 @@ export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) 
         <span aria-hidden="true" className="text-lg">&#x1F512;</span>
         <div>
           <p className="font-medium text-gray-800">Picks are locked</p>
-          <p className="text-sm text-gray-600">
-            {poolStatus === 'live'
-              ? 'The tournament is live. No changes allowed.'
-              : poolStatus === 'complete'
-                ? 'This tournament is complete.'
-                : 'The picks deadline has passed.'}
-          </p>
+          <p className="text-sm text-gray-600">{lockedMessage}</p>
         </div>
       </div>
     )
   }
 
-  const deadlineDate = new Date(deadline)
-  const formattedDeadline = deadlineDate.toLocaleString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZoneName: 'short',
-  })
+  const formattedDeadline = formatDeadline(deadline)
 
   return (
     <div
