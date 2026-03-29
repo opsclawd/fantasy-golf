@@ -15,6 +15,7 @@ interface TrustStatusBarState {
   heading: string
   lockMessage: string
   freshnessMessage: string
+  showFreshness: boolean
   tone: TrustTone
   role: 'status' | 'alert'
   ariaLive: 'polite' | 'assertive'
@@ -98,6 +99,7 @@ export function getTrustStatusBarState(
 ): TrustStatusBarState {
   const heading = input.isLocked ? 'Picks are locked' : 'Picks are open'
   const lockMessage = getLockMessage(input.isLocked, input.poolStatus)
+  const showFreshness = input.poolStatus !== 'open'
   const freshnessState = getFreshnessMessage(
     input.freshness,
     input.refreshedAt,
@@ -108,6 +110,7 @@ export function getTrustStatusBarState(
     heading,
     lockMessage,
     freshnessMessage: freshnessState.freshnessMessage,
+    showFreshness,
     tone: freshnessState.tone,
     role: freshnessState.role,
     ariaLive: freshnessState.ariaLive,
@@ -133,6 +136,8 @@ export function TrustStatusBar({ className, ...input }: TrustStatusBarProps) {
       createElement('span', null, state.heading),
     ),
     createElement('p', { className: 'mt-1 text-sm' }, state.lockMessage),
-    createElement('p', { className: 'mt-1 text-sm' }, state.freshnessMessage),
+    state.showFreshness
+      ? createElement('p', { className: 'mt-1 text-sm' }, state.freshnessMessage)
+      : null,
   )
 }

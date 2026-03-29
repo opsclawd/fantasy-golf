@@ -3,6 +3,42 @@ import { describe, expect, it } from 'vitest'
 import { getTrustStatusBarState } from '../TrustStatusBar'
 
 describe('getTrustStatusBarState', () => {
+  it('sets showFreshness to false for open pools', () => {
+    const result = getTrustStatusBarState({
+      isLocked: false,
+      poolStatus: 'open',
+      freshness: 'current',
+      refreshedAt: '2026-03-29T12:00:00.000Z',
+      lastRefreshError: null,
+    })
+
+    expect(result.showFreshness).toBe(false)
+  })
+
+  it('sets showFreshness to true for live pools', () => {
+    const result = getTrustStatusBarState({
+      isLocked: true,
+      poolStatus: 'live',
+      freshness: 'current',
+      refreshedAt: '2026-03-29T12:00:00.000Z',
+      lastRefreshError: null,
+    })
+
+    expect(result.showFreshness).toBe(true)
+  })
+
+  it('sets showFreshness to true for complete pools', () => {
+    const result = getTrustStatusBarState({
+      isLocked: true,
+      poolStatus: 'complete',
+      freshness: 'current',
+      refreshedAt: '2026-03-29T12:00:00.000Z',
+      lastRefreshError: null,
+    })
+
+    expect(result.showFreshness).toBe(true)
+  })
+
   it('returns locked + live messaging with current freshness details', () => {
     const result = getTrustStatusBarState({
       isLocked: true,
@@ -20,6 +56,7 @@ describe('getTrustStatusBarState', () => {
       role: 'status',
       ariaLive: 'polite',
       icon: '\uD83D\uDD12',
+      showFreshness: true,
     })
   })
 
@@ -40,6 +77,7 @@ describe('getTrustStatusBarState', () => {
       role: 'status',
       ariaLive: 'polite',
       icon: '\uD83D\uDD13',
+      showFreshness: false,
     })
   })
 
@@ -60,6 +98,7 @@ describe('getTrustStatusBarState', () => {
       role: 'status',
       ariaLive: 'polite',
       icon: '\uD83D\uDD13',
+      showFreshness: false,
     })
   })
 
@@ -80,6 +119,7 @@ describe('getTrustStatusBarState', () => {
       role: 'alert',
       ariaLive: 'assertive',
       icon: '\uD83D\uDD13',
+      showFreshness: false,
     })
   })
 
