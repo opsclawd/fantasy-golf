@@ -2,7 +2,8 @@ type DataAlertVariant = 'error' | 'warning' | 'info'
 
 interface DataAlertProps {
   variant: DataAlertVariant
-  text: string
+  title: string
+  message?: string
   className?: string
 }
 
@@ -31,7 +32,7 @@ const VARIANT_CONFIG: Record<
   },
 }
 
-export function DataAlert({ variant, text, className }: DataAlertProps) {
+export function DataAlert({ variant, title, message, className }: DataAlertProps) {
   const config = VARIANT_CONFIG[variant]
   const classes = [
     'rounded-lg border px-3 py-2 text-sm inline-flex items-start gap-2',
@@ -46,9 +47,12 @@ export function DataAlert({ variant, text, className }: DataAlertProps) {
       <span aria-hidden="true" className="font-semibold leading-5">
         {config.icon}
       </span>
-      <span>
-        <span className="sr-only">{config.srPrefix} </span>
-        {text}
+      <span className="flex flex-col gap-0.5">
+        <span>
+          <span className="sr-only">{config.srPrefix} </span>
+          <span className="font-semibold">{title}</span>
+        </span>
+        {message ? <span>{message}</span> : null}
       </span>
     </div>
   )
