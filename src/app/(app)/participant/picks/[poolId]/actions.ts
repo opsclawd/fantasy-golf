@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getEntryByPoolAndUser, upsertEntry } from '@/lib/entry-queries'
 import { isPoolLocked, validatePickSubmission } from '@/lib/picks'
 import { getPoolById, insertAuditEvent, isPoolMember } from '@/lib/pool-queries'
+import { redirect } from 'next/navigation'
 
 export type SubmitPicksState = {
   error?: string
@@ -15,7 +16,7 @@ export async function submitPicks(formData: FormData): Promise<SubmitPicksState>
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return { error: 'You must be signed in to submit picks.' }
+    redirect('/sign-in')
   }
 
   const rawPoolId = formData.get('poolId')
