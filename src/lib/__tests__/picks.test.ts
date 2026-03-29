@@ -6,6 +6,65 @@ import {
 } from '../picks'
 
 describe('validatePickSubmission', () => {
+  it('rejects invalid picksPerEntry invariant values', () => {
+    expect(
+      validatePickSubmission({
+        golferIds: ['g1'],
+        picksPerEntry: 0,
+        isLocked: false,
+      })
+    ).toEqual({
+      ok: false,
+      error: 'Invalid picksPerEntry: must be a positive integer.',
+    })
+
+    expect(
+      validatePickSubmission({
+        golferIds: ['g1'],
+        picksPerEntry: -2,
+        isLocked: false,
+      })
+    ).toEqual({
+      ok: false,
+      error: 'Invalid picksPerEntry: must be a positive integer.',
+    })
+
+    expect(
+      validatePickSubmission({
+        golferIds: ['g1'],
+        picksPerEntry: 1.5,
+        isLocked: false,
+      })
+    ).toEqual({
+      ok: false,
+      error: 'Invalid picksPerEntry: must be a positive integer.',
+    })
+  })
+
+  it('rejects invalid golfer IDs', () => {
+    expect(
+      validatePickSubmission({
+        golferIds: ['g1', '', 'g3', 'g4'],
+        picksPerEntry: 4,
+        isLocked: false,
+      })
+    ).toEqual({
+      ok: false,
+      error: 'Invalid golferIds: all IDs must be non-empty strings.',
+    })
+
+    expect(
+      validatePickSubmission({
+        golferIds: ['g1', '   ', 'g3', 'g4'],
+        picksPerEntry: 4,
+        isLocked: false,
+      })
+    ).toEqual({
+      ok: false,
+      error: 'Invalid golferIds: all IDs must be non-empty strings.',
+    })
+  })
+
   it('returns ok for exact picks count', () => {
     const result = validatePickSubmission({
       golferIds: ['g1', 'g2', 'g3', 'g4'],
@@ -93,6 +152,10 @@ describe('validatePickSubmission', () => {
 })
 
 describe('isPoolLocked', () => {
+  it('returns true for invalid deadline string', () => {
+    expect(isPoolLocked('open', 'not-a-date', new Date('2099-04-09T08:00:00Z'))).toBe(true)
+  })
+
   it('returns false for open pool with future deadline', () => {
     expect(
       isPoolLocked('open', '2099-04-10T08:00:00Z', new Date('2099-04-09T08:00:00Z'))

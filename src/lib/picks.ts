@@ -17,6 +17,18 @@ export function validatePickSubmission(
     return { ok: false, error: 'This pool is locked. Picks can no longer be changed.' }
   }
 
+  if (!Number.isInteger(input.picksPerEntry) || input.picksPerEntry <= 0) {
+    return { ok: false, error: 'Invalid picksPerEntry: must be a positive integer.' }
+  }
+
+  if (
+    input.golferIds.some(
+      (id) => typeof id !== 'string' || id.trim().length === 0
+    )
+  ) {
+    return { ok: false, error: 'Invalid golferIds: all IDs must be non-empty strings.' }
+  }
+
   if (new Set(input.golferIds).size !== input.golferIds.length) {
     return { ok: false, error: 'Duplicate golfer selections are not allowed.' }
   }
@@ -37,7 +49,12 @@ export function isPoolLocked(
   deadline: string,
   now: Date = new Date()
 ): boolean {
-  return !(status === 'open' && new Date(deadline) > now)
+  const deadlineTime = Date.parse(deadline)
+  if (Number.isNaN(deadlineTime)) {
+    return true
+  }
+
+  return !(status === 'open' && deadlineTime > now.getTime())
 }
 
 export function calculateRemainingPicks(
