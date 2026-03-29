@@ -141,6 +141,14 @@ export default async function CommissionerPoolAuditPage({
           <p className="text-gray-500">
             Event history for <span className="font-medium text-gray-700">{pool.name}</span>
           </p>
+          <p className="mt-2 text-sm">
+            <Link
+              href={`/commissioner/pools/${poolId}/audit/score-trace`}
+              className="font-medium text-blue-600 hover:text-blue-800"
+            >
+              View score trace
+            </Link>
+          </p>
         </div>
         <Link
           href={`/commissioner/pools/${poolId}`}
