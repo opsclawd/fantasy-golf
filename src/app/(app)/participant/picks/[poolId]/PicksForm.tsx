@@ -22,7 +22,7 @@ function SubmitButton({ hasEnoughPicks, isEdit }: { hasEnoughPicks: boolean; isE
     <button
       type="submit"
       disabled={pending || !hasEnoughPicks}
-      className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {pending ? 'Saving...' : isEdit ? 'Update Picks' : 'Submit Picks'}
     </button>
