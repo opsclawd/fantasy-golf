@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { TournamentScore, GolferStatus } from '../supabase/types'
-import { getGolferScorecard } from '../golfer-detail'
+import { getGolferScorecard, getGolferContribution } from '../golfer-detail'
 
 function createScore(
   golferId: string,
@@ -56,6 +56,70 @@ describe('golfer-detail', () => {
       expect(card.status).toBe('withdrawn')
       expect(card.completedHoles).toBe(2)
       expect(card.totalScore).toBe(-1)
+    })
+  })
+
+  describe('getGolferContribution', () => {
+    it('marks holes where the golfer provided the best-ball score', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0, 1], 'active', 1)],
+        ['g2', createScore('g2', [0, -1, 0], 'active', 1)],
+      ])
+
+      const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
+
+      // Hole 1: g1=-1, g2=0 → g1 is best → contributing
+      expect(contribution.holes[0]).toEqual({ hole: 1, golferScore: -1, bestBallScore: -1, isContributing: true })
+      // Hole 2: g1=0, g2=-1 → g2 is best → not contributing
+      expect(contribution.holes[1]).toEqual({ hole: 2, golferScore: 0, bestBallScore: -1, isContributing: false })
+      // Hole 3: g1=1, g2=0 → g2 is best → not contributing
+      expect(contribution.holes[2]).toEqual({ hole: 3, golferScore: 1, bestBallScore: 0, isContributing: false })
+    })
+
+    it('marks as contributing when golfer ties for best ball', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0], 'active')],
+        ['g2', createScore('g2', [-1, 0], 'active')],
+      ])
+
+      const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
+
+      // Both tied at -1 → g1 is contributing (it matches best ball)
+      expect(contribution.holes[0].isContributing).toBe(true)
+    })
+
+    it('returns null contribution when golfer is withdrawn', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, 0], 'withdrawn', 1)],
+        ['g2', createScore('g2', [0, -1], 'active', 1)],
+      ])
+
+      const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
+
+      expect(contribution.isWithdrawn).toBe(true)
+      // Withdrawn golfers don't contribute to best-ball
+      expect(contribution.holes[0].isContributing).toBe(false)
+      expect(contribution.holes[1].isContributing).toBe(false)
+    })
+
+    it('handles golfer not found in scores map', () => {
+      const golferScores = new Map<string, TournamentScore>()
+      const contribution = getGolferContribution('g1', ['g1'], golferScores)
+
+      expect(contribution.isWithdrawn).toBe(false)
+      expect(contribution.totalContributingHoles).toBe(0)
+    })
+
+    it('counts total contributing holes', () => {
+      const golferScores = new Map<string, TournamentScore>([
+        ['g1', createScore('g1', [-1, -2, 0, -1], 'active', 3)],
+        ['g2', createScore('g2', [0, 0, -1, -1], 'active', 2)],
+      ])
+
+      const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
+
+      // Hole 1: g1=-1 best, Hole 2: g1=-2 best, Hole 3: g2=-1 best, Hole 4: tied -1 → g1 contributing
+      expect(contribution.totalContributingHoles).toBe(3)
     })
   })
 })

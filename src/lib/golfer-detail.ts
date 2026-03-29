@@ -1,5 +1,5 @@
 import type { TournamentScore, GolferStatus } from './supabase/types'
-import { getHoleScore } from './scoring'
+import { getHoleScore, getEntryHoleScore } from './scoring'
 
 export interface HoleResult {
   hole: number
@@ -36,5 +36,58 @@ export function getGolferScorecard(score: TournamentScore): GolferScorecard {
     holes,
     completedHoles,
     totalScore,
+  }
+}
+
+export interface HoleContribution {
+  hole: number
+  golferScore: number | null
+  bestBallScore: number | null
+  isContributing: boolean
+}
+
+export interface GolferContribution {
+  golferId: string
+  isWithdrawn: boolean
+  holes: HoleContribution[]
+  totalContributingHoles: number
+}
+
+export function getGolferContribution(
+  golferId: string,
+  entryGolferIds: string[],
+  golferScores: Map<string, TournamentScore>
+): GolferContribution {
+  const golferScore = golferScores.get(golferId)
+  const isWithdrawn = golferScore?.status === 'withdrawn' || golferScore?.status === 'cut'
+
+  const holes: HoleContribution[] = []
+  let totalContributingHoles = 0
+
+  for (let i = 1; i <= 18; i++) {
+    const golferHoleScore = golferScore ? getHoleScore(golferScore, i) : null
+    const bestBallScore = getEntryHoleScore(golferScores, entryGolferIds, i)
+
+    const isContributing =
+      !isWithdrawn &&
+      golferHoleScore !== null &&
+      bestBallScore !== null &&
+      golferHoleScore === bestBallScore
+
+    if (isContributing) totalContributingHoles++
+
+    holes.push({
+      hole: i,
+      golferScore: golferHoleScore,
+      bestBallScore,
+      isContributing,
+    })
+  }
+
+  return {
+    golferId,
+    isWithdrawn,
+    holes,
+    totalContributingHoles,
   }
 }
