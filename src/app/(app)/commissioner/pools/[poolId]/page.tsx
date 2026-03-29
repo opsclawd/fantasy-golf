@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getPoolById, getPoolMembers, getEntriesForPool } from '@/lib/pool-queries'
 import { getScoresForTournament } from '@/lib/scoring-queries'
 import { StatusChip } from '@/components/StatusChip'
-import { FreshnessChip } from '@/components/FreshnessChip'
+import { TrustStatusBar } from '@/components/TrustStatusBar'
 import { CommissionerGolferPanel } from '@/components/CommissionerGolferPanel'
 import { classifyFreshness } from '@/lib/freshness'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
@@ -123,23 +123,14 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
       {/* Scoring Refresh Status (only for live/complete pools) */}
       {pool.status !== 'open' && (
-        <div className="bg-white rounded-lg shadow p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm text-gray-700">Scoring Status</h3>
-            <FreshnessChip
-              status={classifyFreshness(pool.refreshed_at)}
-              refreshedAt={pool.refreshed_at}
-            />
-          </div>
-          {pool.last_refresh_error && (
-            <div
-              className="flex items-center gap-1.5 text-sm text-amber-700 bg-amber-50 rounded-lg p-3"
-              role="alert"
-            >
-              <span aria-hidden="true">{'\u26A0'}</span>
-              <span>Last refresh error: {pool.last_refresh_error}</span>
-            </div>
-          )}
+        <div className="bg-white rounded-lg shadow p-4">
+          <TrustStatusBar
+            isLocked={true}
+            poolStatus={pool.status}
+            freshness={classifyFreshness(pool.refreshed_at)}
+            refreshedAt={pool.refreshed_at}
+            lastRefreshError={pool.last_refresh_error}
+          />
         </div>
       )}
 

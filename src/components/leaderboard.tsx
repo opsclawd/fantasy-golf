@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ScoreDisplay } from './score-display'
-import { FreshnessChip } from './FreshnessChip'
+import { TrustStatusBar } from './TrustStatusBar'
 import { LeaderboardEmptyState } from './LeaderboardEmptyState'
 import { GolferDetailSheet } from './GolferDetailSheet'
 import { DataAlert } from './DataAlert'
@@ -158,23 +158,21 @@ export function Leaderboard({ poolId, pollInterval = DEFAULT_POLL_INTERVAL }: Le
       <div className="p-4 border-b">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
           <h2 className="text-lg font-semibold">Leaderboard</h2>
-          <div className="flex items-center gap-3 flex-wrap">
-            <FreshnessChip status={freshness} refreshedAt={refreshedAt} />
-            {completedHoles > 0 && (
-              <span className="text-sm text-gray-500">
-                Thru {completedHoles} holes
-              </span>
-            )}
-          </div>
+          {completedHoles > 0 && (
+            <span className="text-sm text-gray-500">
+              Thru {completedHoles} holes
+            </span>
+          )}
         </div>
-        {lastRefreshError && poolStatus === 'live' && (
-          <div
-            className="mt-2 flex items-center gap-1.5 text-sm text-amber-700"
-            role="alert"
-          >
-            <span aria-hidden="true">{'\u26A0'}</span>
-            <span>Scores may be delayed: {lastRefreshError}</span>
-          </div>
+        {(poolStatus === 'live' || poolStatus === 'complete') && (
+          <TrustStatusBar
+            className="mt-3"
+            isLocked={true}
+            poolStatus={poolStatus}
+            freshness={freshness}
+            refreshedAt={refreshedAt}
+            lastRefreshError={lastRefreshError}
+          />
         )}
       </div>
 

@@ -1,7 +1,9 @@
 import { LockBanner } from '@/components/LockBanner'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
 import { EntryGolferBreakdown } from '@/components/EntryGolferBreakdown'
+import { TrustStatusBar } from '@/components/TrustStatusBar'
 import { getEntryByPoolAndUser } from '@/lib/entry-queries'
+import { classifyFreshness } from '@/lib/freshness'
 import { isPoolLocked } from '@/lib/picks'
 import { getPoolById, isPoolMember } from '@/lib/pool-queries'
 import { getScoresForTournament } from '@/lib/scoring-queries'
@@ -64,6 +66,17 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
       <p className="text-gray-500 mb-4">{pool.tournament_name}</p>
 
       <LockBanner isLocked={isLocked} deadline={pool.deadline} poolStatus={pool.status} />
+
+      {(pool.status === 'live' || pool.status === 'complete') && (
+        <TrustStatusBar
+          className="mb-4"
+          isLocked={isLocked}
+          poolStatus={pool.status}
+          freshness={classifyFreshness(pool.refreshed_at)}
+          refreshedAt={pool.refreshed_at}
+          lastRefreshError={pool.last_refresh_error}
+        />
+      )}
 
       {isLocked && hasEntry ? (
         <>

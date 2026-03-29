@@ -1,6 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { Leaderboard } from '@/components/leaderboard'
 import { StatusChip } from '@/components/StatusChip'
+import { TrustStatusBar } from '@/components/TrustStatusBar'
+import { classifyFreshness } from '@/lib/freshness'
+import { getPoolById } from '@/lib/pool-queries'
 import { notFound } from 'next/navigation'
 
 export default async function SpectatorPage({
@@ -11,11 +14,7 @@ export default async function SpectatorPage({
   const { poolId } = await params
   const supabase = await createClient()
 
-  const { data: pool } = await supabase
-    .from('pools')
-    .select('*')
-    .eq('id', poolId)
-    .single()
+  const pool = await getPoolById(supabase, poolId)
 
   if (!pool) {
     notFound()
@@ -36,6 +35,16 @@ export default async function SpectatorPage({
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {(pool.status === 'live' || pool.status === 'complete') && (
+          <TrustStatusBar
+            className="mb-6"
+            isLocked={true}
+            poolStatus={pool.status}
+            freshness={classifyFreshness(pool.refreshed_at)}
+            refreshedAt={pool.refreshed_at}
+            lastRefreshError={pool.last_refresh_error}
+          />
+        )}
         <Leaderboard poolId={poolId} />
       </main>
     </div>
