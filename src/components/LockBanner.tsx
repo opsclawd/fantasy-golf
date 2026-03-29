@@ -1,9 +1,10 @@
 interface LockBannerProps {
   isLocked: boolean
-  deadline: string | null | undefined
+  deadline: string
+  poolStatus: string
 }
 
-function formatDeadline(deadline: string | null | undefined) {
+function formatDeadline(deadline: string) {
   if (!deadline) {
     return 'TBD'
   }
@@ -19,13 +20,17 @@ function formatDeadline(deadline: string | null | undefined) {
   })
 }
 
-export function LockBanner({ isLocked, deadline }: LockBannerProps) {
+export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) {
   const formattedDeadline = formatDeadline(deadline)
   const icon = isLocked ? 'LOCKED' : 'OPEN'
   const title = isLocked ? 'Picks are locked' : 'Picks are open'
   const details = isLocked
-    ? `Deadline was ${formattedDeadline}`
-    : `Submit picks before ${formattedDeadline}`
+    ? poolStatus === 'live'
+      ? 'This pool is live and no longer accepts picks.'
+      : poolStatus === 'complete'
+        ? 'This pool is complete and no longer accepts picks.'
+        : 'The submission deadline has passed.'
+    : `Deadline: ${formattedDeadline}`
   const classes = isLocked
     ? 'border-amber-200 bg-amber-50 text-amber-900'
     : 'border-green-200 bg-green-50 text-green-900'
