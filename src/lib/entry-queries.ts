@@ -21,12 +21,16 @@ export async function getEntryByPoolAndUser(
   poolId: string,
   userId: string
 ): Promise<Entry | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('entries')
     .select('*')
     .eq('pool_id', poolId)
     .eq('user_id', userId)
-    .single()
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to fetch entry for pool ${poolId}: ${error.message}`)
+  }
 
   return (data as Entry | null) ?? null
 }
@@ -68,17 +72,25 @@ export async function getPoolsForMember(
     .eq('user_id', userId)
     .order('joined_at', { ascending: false })
 
-  if (membersError || !memberRows) return []
+  if (membersError) {
+    throw new Error(`Failed to fetch pools for member ${userId}: ${membersError.message}`)
+  }
+
+  if (!memberRows) return []
 
   const members = memberRows as PoolMemberWithPool[]
   const poolIds = members.map((member) => member.pool_id)
   if (poolIds.length === 0) return []
 
-  const { data: entries } = await supabase
+  const { data: entries, error: entriesError } = await supabase
     .from('entries')
     .select('pool_id, golfer_ids')
     .eq('user_id', userId)
     .in('pool_id', poolIds)
+
+  if (entriesError) {
+    throw new Error(`Failed to fetch entries for member ${userId}: ${entriesError.message}`)
+  }
 
   const entryByPoolId = new Map<string, EntrySummary>()
   for (const entry of entries || []) {
