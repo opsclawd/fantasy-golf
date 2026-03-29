@@ -14,6 +14,8 @@ export type SubmitPicksState = {
 export async function submitPicks(formData: FormData): Promise<SubmitPicksState> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const saveErrorMessage = 'Failed to save picks. Please try again.'
+  const lockErrorMessage = 'This pool is locked. Picks can no longer be changed.'
 
   if (!user) {
     redirect('/sign-in')
@@ -47,59 +49,95 @@ export async function submitPicks(formData: FormData): Promise<SubmitPicksState>
 
   const selectedGolferIds = golferIds as string[]
 
-  const pool = await getPoolById(supabase, poolId)
-  if (!pool) {
-    return { error: 'Pool not found.' }
-  }
+  try {
+    const pool = await getPoolById(supabase, poolId)
+    if (!pool) {
+      return { error: 'Pool not found.' }
+    }
 
-  const member = await isPoolMember(supabase, poolId, user.id)
-  if (!member) {
-    return { error: 'You must join this pool before submitting picks.' }
-  }
+    const member = await isPoolMember(supabase, poolId, user.id)
+    if (!member) {
+      return { error: 'You must join this pool before submitting picks.' }
+    }
 
-  const locked = isPoolLocked(pool.status, pool.deadline)
-  const validation = validatePickSubmission({
-    golferIds: selectedGolferIds,
-    picksPerEntry: pool.picks_per_entry,
-    isLocked: locked,
-  })
+    const locked = isPoolLocked(pool.status, pool.deadline)
+    const validation = validatePickSubmission({
+      golferIds: selectedGolferIds,
+      picksPerEntry: pool.picks_per_entry,
+      isLocked: locked,
+    })
 
-  if (!validation.ok) {
-    return { error: validation.error }
-  }
+    if (!validation.ok) {
+      return { error: validation.error }
+    }
 
-  const existingEntry = await getEntryByPoolAndUser(supabase, poolId, user.id)
-  const auditAction = existingEntry ? 'picksUpdated' : 'picksSubmitted'
+    const { data: golfers, error: golferLookupError } = await supabase
+      .from('golfers')
+      .select('id')
+      .in('id', selectedGolferIds)
 
-  const { error: upsertError } = await upsertEntry(supabase, {
-    pool_id: poolId,
-    user_id: user.id,
-    golfer_ids: selectedGolferIds,
-  })
+    if (golferLookupError) {
+      console.error('Failed to validate golfer IDs', {
+        poolId,
+        userId: user.id,
+        error: golferLookupError,
+      })
+      return { error: 'Failed to submit picks.' }
+    }
 
-  if (upsertError) {
-    console.error('Failed to upsert entry', { poolId, userId: user.id, error: upsertError })
-    return { error: 'Failed to submit picks.' }
-  }
+    if (!golfers || golfers.length !== selectedGolferIds.length) {
+      return { error: 'One or more selected golfers are invalid.' }
+    }
 
-  const { error: auditError } = await insertAuditEvent(supabase, {
-    pool_id: poolId,
-    user_id: user.id,
-    action: auditAction,
-    details: {
+    const latestPool = await getPoolById(supabase, poolId)
+    if (!latestPool) {
+      return { error: 'Pool not found.' }
+    }
+
+    if (isPoolLocked(latestPool.status, latestPool.deadline)) {
+      return { error: lockErrorMessage }
+    }
+
+    const existingEntry = await getEntryByPoolAndUser(supabase, poolId, user.id)
+    const auditAction = existingEntry ? 'picksUpdated' : 'picksSubmitted'
+
+    const { error: upsertError } = await upsertEntry(supabase, {
+      pool_id: poolId,
+      user_id: user.id,
       golfer_ids: selectedGolferIds,
-      picks_per_entry: pool.picks_per_entry,
-    },
-  })
+    })
 
-  if (auditError) {
-    console.error('Failed to insert picks audit event', {
+    if (upsertError) {
+      console.error('Failed to upsert entry', { poolId, userId: user.id, error: upsertError })
+      return { error: 'Failed to submit picks.' }
+    }
+
+    const { error: auditError } = await insertAuditEvent(supabase, {
+      pool_id: poolId,
+      user_id: user.id,
+      action: auditAction,
+      details: {
+        golfer_ids: selectedGolferIds,
+        picks_per_entry: pool.picks_per_entry,
+      },
+    })
+
+    if (auditError) {
+      console.error('Failed to insert picks audit event', {
+        poolId,
+        userId: user.id,
+        action: auditAction,
+        error: auditError,
+      })
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Unexpected failure while submitting picks', {
       poolId,
       userId: user.id,
-      action: auditAction,
-      error: auditError,
+      error,
     })
+    return { error: saveErrorMessage }
   }
-
-  return { success: true }
 }
