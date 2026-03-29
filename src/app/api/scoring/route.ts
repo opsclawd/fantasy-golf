@@ -131,16 +131,22 @@ export async function POST(request: Request) {
       payload: { ranked, completedHoles, updatedAt: refreshedAt },
     })
 
+    const refreshDetails = buildRefreshAuditDetails(
+      oldScoresMap,
+      allScores,
+      completedHoles,
+      allScores.length
+    )
+    const scoreRefreshDetails: Record<string, unknown> = {
+      ...refreshDetails,
+      entryCount: (entries || []).length,
+    }
+
     await insertAuditEvent(supabase, {
       pool_id: pool.id,
       user_id: null,
       action: 'scoreRefreshCompleted',
-      details: buildRefreshAuditDetails(
-        oldScoresMap,
-        allScores,
-        completedHoles,
-        (entries || []).length
-      ) as unknown as Record<string, unknown>,
+      details: scoreRefreshDetails,
     })
 
     return NextResponse.json({
