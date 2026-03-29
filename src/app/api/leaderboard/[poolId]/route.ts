@@ -42,6 +42,9 @@ export async function GET(
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
           golferStatuses: {},
+          golferNames: {},
+          golferCountries: {},
+          golferScores: {},
         },
         error: null,
       })
@@ -62,6 +65,9 @@ export async function GET(
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
           golferStatuses: {},
+          golferNames: {},
+          golferCountries: {},
+          golferScores: {},
         },
         error: null,
       })
@@ -75,6 +81,26 @@ export async function GET(
       if (ts.status !== 'active') {
         golferStatuses[ts.golfer_id] = ts.status
       }
+    }
+
+    // Fetch golfer names for display
+    const allGolferIds = new Set<string>()
+    for (const entry of entries) {
+      for (const id of (entry as { golfer_ids: string[] }).golfer_ids) {
+        allGolferIds.add(id)
+      }
+    }
+
+    const { data: golferRows } = await supabase
+      .from('golfers')
+      .select('id, name, country')
+      .in('id', Array.from(allGolferIds))
+
+    const golferNames: Record<string, string> = {}
+    const golferCountries: Record<string, string> = {}
+    for (const g of golferRows || []) {
+      golferNames[g.id] = g.name
+      golferCountries[g.id] = g.country ?? ''
     }
 
     // Calculate completed holes from DB scores
@@ -104,6 +130,9 @@ export async function GET(
         poolStatus: pool.status,
         lastRefreshError: pool.last_refresh_error,
         golferStatuses,
+        golferNames,
+        golferCountries,
+        golferScores: Object.fromEntries(golferScoresMap),
       },
       error: null,
     })
