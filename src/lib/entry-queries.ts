@@ -1,0 +1,94 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Entry, MemberRole, Pool } from './supabase/types'
+
+type MemberPool = Pick<
+  Pool,
+  'id' | 'name' | 'tournament_name' | 'status' | 'deadline' | 'picks_per_entry'
+>
+
+type EntrySummary = {
+  golfer_ids: string[]
+}
+
+type PoolMemberWithPool = {
+  pool_id: string
+  role: MemberRole
+  pools: MemberPool | MemberPool[] | null
+}
+
+export async function getEntryByPoolAndUser(
+  supabase: SupabaseClient,
+  poolId: string,
+  userId: string
+): Promise<Entry | null> {
+  const { data } = await supabase
+    .from('entries')
+    .select('*')
+    .eq('pool_id', poolId)
+    .eq('user_id', userId)
+    .single()
+
+  return (data as Entry | null) ?? null
+}
+
+export async function upsertEntry(
+  supabase: SupabaseClient,
+  entry: Pick<Entry, 'pool_id' | 'user_id' | 'golfer_ids' | 'updated_at'>
+): Promise<{ data: Entry | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from('entries')
+    .upsert(entry, { onConflict: 'pool_id,user_id' })
+    .select()
+    .single()
+
+  if (error) return { data: null, error: error.message }
+  return { data: data as Entry, error: null }
+}
+
+export async function getPoolsForMember(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<
+  Array<{
+    pool_id: string
+    role: MemberRole
+    pool: MemberPool | null
+    entry: EntrySummary | null
+  }>
+> {
+  const { data: memberRows, error: membersError } = await supabase
+    .from('pool_members')
+    .select('pool_id, role, pools(id, name, tournament_name, status, deadline, picks_per_entry)')
+    .eq('user_id', userId)
+
+  if (membersError || !memberRows) return []
+
+  const members = memberRows as PoolMemberWithPool[]
+  const poolIds = members.map((member) => member.pool_id)
+  if (poolIds.length === 0) return []
+
+  const { data: entries } = await supabase
+    .from('entries')
+    .select('pool_id, golfer_ids')
+    .eq('user_id', userId)
+    .in('pool_id', poolIds)
+
+  const entryByPoolId = new Map<string, EntrySummary>()
+  for (const entry of entries || []) {
+    const row = entry as { pool_id: string; golfer_ids: string[] }
+    entryByPoolId.set(row.pool_id, { golfer_ids: row.golfer_ids })
+  }
+
+  return members.map((member) => {
+    const poolValue = Array.isArray(member.pools)
+      ? member.pools[0] ?? null
+      : member.pools
+
+    return {
+      pool_id: member.pool_id,
+      role: member.role,
+      pool: poolValue,
+      entry: entryByPoolId.get(member.pool_id) ?? null,
+    }
+  })
+}
