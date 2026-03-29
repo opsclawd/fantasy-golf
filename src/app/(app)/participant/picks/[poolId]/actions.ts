@@ -1,34 +1,104 @@
 'use server'
 
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getEntryByPoolAndUser, upsertEntry } from '@/lib/entry-queries'
+import { isPoolLocked, validatePickSubmission } from '@/lib/picks'
+import { getPoolById, insertAuditEvent, isPoolMember } from '@/lib/pool-queries'
 
-export async function submitPicks(formData: FormData) {
+export type SubmitPicksState = {
+  error?: string
+  success?: boolean
+} | null
+
+export async function submitPicks(formData: FormData): Promise<SubmitPicksState> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
-  if (!user) redirect('/sign-in')
 
-  const poolId = formData.get('poolId') as string
-  const golferIds = JSON.parse(formData.get('golferIds') as string)
-
-  if (!Array.isArray(golferIds) || golferIds.length !== 4) {
-    throw new Error('Please select exactly 4 golfers')
+  if (!user) {
+    return { error: 'You must be signed in to submit picks.' }
   }
 
-  const { error } = await supabase.from('entries').upsert({
-    pool_id: poolId,
-    user_id: user.id,
-    golfer_ids: golferIds,
-    updated_at: new Date().toISOString(),
-  }, {
-    onConflict: 'pool_id,user_id'
+  const rawPoolId = formData.get('poolId')
+  const poolId = typeof rawPoolId === 'string' ? rawPoolId.trim() : ''
+  if (!poolId) {
+    return { error: 'Pool ID is required.' }
+  }
+
+  const rawGolferIds = formData.get('golferIds')
+  if (typeof rawGolferIds !== 'string') {
+    return { error: 'Golfer selections are required.' }
+  }
+
+  let golferIds: unknown
+  try {
+    golferIds = JSON.parse(rawGolferIds)
+  } catch {
+    return { error: 'Invalid golfer selections payload.' }
+  }
+
+  if (!Array.isArray(golferIds)) {
+    return { error: 'Invalid golfer selections payload.' }
+  }
+
+  if (golferIds.some((id) => typeof id !== 'string')) {
+    return { error: 'Invalid golfer selections payload.' }
+  }
+
+  const selectedGolferIds = golferIds as string[]
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) {
+    return { error: 'Pool not found.' }
+  }
+
+  const member = await isPoolMember(supabase, poolId, user.id)
+  if (!member) {
+    return { error: 'You must join this pool before submitting picks.' }
+  }
+
+  const locked = isPoolLocked(pool.status, pool.deadline)
+  const validation = validatePickSubmission({
+    golferIds: selectedGolferIds,
+    picksPerEntry: pool.picks_per_entry,
+    isLocked: locked,
   })
 
-  if (error) {
-    console.error(error)
-    throw new Error('Failed to submit picks')
+  if (!validation.ok) {
+    return { error: validation.error }
   }
 
-  redirect(`/participant/picks/${poolId}`)
+  const existingEntry = await getEntryByPoolAndUser(supabase, poolId, user.id)
+  const auditAction = existingEntry ? 'picksUpdated' : 'picksSubmitted'
+
+  const { error: upsertError } = await upsertEntry(supabase, {
+    pool_id: poolId,
+    user_id: user.id,
+    golfer_ids: selectedGolferIds,
+  })
+
+  if (upsertError) {
+    console.error('Failed to upsert entry', { poolId, userId: user.id, error: upsertError })
+    return { error: 'Failed to submit picks.' }
+  }
+
+  const { error: auditError } = await insertAuditEvent(supabase, {
+    pool_id: poolId,
+    user_id: user.id,
+    action: auditAction,
+    details: {
+      golfer_ids: selectedGolferIds,
+      picks_per_entry: pool.picks_per_entry,
+    },
+  })
+
+  if (auditError) {
+    console.error('Failed to insert picks audit event', {
+      poolId,
+      userId: user.id,
+      action: auditAction,
+      error: auditError,
+    })
+  }
+
+  return { success: true }
 }
