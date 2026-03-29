@@ -1,9 +1,10 @@
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { Leaderboard } from '@/components/leaderboard'
+import { notFound } from 'next/navigation'
 
 export default async function SpectatorPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { data: pool } = await supabase
     .from('pools')
@@ -12,7 +13,7 @@ export default async function SpectatorPage({ params }: { params: Promise<{ pool
     .single()
 
   if (!pool) {
-    return <div>Pool not found</div>
+    notFound()
   }
 
   return (

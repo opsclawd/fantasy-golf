@@ -1,5 +1,6 @@
+import { describe, it, expect } from 'vitest'
 import { getHoleScore, getEntryHoleScore, calculateEntryTotalScore, calculateEntryBirdies, rankEntries } from '../scoring'
-import { TournamentScore, Entry } from '../supabase/types'
+import type { TournamentScore, Entry } from '../supabase/types'
 
 describe('scoring', () => {
   describe('getHoleScore', () => {

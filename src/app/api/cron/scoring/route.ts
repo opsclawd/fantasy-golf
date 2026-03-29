@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const res = await fetch(process.env.NEXT_PUBLIC_APP_URL + '/api/scoring', {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL
+
+  if (!appUrl) {
+    return NextResponse.json(
+      { error: 'Missing NEXT_PUBLIC_APP_URL environment variable' },
+      { status: 500 }
+    )
+  }
+
+  const targetUrl = new URL('/api/scoring', appUrl).toString()
+  const res = await fetch(targetUrl, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${process.env.CRON_SECRET}` }
   })
