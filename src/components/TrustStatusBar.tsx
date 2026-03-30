@@ -1,6 +1,8 @@
 import type { FreshnessStatus, PoolStatus } from '@/lib/supabase/types'
 import { createElement } from 'react'
 
+import { panelClasses, sectionHeadingClasses } from './uiStyles'
+
 interface GetTrustStatusBarStateInput {
   isLocked: boolean
   poolStatus: PoolStatus
@@ -13,7 +15,9 @@ type TrustTone = 'info' | 'warning' | 'error'
 
 interface TrustStatusBarState {
   heading: string
+  lockLabel: 'Open' | 'Locked'
   lockMessage: string
+  freshnessLabel: 'Current' | 'Stale' | 'No data'
   freshnessMessage: string
   showFreshness: boolean
   tone: TrustTone
@@ -86,18 +90,31 @@ function getFreshnessMessage(
 function toneClasses(tone: TrustTone): string {
   switch (tone) {
     case 'error':
-      return 'border-red-300 bg-red-50 text-red-900'
+      return 'border-red-200/80 bg-red-50/95 text-red-950'
     case 'warning':
-      return 'border-amber-300 bg-amber-50 text-amber-900'
+      return 'border-amber-200/80 bg-amber-50/95 text-amber-950'
     default:
-      return 'border-slate-300 bg-slate-50 text-slate-900'
+      return 'border-emerald-200/80 bg-white/95 text-slate-900'
   }
+}
+
+function getFreshnessLabel(freshness: FreshnessStatus): TrustStatusBarState['freshnessLabel'] {
+  if (freshness === 'current') {
+    return 'Current'
+  }
+
+  if (freshness === 'stale') {
+    return 'Stale'
+  }
+
+  return 'No data'
 }
 
 export function getTrustStatusBarState(
   input: GetTrustStatusBarStateInput,
 ): TrustStatusBarState {
-  const heading = input.isLocked ? 'Picks are locked' : 'Picks are open'
+  const heading = 'Tournament status'
+  const lockLabel = input.isLocked ? 'Locked' : 'Open'
   const lockMessage = getLockMessage(input.isLocked, input.poolStatus)
   const showFreshness = input.poolStatus !== 'open'
   const freshnessState = getFreshnessMessage(
@@ -108,7 +125,9 @@ export function getTrustStatusBarState(
 
   return {
     heading,
+    lockLabel,
     lockMessage,
+    freshnessLabel: getFreshnessLabel(input.freshness),
     freshnessMessage: freshnessState.freshnessMessage,
     showFreshness,
     tone: freshnessState.tone,
@@ -120,7 +139,9 @@ export function getTrustStatusBarState(
 
 export function TrustStatusBar({ className, ...input }: TrustStatusBarProps) {
   const state = getTrustStatusBarState(input)
-  const classes = `rounded-lg border p-3 ${toneClasses(state.tone)} ${className ?? ''}`.trim()
+  const classes = [panelClasses(), 'border p-4', toneClasses(state.tone), className]
+    .filter(Boolean)
+    .join(' ')
 
   return createElement(
     'section',
@@ -130,14 +151,40 @@ export function TrustStatusBar({ className, ...input }: TrustStatusBarProps) {
       'aria-live': state.ariaLive,
     },
     createElement(
-      'p',
-      { className: 'flex items-center gap-2 text-sm font-semibold' },
-      createElement('span', { 'aria-hidden': 'true' }, state.icon),
-      createElement('span', null, state.heading),
+      'div',
+      { className: 'flex items-start justify-between gap-3' },
+      createElement(
+        'div',
+        { className: 'space-y-1' },
+        createElement('p', { className: sectionHeadingClasses() }, state.heading),
+        createElement(
+          'p',
+          { className: 'flex items-center gap-2 text-base font-semibold text-slate-950' },
+          createElement('span', { 'aria-hidden': 'true' }, state.icon),
+          createElement('span', null, `${state.lockLabel} for this pool`),
+        ),
+      ),
+      createElement(
+        'span',
+        {
+          className:
+            'inline-flex items-center rounded-full border border-current/10 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]',
+        },
+        state.lockLabel,
+      ),
     ),
-    createElement('p', { className: 'mt-1 text-sm' }, state.lockMessage),
+    createElement('p', { className: 'mt-3 text-sm text-slate-800' }, state.lockMessage),
     state.showFreshness
-      ? createElement('p', { className: 'mt-1 text-sm' }, state.freshnessMessage)
+      ? createElement(
+          'div',
+          { className: 'mt-3 rounded-2xl border border-black/5 bg-white/65 px-3 py-2' },
+          createElement(
+            'p',
+            { className: 'text-xs font-semibold uppercase tracking-[0.18em] text-slate-500' },
+            `Freshness: ${state.freshnessLabel}`,
+          ),
+          createElement('p', { className: 'mt-1 text-sm text-slate-800' }, state.freshnessMessage),
+        )
       : null,
   )
 }

@@ -3,6 +3,20 @@ import { describe, expect, it } from 'vitest'
 import { getTrustStatusBarState } from '../TrustStatusBar'
 
 describe('getTrustStatusBarState', () => {
+  it('returns the shared heading copy for live pools', () => {
+    const result = getTrustStatusBarState({
+      isLocked: true,
+      poolStatus: 'live',
+      freshness: 'current',
+      refreshedAt: '2026-03-29T12:00:00.000Z',
+      lastRefreshError: null,
+    })
+
+    expect(result.heading).toBe('Tournament status')
+    expect(result.lockLabel).toBe('Locked')
+    expect(result.freshnessLabel).toBe('Current')
+  })
+
   it('sets showFreshness to false for open pools', () => {
     const result = getTrustStatusBarState({
       isLocked: false,
@@ -49,8 +63,10 @@ describe('getTrustStatusBarState', () => {
     })
 
     expect(result).toEqual({
-      heading: 'Picks are locked',
+      heading: 'Tournament status',
+      lockLabel: 'Locked',
       lockMessage: 'The tournament is live. No changes allowed.',
+      freshnessLabel: 'Current',
       freshnessMessage: 'Scores are current. Last updated at 2026-03-29T12:00:00.000Z.',
       tone: 'info',
       role: 'status',
@@ -70,8 +86,10 @@ describe('getTrustStatusBarState', () => {
     })
 
     expect(result).toEqual({
-      heading: 'Picks are open',
+      heading: 'Tournament status',
+      lockLabel: 'Open',
       lockMessage: 'You can edit picks until the deadline.',
+      freshnessLabel: 'Stale',
       freshnessMessage: 'Scores may be delayed. Data is stale.',
       tone: 'warning',
       role: 'status',
@@ -91,8 +109,10 @@ describe('getTrustStatusBarState', () => {
     })
 
     expect(result).toEqual({
-      heading: 'Picks are open',
+      heading: 'Tournament status',
+      lockLabel: 'Open',
       lockMessage: 'You can edit picks until the deadline.',
+      freshnessLabel: 'No data',
       freshnessMessage: 'No scoring data is available yet.',
       tone: 'warning',
       role: 'status',
@@ -112,8 +132,10 @@ describe('getTrustStatusBarState', () => {
     })
 
     expect(result).toEqual({
-      heading: 'Picks are open',
+      heading: 'Tournament status',
+      lockLabel: 'Open',
       lockMessage: 'You can edit picks until the deadline.',
+      freshnessLabel: 'Current',
       freshnessMessage: 'Last refresh error: PGATour API timed out.',
       tone: 'error',
       role: 'alert',

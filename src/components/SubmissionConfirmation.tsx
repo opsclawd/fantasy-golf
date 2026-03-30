@@ -1,3 +1,5 @@
+import { panelClasses, sectionHeadingClasses } from './uiStyles'
+
 interface SubmissionConfirmationProps {
   golferNames: Record<string, string>
   golferIds: string[]
@@ -12,43 +14,32 @@ export function SubmissionConfirmation({
   poolName,
 }: SubmissionConfirmationProps) {
   return (
-    <div className="space-y-4">
-      <div
-        className="rounded-lg border border-green-200 bg-green-50 p-3 sm:p-4"
+    <div className="space-y-5">
+      <section
+        className={`${panelClasses()} border border-emerald-200/80 bg-emerald-50/95 p-4`}
         role="status"
         aria-live="polite"
       >
-        <div className="mb-2 flex items-start gap-2">
-          <span aria-hidden="true" className="shrink-0 text-lg text-green-700">
-            &#x2713;
-          </span>
-          <p className="min-w-0 break-words text-sm font-semibold text-green-800 sm:text-base">
-            Entry submitted for {poolName}
-          </p>
-        </div>
-        <p className="break-words text-sm text-green-700">
+        <p className={`${sectionHeadingClasses()} text-emerald-800`}>Entry locked in</p>
+        <h2 className="mt-2 text-lg font-semibold text-emerald-950">{poolName}</h2>
+        <p className="mt-1 break-words text-sm text-emerald-900">
           {isLocked
-            ? 'Your picks are locked and cannot be changed.'
-            : 'You can edit your picks until the deadline.'}
+            ? 'Your picks are final for this tournament.'
+            : 'Your picks are saved and still editable until lock.'}
         </p>
-      </div>
+      </section>
 
-      <div>
-        <h3 className="font-medium mb-2">Your picks</h3>
-          <ul className="space-y-1" aria-label="Selected golfers">
-            {golferIds.map((id, index) => (
-              <li
-                key={id}
-                className="flex items-start gap-2 rounded bg-gray-50 p-2"
-              >
-                <span className="w-5 shrink-0 text-right text-xs text-gray-400">
-                  {index + 1}.
-                </span>
-                <span className="min-w-0 break-words">{golferNames[id] || id}</span>
-              </li>
-            ))}
-          </ul>
-      </div>
+      <section className={`${panelClasses()} p-4`}>
+        <p className={sectionHeadingClasses()}>Current picks</p>
+        <ul className="mt-3 space-y-2" aria-label="Selected golfers">
+          {golferIds.map((id, index) => (
+            <li key={id} className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm">
+              <span className="text-xs font-semibold text-slate-400">{index + 1}</span>
+              <span className="font-medium text-slate-900">{golferNames[id] || id}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }

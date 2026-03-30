@@ -1,5 +1,7 @@
 import type { FreshnessStatus } from '@/lib/supabase/types'
 
+import { sectionHeadingClasses } from './uiStyles'
+
 const FRESHNESS_CONFIG: Record<
   FreshnessStatus,
   { label: string; icon: string; classes: string; srText: string }
@@ -7,19 +9,19 @@ const FRESHNESS_CONFIG: Record<
   current: {
     label: 'Current',
     icon: '\u2713', // checkmark
-    classes: 'bg-green-100 text-green-800',
+    classes: 'border-emerald-200 bg-emerald-50 text-emerald-900',
     srText: 'Data is current',
   },
   stale: {
     label: 'Stale',
     icon: '\u26A0', // warning
-    classes: 'bg-amber-100 text-amber-800',
+    classes: 'border-amber-200 bg-amber-50 text-amber-900',
     srText: 'Data may be outdated',
   },
   unknown: {
     label: 'No data yet',
     icon: '\u2014', // em dash
-    classes: 'bg-gray-100 text-gray-600',
+    classes: 'border-slate-200 bg-slate-100 text-slate-700',
     srText: 'No scoring data available',
   },
 }
@@ -39,7 +41,7 @@ export function FreshnessChip({ status, refreshedAt }: FreshnessChipProps) {
 
   return (
     <span
-      className={`inline-flex min-w-0 shrink items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.classes}`}
+      className={`inline-flex min-w-0 shrink items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${config.classes}`}
       role="status"
       aria-live="polite"
       aria-label={config.srText}
@@ -47,7 +49,9 @@ export function FreshnessChip({ status, refreshedAt }: FreshnessChipProps) {
       <span aria-hidden="true" className="shrink-0">
         {config.icon}
       </span>
-      <span className="truncate">{config.label}</span>
+      <span className={`${sectionHeadingClasses().replace('text-emerald-800/70', 'text-current')} truncate`}>
+        {config.label}
+      </span>
       {timeLabel && (
         <span className="ml-1 min-w-0 truncate text-xs opacity-75">{timeLabel}</span>
       )}
