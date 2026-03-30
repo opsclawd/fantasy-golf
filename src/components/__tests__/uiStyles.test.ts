@@ -27,8 +27,10 @@ describe('uiStyles', () => {
   })
 
   it('returns visible focus classes for keyboard-scroll regions', () => {
+    expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-inset')
     expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-2')
     expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-emerald-500')
+    expect(scrollRegionFocusClasses()).not.toContain('focus-visible:ring-offset-2')
     expect(scrollRegionFocusClasses()).not.toBe('focus-visible:outline-none')
   })
 })

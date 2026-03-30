@@ -24,10 +24,9 @@ export function metricCardClasses() {
 export function scrollRegionFocusClasses() {
   return [
     'focus-visible:outline-none',
+    'focus-visible:ring-inset',
     'focus-visible:ring-2',
     'focus-visible:ring-emerald-500',
-    'focus-visible:ring-offset-2',
-    'focus-visible:ring-offset-white',
   ].join(' ')
 }
 
