@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import { createPool, type CreatePoolState } from './actions'
 
@@ -30,6 +30,11 @@ function setCachedTournaments(year: string, tournaments: TournamentOption[]) {
   localStorage.setItem(`${CACHE_KEY}_${year}`, JSON.stringify(tournaments))
 }
 
+function filterUpcoming(tournaments: TournamentOption[]) {
+  const now = new Date()
+  return tournaments.filter(t => new Date(t.startDate) > now)
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus()
 
@@ -57,23 +62,7 @@ export function CreatePoolForm() {
   const [loadingTournaments, setLoadingTournaments] = useState(false)
   const [tournamentError, setTournamentError] = useState('')
 
-  useEffect(() => {
-    const cached = getCachedTournaments(currentYear)
-    if (cached) {
-      setTournaments(cached)
-      setAvailableTournaments(filterUpcoming(cached))
-      setTournamentError('')
-    } else {
-      fetchTournaments()
-    }
-  }, [currentYear])
-
-  const filterUpcoming = (tourns: TournamentOption[]) => {
-    const now = new Date()
-    return tourns.filter(t => new Date(t.startDate) > now)
-  }
-
-  const fetchTournaments = async () => {
+  const fetchTournaments = useCallback(async () => {
     setLoadingTournaments(true)
     try {
       const res = await fetch(`/api/tournaments?year=${currentYear}`)
@@ -112,7 +101,19 @@ export function CreatePoolForm() {
     } finally {
       setLoadingTournaments(false)
     }
-  }
+  }, [currentYear])
+
+  useEffect(() => {
+    const cached = getCachedTournaments(currentYear)
+    if (cached) {
+      setTournaments(cached)
+      setAvailableTournaments(filterUpcoming(cached))
+      setTournamentError('')
+      return
+    }
+
+    void fetchTournaments()
+  }, [currentYear, fetchTournaments])
 
   const handleTournamentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = e.target.value
