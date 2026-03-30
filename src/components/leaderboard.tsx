@@ -9,7 +9,7 @@ import { DataAlert } from './DataAlert'
 import { LeaderboardHeader } from './LeaderboardHeader'
 import { LeaderboardRow, type RankedEntry } from './LeaderboardRow'
 import { shouldRenderLeaderboardTrustStatus } from './leaderboard-trust-status'
-import { panelClasses } from './uiStyles'
+import { panelClasses, scrollRegionFocusClasses } from './uiStyles'
 import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib/supabase/types'
 
 interface LeaderboardData {
@@ -177,7 +177,7 @@ export function Leaderboard({
         />
       ) : (
         <div
-          className="overflow-x-auto px-2 pb-2 focus-visible:outline-none sm:px-3 sm:pb-3"
+          className={`overflow-x-auto px-2 pb-2 ${scrollRegionFocusClasses()} sm:px-3 sm:pb-3`}
           tabIndex={0}
           aria-label="Leaderboard standings"
         >

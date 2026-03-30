@@ -13,7 +13,7 @@ import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
 import Link from 'next/link'
 import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
-import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
+import { panelClasses, scrollRegionFocusClasses, sectionHeadingClasses } from '@/components/uiStyles'
 
 type PoolEntry = {
   id: string
@@ -160,7 +160,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
           </div>
         </div>
         <div
-          className="overflow-x-auto px-1 pb-1 focus-visible:outline-none"
+          className={`overflow-x-auto px-1 pb-1 ${scrollRegionFocusClasses()}`}
           tabIndex={0}
           aria-label="Participant entries"
         >

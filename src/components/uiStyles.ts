@@ -21,6 +21,16 @@ export function metricCardClasses() {
   return [panelClasses(), 'min-h-[8rem]', 'p-5'].join(' ')
 }
 
+export function scrollRegionFocusClasses() {
+  return [
+    'focus-visible:outline-none',
+    'focus-visible:ring-2',
+    'focus-visible:ring-emerald-500',
+    'focus-visible:ring-offset-2',
+    'focus-visible:ring-offset-white',
+  ].join(' ')
+}
+
 export function sectionHeadingClasses() {
   return [
     'text-[0.7rem]',

@@ -4,6 +4,7 @@ import {
   metricCardClasses,
   pageShellClasses,
   panelClasses,
+  scrollRegionFocusClasses,
   sectionHeadingClasses,
 } from '../uiStyles'
 
@@ -23,5 +24,11 @@ describe('uiStyles', () => {
 
   it('returns the shared heading wrapper classes', () => {
     expect(sectionHeadingClasses()).toContain('tracking-[0.18em]')
+  })
+
+  it('returns visible focus classes for keyboard-scroll regions', () => {
+    expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-2')
+    expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-emerald-500')
+    expect(scrollRegionFocusClasses()).not.toBe('focus-visible:outline-none')
   })
 })
