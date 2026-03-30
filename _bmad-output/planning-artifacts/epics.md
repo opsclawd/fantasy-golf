@@ -144,6 +144,21 @@ FR33: Epic 5 - Provide an online-only PWA experience.
 FR34: Epic 5 - Support desktop commissioner and mobile player flows.
 FR35: Epic 5 - Deliver a responsive modern browser experience.
 FR36: Epic 5 - Meet basic accessibility needs.
+FR5: Epic 6 - See pool and tournament status with stronger visual hierarchy.
+FR7: Epic 6 - Review participation and entry status with clearer scanning.
+FR10: Epic 6 - Use the pool on mobile web with improved UI consistency.
+FR12: Epic 6 - Track remaining picks with a polished progress treatment.
+FR14: Epic 6 - Get submission confirmation with stronger emphasis.
+FR15: Epic 6 - Review current picks with improved summary presentation.
+FR20: Epic 6 - Display the live leaderboard with a more polished layout.
+FR21: Epic 6 - Show current vs stale data with better visibility.
+FR25: Epic 6 - View golfer details in a more refined detail view.
+FR27: Epic 6 - Inspect golfer-related pool details with stronger support views.
+FR31: Epic 6 - Surface fallback or failure states with trustable styling.
+FR32: Epic 6 - Show lock-state and freshness messaging consistently across the UI.
+FR34: Epic 6 - Support desktop commissioner and mobile player flows with cohesive responsive UI.
+FR35: Epic 6 - Deliver a responsive modern browser experience with improved polish.
+FR36: Epic 6 - Meet basic accessibility needs with stronger hierarchy and focus states.
 
 ## Epic List
 
@@ -166,6 +181,10 @@ Players can inspect golfer detail and understand how selected golfers affect the
 ### Epic 5: Trust the system and use it everywhere
 Commissioners can review audit data, investigate scoring issues, and rely on fallback behavior, while the product remains responsive, accessible, and usable as a PWA across desktop and mobile.
 **FRs covered:** FR28, FR29, FR30, FR31, FR32, FR33, FR34, FR35, FR36
+
+### Epic 6: Deliver a cohesive modern UI across the product
+Users get a full visual and interaction overhaul so every screen feels like one consistent, premium fantasy sports experience with clear hierarchy, strong status signaling, polished mobile behavior, and F1-inspired scoreboard clarity.
+**FRs covered:** FR5, FR7, FR10, FR12, FR14, FR15, FR20, FR21, FR25, FR27, FR31, FR32, FR34, FR35, FR36
 
 ## Epic 1: Launch and manage a private pool
 
@@ -610,3 +629,133 @@ So that I can use it on desktop and mobile without a native app.
 **Then** focus states and status changes remain perceivable
 **And** the key flows remain accessible
 **And** status chips, confirmation states, and errors remain legible on small screens
+
+## Epic 6: Deliver a cohesive modern UI across the product
+
+Users get a full visual and interaction overhaul so every screen feels like one consistent, premium fantasy sports experience with clear hierarchy, strong status signaling, polished mobile behavior, and F1-inspired scoreboard clarity.
+
+### Story 6.1: Establish a unified visual system
+
+As a player or commissioner,
+I want the app to use one consistent visual system,
+So that every screen feels like part of the same product.
+
+**Acceptance Criteria:**
+
+**Given** I move between commissioner and player screens
+**When** I view headers, cards, buttons, and status elements
+**Then** they use the same spacing, typography, and color treatment
+**And** the layout feels visually consistent across the app
+
+**Given** a screen uses legacy styling patterns
+**When** the updated UI is applied
+**Then** the new design replaces the inconsistent styling
+**And** it preserves the existing user flow
+
+### Story 6.2: Make status and freshness states impossible to miss
+
+As a player or commissioner,
+I want lock state, freshness, and confirmation to stand out clearly,
+So that I always know what is current and what I can do.
+
+**Acceptance Criteria:**
+
+**Given** I view a pool, leaderboard, or entry screen
+**When** lock state or freshness changes
+**Then** the UI shows a clear chip, label, or icon alongside the text state
+**And** the state is understandable without relying on color alone
+
+**Given** a score feed is stale or unavailable
+**When** I view the leaderboard
+**Then** the stale or fallback state is visually prominent
+**And** it does not look like current live data
+
+### Story 6.3: Refresh the leaderboard for fast scanning
+
+As a player or commissioner,
+I want the leaderboard to be easier to scan at a glance,
+So that standings feel immediate and trustworthy.
+
+**Acceptance Criteria:**
+
+**Given** I open the leaderboard on desktop or mobile
+**When** the standings render
+**Then** rank, team/player name, and score are visually prioritized
+**And** the top entries are easy to compare quickly
+
+**Given** score changes occur during refresh
+**When** the leaderboard updates
+**Then** the change is visible without creating layout confusion
+**And** the update remains readable on small screens
+
+### Story 6.4: Rework the commissioner hub into a guided command center
+
+As a commissioner,
+I want the setup and management screens to feel guided and focused,
+So that running a pool feels simple instead of administrative.
+
+**Acceptance Criteria:**
+
+**Given** I open the commissioner hub
+**When** I review pool status, invite sharing, and participation
+**Then** the primary actions are visually grouped in a clear order
+**And** the screen emphasizes next steps instead of dense admin clutter
+
+**Given** the commissioner view has multiple status blocks
+**When** the layout renders
+**Then** the most important status information is visually dominant
+**And** secondary details remain accessible without competing for attention
+
+### Story 6.5: Polish the mobile pick flow and current-picks summary
+
+As a player,
+I want the pick flow to feel clean and reassuring on mobile,
+So that I can submit my entry quickly and confidently.
+
+**Acceptance Criteria:**
+
+**Given** I am selecting golfers on mobile
+**When** I add or remove picks
+**Then** the remaining-picks indicator updates immediately
+**And** the current entry summary stays visible and readable
+
+**Given** I submit a valid entry
+**When** the save completes
+**Then** the confirmation state is unmistakable
+**And** my saved picks remain visible in the updated design
+
+### Story 6.6: Standardize golfer detail, empty, and failure states
+
+As a player or commissioner,
+I want golfer detail and fallback states to be polished and consistent,
+So that the product stays clear even when data is incomplete or unavailable.
+
+**Acceptance Criteria:**
+
+**Given** I open a golfer detail view
+**When** the view renders
+**Then** the layout uses the same visual system as the rest of the app
+**And** golfer context is easy to scan
+
+**Given** a screen has no data, partial data, or a failure state
+**When** the UI renders that state
+**Then** the empty or fallback treatment is clearly intentional
+**And** it uses the same visual language as the rest of the product
+
+### Story 6.7: Finalize responsive motion and accessibility polish
+
+As a player or commissioner,
+I want the upgraded UI to work smoothly on desktop and mobile,
+So that the app feels polished and usable everywhere.
+
+**Acceptance Criteria:**
+
+**Given** I use the app on desktop or mobile
+**When** I navigate the primary screens
+**Then** the layout adapts cleanly to the viewport
+**And** touch targets, spacing, and typography remain usable
+
+**Given** I use keyboard navigation or focus states
+**When** I move through interactive controls
+**Then** focus is clearly visible
+**And** motion or transitions do not block usability or clarity
