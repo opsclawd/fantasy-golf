@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Leaderboard } from '@/components/leaderboard'
 import { StatusChip } from '@/components/StatusChip'
 import { TrustStatusBar } from '@/components/TrustStatusBar'
+import { pageShellClasses, sectionHeadingClasses } from '@/components/uiStyles'
 import { classifyFreshness } from '@/lib/freshness'
 import { getPoolById } from '@/lib/pool-queries'
 import { notFound } from 'next/navigation'
@@ -21,23 +22,26 @@ export default async function SpectatorPage({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
+    <div className={pageShellClasses()}>
+      <header className="border-b border-white/50 bg-white/55 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold">{pool.name}</h1>
-              <p className="text-gray-500">{pool.tournament_name}</p>
+              <p className={sectionHeadingClasses()}>Spectator view</p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                {pool.name}
+              </h1>
+              <p className="mt-2 text-sm text-slate-600 sm:text-base">{pool.tournament_name}</p>
             </div>
             <StatusChip status={pool.status} />
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
         {(pool.status === 'live' || pool.status === 'complete') && (
           <TrustStatusBar
-            className="mb-6"
+            className="border"
             isLocked={true}
             poolStatus={pool.status}
             freshness={classifyFreshness(pool.refreshed_at)}

@@ -2,22 +2,15 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ScoreDisplay } from './score-display'
 import { TrustStatusBar } from './TrustStatusBar'
 import { LeaderboardEmptyState } from './LeaderboardEmptyState'
 import { GolferDetailSheet } from './GolferDetailSheet'
 import { DataAlert } from './DataAlert'
+import { LeaderboardHeader } from './LeaderboardHeader'
+import { LeaderboardRow, type RankedEntry } from './LeaderboardRow'
 import { shouldRenderLeaderboardTrustStatus } from './leaderboard-trust-status'
+import { panelClasses } from './uiStyles'
 import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib/supabase/types'
-
-interface RankedEntry {
-  id: string
-  golfer_ids: string[]
-  totalScore: number
-  totalBirdies: number
-  rank: number
-  user_id: string
-}
 
 interface LeaderboardData {
   entries: RankedEntry[]
@@ -119,7 +112,7 @@ export function Leaderboard({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500" role="status">
+      <div className={`${panelClasses()} p-8 text-center text-slate-500`} role="status">
         Loading leaderboard...
       </div>
     )
@@ -127,7 +120,7 @@ export function Leaderboard({
 
   if (fetchError) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
+      <div className={`${panelClasses()} p-8 text-center`}>
         <DataAlert variant="error" title="Unable to load leaderboard" message={fetchError} />
       </div>
     )
@@ -138,6 +131,7 @@ export function Leaderboard({
   const { entries, completedHoles, refreshedAt, freshness, poolStatus, lastRefreshError, golferStatuses } = data
   const hasEntries = entries.length > 0
   const hasScores = completedHoles > 0
+  const showTrustStatusHeader = shouldRenderLeaderboardTrustStatus(poolStatus, hideTrustStatusHeader)
 
   // Detect which golfer IDs in entries are withdrawn
   const withdrawnGolferIds = new Set(
@@ -160,30 +154,21 @@ export function Leaderboard({
       : null
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-          <h2 className="text-lg font-semibold">Leaderboard</h2>
-          {completedHoles > 0 && (
-            <span className="text-sm text-gray-500">
-              Thru {completedHoles} holes
-            </span>
-          )}
-        </div>
-        {shouldRenderLeaderboardTrustStatus(poolStatus, hideTrustStatusHeader) && (
+    <div className={`${panelClasses()} overflow-hidden`}>
+      <LeaderboardHeader completedHoles={completedHoles} />
+      {showTrustStatusHeader && (
+        <div className="px-4 pb-4 pt-4 sm:px-5">
           <TrustStatusBar
-            className="mt-3"
+            className="border"
             isLocked={true}
             poolStatus={poolStatus}
             freshness={freshness}
             refreshedAt={refreshedAt}
             lastRefreshError={lastRefreshError}
           />
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Content */}
       {!hasEntries || !hasScores ? (
         <LeaderboardEmptyState
           poolStatus={poolStatus}
@@ -192,14 +177,22 @@ export function Leaderboard({
           lastRefreshError={lastRefreshError}
         />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto px-2 pb-2 sm:px-3 sm:pb-3">
+          <table className="min-w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
+            <thead className="bg-slate-100/80">
               <tr>
-                <th className="px-4 py-2 text-left text-sm">Rank</th>
-                <th className="px-4 py-2 text-left text-sm">Entry</th>
-                <th className="px-4 py-2 text-right text-sm">Score</th>
-                <th className="px-4 py-2 text-right text-sm">Birdies</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                  Rank
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                  Entry
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                  Score
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                  Birdies
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -208,57 +201,15 @@ export function Leaderboard({
                   (index > 0 && entries[index - 1].rank === entry.rank) ||
                   (index < entries.length - 1 && entries[index + 1]?.rank === entry.rank)
 
-                const entryHasWithdrawnGolfer = entry.golfer_ids.some(id =>
-                  withdrawnGolferIds.has(id)
-                )
-
                 return (
-                  <tr key={entry.id} className="border-t">
-                    <td className="px-4 py-2">
-                      <span
-                        className={`inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1 text-center rounded text-sm ${
-                          entry.rank === 1
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : entry.rank === 2
-                              ? 'bg-gray-100 text-gray-800'
-                              : entry.rank === 3
-                                ? 'bg-orange-100 text-orange-800'
-                                : ''
-                        }`}
-                      >
-                        {isTied ? `T${entry.rank}` : entry.rank}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="text-sm text-gray-700 mb-1">
-                        {entry.user_id.slice(0, 8)}
-                      </div>
-                      <div className="flex gap-1 flex-wrap">
-                        {entry.golfer_ids.map(id => {
-                          const isWd = withdrawnGolferIds.has(id)
-                          return (
-                            <button
-                              key={id}
-                              type="button"
-                              onClick={() => setSelectedGolferId(id)}
-                              className={`px-1.5 py-0.5 rounded text-xs hover:ring-1 hover:ring-blue-400 ${
-                                isWd
-                                  ? 'bg-amber-50 text-amber-700 line-through'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}
-                              aria-label={`View details for ${data?.golferNames?.[id] ?? id}`}
-                            >
-                              {data?.golferNames?.[id] ?? id.slice(0, 8)}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2 text-right font-mono">
-                      <ScoreDisplay score={entry.totalScore} />
-                    </td>
-                    <td className="px-4 py-2 text-right">{entry.totalBirdies}</td>
-                  </tr>
+                  <LeaderboardRow
+                    key={entry.id}
+                    entry={entry}
+                    isTied={isTied}
+                    golferNames={data.golferNames}
+                    withdrawnGolferIds={withdrawnGolferIds}
+                    onSelectGolfer={setSelectedGolferId}
+                  />
                 )
               })}
             </tbody>

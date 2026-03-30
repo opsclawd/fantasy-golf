@@ -1,5 +1,6 @@
 import type { PoolStatus } from '@/lib/supabase/types'
 import { DataAlert } from './DataAlert'
+import { sectionHeadingClasses } from './uiStyles'
 
 interface LeaderboardEmptyStateProps {
   poolStatus: PoolStatus
@@ -34,15 +35,18 @@ export function LeaderboardEmptyState({
   }
 
   return (
-    <div className="p-8 text-center" role="status">
-      <p className="text-lg font-medium text-gray-700">{title}</p>
-      <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">{description}</p>
+    <div className="px-6 py-10 text-center sm:px-10" role="status">
+      <div className="mx-auto max-w-xl">
+        <p className={sectionHeadingClasses()}>Leaderboard status</p>
+        <p className="mt-3 text-2xl font-semibold text-slate-950">{title}</p>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
+      </div>
       {lastRefreshError && poolStatus === 'live' && (
         <DataAlert
           variant="warning"
           title="Last refresh failed"
           message={lastRefreshError}
-          className="mt-4"
+          className="mx-auto mt-6 max-w-xl text-left"
         />
       )}
     </div>
