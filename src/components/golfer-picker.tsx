@@ -106,7 +106,7 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
     <div className="space-y-4">
       <PickProgress current={selectedIds.length} required={maxSelections} />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3 sm:flex-row sm:items-end">
         <div className="flex-1">
           <label htmlFor="golfer-search" className="mb-1 block text-sm font-medium text-gray-700">
             Search golfers
@@ -117,7 +117,7 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
             placeholder="Search by name"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
           />
         </div>
         <div className="sm:w-56">
@@ -128,7 +128,7 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
             id="golfer-country"
             value={countryFilter}
             onChange={(e) => setCountryFilter(e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
           >
             <option value="">All Countries</option>
             {countries.map((country) => (
@@ -140,36 +140,8 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">Selected golfers</p>
-        {selectedIds.length === 0 ? (
-          <p className="text-sm text-gray-500">No golfers selected yet.</p>
-        ) : (
-          <ul className="flex flex-wrap gap-2" aria-label="Selected golfers">
-            {selectedIds.map((id) => {
-              const golfer = golfers.find((g) => g.id === id)
-              const label = golfer ? `${golfer.name} (${golfer.country})` : id
-
-              return (
-                <li key={id}>
-                  <button
-                    type="button"
-                    onClick={() => toggleGolfer(id)}
-                    className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-sm text-blue-800 hover:bg-blue-100"
-                    aria-label={`Remove ${label}`}
-                  >
-                    <span>{label}</span>
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </div>
-
       <div
-        className="max-h-72 overflow-y-auto border rounded"
+        className="max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white/90"
         role="listbox"
         aria-multiselectable="true"
         aria-label="Available golfers"
@@ -208,15 +180,21 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
                     aria-selected={isSelected}
                     aria-disabled={isDisabled}
                     aria-label={`${isSelected ? 'Remove' : 'Select'} ${golfer.name} from ${golfer.country}`}
-                    className={`flex w-full items-center justify-between px-3 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset ${
-                      isSelected ? 'bg-blue-50' : ''
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-inset ${
+                      isSelected ? 'bg-sky-50' : ''
                     } ${isDisabled ? 'cursor-not-allowed opacity-60' : ''}`}
                   >
                     <span>
                       <span className="font-medium">{golfer.name}</span>
                       <span className="ml-2 text-sm text-gray-500">{golfer.country}</span>
                     </span>
-                    <span className="text-xs font-medium text-gray-600">{isSelected ? 'Selected' : 'Select'}</span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
+                        isSelected ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      {isSelected ? 'Selected' : 'Select'}
+                    </span>
                   </button>
                 </li>
               )
@@ -225,14 +203,12 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
         )}
       </div>
 
-      {selectedGolfers.length > 0 && (
-        <p className="text-xs text-gray-500" aria-live="polite">
-          Current picks: {selectedGolfers.map((g) => g.name).join(', ')}
-        </p>
-      )}
-
-      <div className="text-sm text-gray-500">
-        Selected: {selectedIds.length}/{maxSelections}
+      <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-sm text-slate-600">
+        {selectedGolfers.length > 0 ? (
+          <p aria-live="polite">Current picks: {selectedGolfers.map((g) => g.name).join(', ')}</p>
+        ) : (
+          <p aria-live="polite">Tap golfers below to build your entry.</p>
+        )}
       </div>
     </div>
   )

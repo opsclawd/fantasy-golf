@@ -11,9 +11,9 @@ export function PickProgress({ current, required }: PickProgressProps) {
   const ariaValueNow = Math.min(Math.max(current, 0), ariaValueMax)
 
   return (
-    <div className="space-y-2" role="status" aria-live="polite">
-      <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">
+    <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3" role="status" aria-live="polite">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="font-medium text-slate-900">
           {isComplete ? (
             <span className="text-green-700">
               <span aria-hidden="true">&#x2713; </span>
@@ -26,13 +26,13 @@ export function PickProgress({ current, required }: PickProgressProps) {
           )}
         </span>
         {!isComplete && (
-          <span className="text-amber-700 font-medium">
+          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
             {remaining} remaining
           </span>
         )}
       </div>
       <div
-        className="w-full h-2 bg-gray-200 rounded-full overflow-hidden"
+        className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
         role="progressbar"
         aria-valuenow={ariaValueNow}
         aria-valuemin={0}
@@ -41,7 +41,7 @@ export function PickProgress({ current, required }: PickProgressProps) {
       >
         <div
           className={`h-full rounded-full transition-all duration-300 ${
-            isComplete ? 'bg-green-600' : 'bg-blue-600'
+            isComplete ? 'bg-green-600' : 'bg-sky-600'
           }`}
           style={{ width: `${percentage}%` }}
         />

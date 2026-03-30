@@ -10,6 +10,7 @@ import { getScoresForTournament } from '@/lib/scoring-queries'
 import { getGolfersByIds } from '@/lib/golfer-queries'
 import { createClient } from '@/lib/supabase/server'
 import type { TournamentScore, Golfer } from '@/lib/supabase/types'
+import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
 import { redirect } from 'next/navigation'
 import { PicksForm } from './PicksForm'
 
@@ -61,9 +62,12 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-1">{pool.name}</h1>
-      <p className="text-gray-500 mb-4">{pool.tournament_name}</p>
+    <div className="mx-auto max-w-3xl space-y-4">
+      <section className={`${panelClasses()} p-5 sm:p-6`}>
+        <p className={sectionHeadingClasses()}>Participant picks</p>
+        <h1 className="mt-2 text-2xl font-bold text-slate-950">{pool.name}</h1>
+        <p className="mt-1 text-sm text-slate-600">{pool.tournament_name}</p>
+      </section>
 
       <LockBanner isLocked={isLocked} deadline={pool.deadline} poolStatus={pool.status} />
 
