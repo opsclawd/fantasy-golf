@@ -9,15 +9,18 @@ export function PickProgress({ current, required }: PickProgressProps) {
   const percentage = required > 0 ? Math.min(100, (current / required) * 100) : 0
   const ariaValueMax = Math.max(required, 0)
   const ariaValueNow = Math.min(Math.max(current, 0), ariaValueMax)
+  const progressLabel = isComplete
+    ? `All ${required} of ${required} golfers selected`
+    : `${ariaValueNow} of ${required} golfers selected`
 
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3" role="status" aria-live="polite">
+    <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3" role="status" aria-live="polite" aria-atomic="true">
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-medium text-slate-900">
           {isComplete ? (
             <span className="text-green-700">
               <span aria-hidden="true">&#x2713; </span>
-              All {required} golfers selected - ready to submit
+              All {required} golfers selected - ready-to-submit
             </span>
           ) : (
             <span>
@@ -37,10 +40,11 @@ export function PickProgress({ current, required }: PickProgressProps) {
         aria-valuenow={ariaValueNow}
         aria-valuemin={0}
         aria-valuemax={ariaValueMax}
+        aria-valuetext={progressLabel}
         aria-label={`${current} of ${required} golfers selected`}
       >
         <div
-          className={`h-full rounded-full transition-all duration-300 ${
+          className={`h-full rounded-full motion-safe:transition-[width,background-color] motion-safe:duration-300 ${
             isComplete ? 'bg-green-600' : 'bg-sky-600'
           }`}
           style={{ width: `${percentage}%` }}

@@ -106,7 +106,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             <h1 className="text-3xl font-semibold text-slate-950">{pool.name}</h1>
             <p className="mt-1 text-sm text-slate-500">{pool.tournament_name}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 max-sm:w-full">
             <StatusChip status={pool.status} />
             {pool.status === 'open' && <StartPoolButton poolId={pool.id} />}
             {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
@@ -159,42 +159,49 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             </Link>
           </div>
         </div>
-        <table className="w-full">
-          <thead className="bg-slate-100/80">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Participant</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Golfers</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {normalizedEntries.length === 0 ? (
+        <div
+          className="overflow-x-auto px-1 pb-1 focus-visible:outline-none"
+          tabIndex={0}
+          aria-label="Participant entries"
+        >
+          <table className="min-w-[42rem] w-full">
+            <caption className="sr-only">Submitted pool entries and their golfer selections</caption>
+            <thead className="bg-slate-100/80">
               <tr>
-                <td colSpan={3} className="px-4 py-10 text-center text-sm text-slate-500">
-                  No entries yet. Share the invite link to get started.
-                </td>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Participant</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Golfers</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Submitted</th>
               </tr>
-            ) : (
-              normalizedEntries.map(entry => (
-                <tr key={entry.id} className="border-t border-slate-200/70 align-top">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{entry.user_id.slice(0, 8)}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-2">
-                      {entry.golfer_ids.map((id: string) => (
-                        <span key={id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-                          {golferMap.get(id) || id}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm text-slate-500">
-                    {new Date(entry.created_at).toLocaleDateString()}
+            </thead>
+            <tbody>
+              {normalizedEntries.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center text-sm text-slate-500">
+                    No entries yet. Share the invite link to get started.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                normalizedEntries.map(entry => (
+                  <tr key={entry.id} className="border-t border-slate-200/70 align-top">
+                    <td className="px-4 py-3 text-sm font-medium text-slate-900">{entry.user_id.slice(0, 8)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        {entry.golfer_ids.map((id: string) => (
+                          <span key={id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+                            {golferMap.get(id) || id}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right text-sm text-slate-500 whitespace-nowrap">
+                      {new Date(entry.created_at).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {showGolferPanel && (

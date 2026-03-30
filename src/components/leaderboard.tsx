@@ -112,7 +112,7 @@ export function Leaderboard({
 
   if (loading) {
     return (
-      <div className={`${panelClasses()} p-8 text-center text-slate-500`} role="status">
+      <div className={`${panelClasses()} p-8 text-center text-slate-500`} role="status" aria-live="polite">
         Loading leaderboard...
       </div>
     )
@@ -176,8 +176,13 @@ export function Leaderboard({
           lastRefreshError={lastRefreshError}
         />
       ) : (
-        <div className="overflow-x-auto px-2 pb-2 sm:px-3 sm:pb-3">
-          <table className="min-w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white">
+        <div
+          className="overflow-x-auto px-2 pb-2 focus-visible:outline-none sm:px-3 sm:pb-3"
+          tabIndex={0}
+          aria-label="Leaderboard standings"
+        >
+          <table className="min-w-[40rem] overflow-hidden rounded-2xl border border-slate-200/80 bg-white sm:min-w-full">
+            <caption className="sr-only">Live leaderboard rankings for pool entries</caption>
             <thead className="bg-slate-100/80">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">

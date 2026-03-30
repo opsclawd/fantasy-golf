@@ -62,7 +62,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4">
+    <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
       <section className={`${panelClasses()} p-5 sm:p-6`}>
         <p className={sectionHeadingClasses()}>Participant picks</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-950">{pool.name}</h1>
@@ -101,7 +101,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
         )}
         </>
       ) : isLocked && !hasEntry ? (
-        <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg" role="status">
+        <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
           <p className="text-gray-600">
             You did not submit picks before the deadline.
           </p>

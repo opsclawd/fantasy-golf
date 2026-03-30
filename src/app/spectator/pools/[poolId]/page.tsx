@@ -33,7 +33,9 @@ export default async function SpectatorPage({
               </h1>
               <p className="mt-2 text-sm text-slate-600 sm:text-base">{pool.tournament_name}</p>
             </div>
-            <StatusChip status={pool.status} />
+            <div className="max-sm:self-start">
+              <StatusChip status={pool.status} />
+            </div>
           </div>
         </div>
       </header>
