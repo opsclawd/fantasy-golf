@@ -13,6 +13,7 @@ import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
 import Link from 'next/link'
 import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
+import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
 
 type PoolEntry = {
   id: string
@@ -98,21 +99,22 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{pool.name}</h1>
-          <p className="text-gray-500">{pool.tournament_name}</p>
+      <section className={`${panelClasses()} p-6`}>
+        <p className={sectionHeadingClasses()}>Commissioner command center</p>
+        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-950">{pool.name}</h1>
+            <p className="mt-1 text-sm text-slate-500">{pool.tournament_name}</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <StatusChip status={pool.status} />
+            {pool.status === 'open' && <StartPoolButton poolId={pool.id} />}
+            {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
+            {pool.status === 'complete' && <ReusePoolButton poolId={pool.id} />}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <StatusChip status={pool.status} />
-          {pool.status === 'open' && <StartPoolButton poolId={pool.id} />}
-          {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
-          {pool.status === 'complete' && <ReusePoolButton poolId={pool.id} />}
-        </div>
-      </div>
+      </section>
 
-      {/* Pool Status Summary */}
       <PoolStatusSection
         pool={pool}
         memberCount={playerMembers.length}
@@ -121,9 +123,8 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
         pendingCount={membersWithoutEntries.length}
       />
 
-      {/* Scoring Refresh Status (only for live/complete pools) */}
       {pool.status !== 'open' && (
-        <div className="bg-white rounded-lg shadow p-4">
+        <section className={`${panelClasses()} p-4`}>
           <TrustStatusBar
             isLocked={true}
             poolStatus={pool.status}
@@ -131,63 +132,62 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             refreshedAt={pool.refreshed_at}
             lastRefreshError={pool.last_refresh_error}
           />
-        </div>
+        </section>
       )}
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <section className={`${panelClasses()} p-4`}>
         <Link
           href={`/commissioner/pools/${poolId}/audit`}
-          className="text-sm font-medium text-blue-600 hover:text-blue-800"
+          className="inline-flex items-center text-sm font-medium text-emerald-700 transition hover:text-emerald-900"
         >
           View Audit Log
         </Link>
-      </div>
+      </section>
 
-      {/* Invite Link */}
       <InviteLinkSection inviteCode={pool.invite_code} />
-
-      {/* Tournament & Format Config (editable only while open) */}
       <PoolConfigForm pool={pool} />
 
-      {/* Entries Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 border-b">
-          <div className="flex justify-between items-center">
-            <h2 className="font-semibold">Entries ({normalizedEntries.length})</h2>
-            <Link href={`/spectator/pools/${poolId}`} className="text-blue-600 hover:text-blue-800 text-sm">
+      <section className={`${panelClasses()} overflow-hidden`}>
+        <div className="border-b border-slate-200/80 px-5 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className={sectionHeadingClasses()}>Entry progress</p>
+              <h2 className="mt-2 text-lg font-semibold text-slate-950">Entries ({normalizedEntries.length})</h2>
+            </div>
+            <Link href={`/spectator/pools/${poolId}`} className="text-sm font-medium text-emerald-700 transition hover:text-emerald-900">
               View Leaderboard
             </Link>
           </div>
         </div>
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-slate-100/80">
             <tr>
-              <th className="px-4 py-2 text-left text-sm">Participant</th>
-              <th className="px-4 py-2 text-left text-sm">Golfers</th>
-              <th className="px-4 py-2 text-right text-sm">Submitted</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Participant</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Golfers</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Submitted</th>
             </tr>
           </thead>
           <tbody>
             {normalizedEntries.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={3} className="px-4 py-10 text-center text-sm text-slate-500">
                   No entries yet. Share the invite link to get started.
                 </td>
               </tr>
             ) : (
               normalizedEntries.map(entry => (
-                <tr key={entry.id} className="border-t">
-                  <td className="px-4 py-2 text-sm">{entry.user_id.slice(0, 8)}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex gap-1 flex-wrap">
+                <tr key={entry.id} className="border-t border-slate-200/70 align-top">
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{entry.user_id.slice(0, 8)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-2">
                       {entry.golfer_ids.map((id: string) => (
-                        <span key={id} className="px-2 py-0.5 bg-gray-100 rounded text-xs">
+                        <span key={id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
                           {golferMap.get(id) || id}
                         </span>
                       ))}
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-right text-gray-500 text-sm">
+                  <td className="px-4 py-3 text-right text-sm text-slate-500">
                     {new Date(entry.created_at).toLocaleDateString()}
                   </td>
                 </tr>
@@ -195,9 +195,8 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             )}
           </tbody>
         </table>
-      </div>
+      </section>
 
-      {/* Golfer Overview (live/complete pools only) */}
       {showGolferPanel && (
         <CommissionerGolferPanel
           golfers={allGolfersList}
@@ -206,19 +205,21 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
         />
       )}
 
-      {/* Pending Members */}
       {membersWithoutEntries.length > 0 && (
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h3 className="font-semibold mb-2">Waiting for Entries ({membersWithoutEntries.length})</h3>
-          <p className="text-sm text-gray-500">These players have joined but haven&apos;t submitted picks yet.</p>
-          <ul className="mt-2 space-y-1">
+        <section className={`${panelClasses()} p-5`}>
+          <p className={sectionHeadingClasses()}>Follow up</p>
+          <h3 className="mt-2 text-lg font-semibold text-slate-950">
+            Waiting for entries ({membersWithoutEntries.length})
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">These players have joined but haven&apos;t submitted picks yet.</p>
+          <ul className="mt-4 space-y-2">
             {membersWithoutEntries.map(m => (
-              <li key={m.id} className="text-sm text-gray-600">
+              <li key={m.id} className="rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                 {m.user_id.slice(0, 8)}
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
     </div>
   )

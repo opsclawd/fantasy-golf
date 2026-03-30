@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import { updatePoolConfigAction, type UpdatePoolConfigState } from './actions'
 import type { Pool } from '@/lib/supabase/types'
+import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
 
 interface TournamentOption {
   id: string
@@ -43,7 +44,7 @@ function SaveButton({ disabled }: { disabled: boolean }) {
     <button
       type="submit"
       disabled={disabled || pending}
-      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+      className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {pending ? 'Saving...' : 'Save Configuration'}
     </button>
@@ -129,75 +130,93 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
   }
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-semibold">Pool Configuration</h2>
+    <section className={`${panelClasses()} p-5`}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className={sectionHeadingClasses()}>Pool setup</p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-950">Tournament and format</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Keep the essentials in one place while the pool is still open.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => setIsEditing(prev => !prev)}
           disabled={!isEditable}
-          className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+          className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isEditing ? 'Cancel' : 'Edit'}
         </button>
       </div>
 
       {!isEditable && (
-        <p className="text-sm text-gray-600 mb-3">
+        <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-100/80 px-4 py-3 text-sm text-slate-700">
           Configuration is locked because this pool is not open.
         </p>
       )}
 
       {state?.error && (
-        <p className="mb-3 text-sm text-red-700" role="alert">
+        <p className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
           {state.error}
         </p>
       )}
 
+      {state?.success && (
+        <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
+          Pool configuration saved.
+        </p>
+      )}
+
       {isEditing ? (
-        <form action={formAction} className="space-y-3">
-          <div>
-            <label htmlFor="tournamentId" className="block text-sm font-medium mb-1">
+        <form action={formAction} className="mt-5 space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div>
+              <label htmlFor="tournamentId" className="mb-1 block text-sm font-medium text-slate-700">
               Tournament
-            </label>
-            <select
-              id="tournamentId"
-              name="tournamentId"
-              value={selectedTournamentId}
-              onChange={handleTournamentChange}
-              className="w-full p-2 border rounded"
-              disabled={isLoadingTournaments}
-              required
-            >
-              <option value="">
-                {isLoadingTournaments ? 'Loading tournaments...' : 'Select a tournament'}
-              </option>
-              {tournaments.map(tournament => (
-                <option key={tournament.id} value={tournament.id}>
-                  {tournament.name}
+              </label>
+              <select
+                id="tournamentId"
+                name="tournamentId"
+                value={selectedTournamentId}
+                onChange={handleTournamentChange}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                disabled={isLoadingTournaments}
+                required
+              >
+                <option value="">
+                  {isLoadingTournaments ? 'Loading tournaments...' : 'Select a tournament'}
                 </option>
-              ))}
-            </select>
-            {tournamentError && <p className="mt-1 text-sm text-red-700">{tournamentError}</p>}
+                {tournaments.map(tournament => (
+                  <option key={tournament.id} value={tournament.id}>
+                    {tournament.name}
+                  </option>
+                ))}
+              </select>
+              {tournamentError && <p className="mt-2 text-sm text-rose-700">{tournamentError}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="picksPerEntry" className="mb-1 block text-sm font-medium text-slate-700">
+                Picks per entry
+              </label>
+              <select
+                id="picksPerEntry"
+                name="picksPerEntry"
+                value={picksPerEntry}
+                onChange={(event) => setPicksPerEntry(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(value => (
+                  <option key={value} value={value}>
+                    {value} golfer{value === 1 ? '' : 's'}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="picksPerEntry" className="block text-sm font-medium mb-1">
-              Picks Per Entry
-            </label>
-            <select
-              id="picksPerEntry"
-              name="picksPerEntry"
-              value={picksPerEntry}
-              onChange={(event) => setPicksPerEntry(event.target.value)}
-              className="w-full p-2 border rounded"
-            >
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(value => (
-                <option key={value} value={value}>
-                  {value} golfer{value === 1 ? '' : 's'}
-                </option>
-              ))}
-            </select>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Changes here update the tournament target and entry size only. Commissioner permissions and pool actions stay the same.
           </div>
 
           <input type="hidden" name="poolId" value={pool.id} />
@@ -209,17 +228,17 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
           <SaveButton disabled={!canSubmit} />
         </form>
       ) : (
-        <dl className="text-sm space-y-1">
-          <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Tournament</dt>
-            <dd>{pool.tournament_name}</dd>
+        <dl className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3">
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tournament</dt>
+            <dd className="mt-2 text-sm font-medium text-slate-950">{pool.tournament_name}</dd>
           </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-gray-500">Picks Per Entry</dt>
-            <dd>{pool.picks_per_entry}</dd>
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3">
+            <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Picks per entry</dt>
+            <dd className="mt-2 text-sm font-medium text-slate-950">{pool.picks_per_entry}</dd>
           </div>
         </dl>
       )}
-    </div>
+    </section>
   )
 }

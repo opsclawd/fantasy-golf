@@ -1,4 +1,5 @@
 import type { Pool } from '@/lib/supabase/types'
+import { metricCardClasses, sectionHeadingClasses } from '@/components/uiStyles'
 
 interface PoolStatusSectionProps {
   pool: Pool
@@ -16,36 +17,29 @@ export function PoolStatusSection({
   pendingCount,
 }: PoolStatusSectionProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="text-2xl font-bold">{memberCount}</div>
-        <div className="text-sm text-gray-500">Players Joined</div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="text-2xl font-bold">{entryCount}</div>
-        <div className="text-sm text-gray-500">Entries Submitted</div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="text-2xl font-bold">{pendingCount}</div>
-        <div className="text-sm text-gray-500">Awaiting Picks</div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow">
-        <div className="text-sm font-medium">
-          {pool.deadline ? new Date(pool.deadline).toLocaleDateString() : '-'}
-        </div>
-        <div className="text-sm text-gray-500">Picks Deadline</div>
-        <div className="mt-1">
-          {isLocked ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700">
-              <span aria-hidden="true">🔒</span> Locked
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
-              <span aria-hidden="true">🔓</span> Open
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
+    <section className="grid gap-4 md:grid-cols-4" aria-label="Pool overview">
+      <article className={metricCardClasses()}>
+        <p className={sectionHeadingClasses()}>Players joined</p>
+        <p className="mt-3 text-4xl font-semibold text-slate-950">{memberCount}</p>
+      </article>
+
+      <article className={metricCardClasses()}>
+        <p className={sectionHeadingClasses()}>Entries submitted</p>
+        <p className="mt-3 text-4xl font-semibold text-slate-950">{entryCount}</p>
+      </article>
+
+      <article className={metricCardClasses()}>
+        <p className={sectionHeadingClasses()}>Awaiting picks</p>
+        <p className="mt-3 text-4xl font-semibold text-slate-950">{pendingCount}</p>
+      </article>
+
+      <article className={metricCardClasses()}>
+        <p className={sectionHeadingClasses()}>Lock state</p>
+        <p className="mt-3 text-lg font-semibold text-slate-950">{isLocked ? 'Locked' : 'Open until deadline'}</p>
+        <p className="mt-2 text-sm text-slate-500">
+          {pool.deadline ? new Date(pool.deadline).toLocaleString() : 'Deadline unavailable'}
+        </p>
+      </article>
+    </section>
   )
 }

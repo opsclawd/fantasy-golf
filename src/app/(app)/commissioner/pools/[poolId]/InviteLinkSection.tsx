@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react'
 
+import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
+
 type InviteLinkSectionProps = {
   inviteCode: string
 }
@@ -27,24 +29,37 @@ export default function InviteLinkSection({ inviteCode }: InviteLinkSectionProps
   }
 
   return (
-    <section className="bg-white p-4 rounded-lg shadow mb-6">
-      <h2 className="font-semibold mb-2">Invite Link</h2>
-      <p className="text-sm text-gray-600 mb-3">Share this link so players can join your pool.</p>
-      <div className="flex flex-col sm:flex-row gap-2">
+    <section className={`${panelClasses()} p-5`}>
+      <p className={sectionHeadingClasses()}>Invite players</p>
+      <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-950">Share the pool link</h2>
+          <p className="mt-1 text-sm text-slate-600">Send this link so players can join before picks lock.</p>
+        </div>
+        <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-900">
+          Invite code: {inviteCode}
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <input
           readOnly
           value={inviteUrl}
-          className="flex-1 p-2 border rounded bg-gray-50 text-sm"
+          className="min-w-0 flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
           aria-label="Pool invite link"
         />
         <button
           type="button"
           onClick={handleCopy}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          {copied ? 'Copied' : 'Copy link'}
+          {copied ? 'Copied link' : 'Copy link'}
         </button>
       </div>
+
+      <p className="mt-3 text-sm text-slate-500">
+        Players land on the join flow immediately, so you can use this as the fastest next step after creating the pool.
+      </p>
     </section>
   )
 }
