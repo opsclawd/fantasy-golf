@@ -1,13 +1,11 @@
-// @vitest-environment jsdom
-
-import { render, screen } from '@testing-library/react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { LeaderboardRow } from '../LeaderboardRow'
 
 describe('LeaderboardRow', () => {
   it('renders rank, entry name, score, and birdies in a scan-friendly hierarchy', () => {
-    render(
+    const markup = renderToStaticMarkup(
       <table>
         <tbody>
           <LeaderboardRow
@@ -28,9 +26,10 @@ describe('LeaderboardRow', () => {
       </table>,
     )
 
-    expect(screen.getByText('1')).toBeInTheDocument()
-    expect(screen.getByText('user-1234')).toBeInTheDocument()
-    expect(screen.getByText('Scottie Scheffler')).toBeInTheDocument()
-    expect(screen.getByText('14')).toBeInTheDocument()
+    expect(markup).toContain('>1<')
+    expect(markup).toContain('user-1234')
+    expect(markup).toContain('Scottie Scheffler')
+    expect(markup).toContain('>-12<')
+    expect(markup).toContain('>14<')
   })
 })
