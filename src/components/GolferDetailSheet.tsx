@@ -56,6 +56,11 @@ export function GolferDetailSheet({ golfer, score, onClose }: GolferDetailSheetP
         ? 'Cut'
         : `Thru ${scorecard.completedHoles} holes`
     : 'Awaiting scoring feed'
+  const golferStatusClasses = scorecard
+    ? scorecard.status === 'withdrawn' || scorecard.status === 'cut'
+      ? 'border-amber-200/80 bg-amber-50 text-amber-800'
+      : 'border-emerald-200/80 bg-emerald-50 text-emerald-800'
+    : 'border-slate-200 bg-slate-100 text-slate-700'
 
   return (
     <dialog
@@ -78,7 +83,7 @@ export function GolferDetailSheet({ golfer, score, onClose }: GolferDetailSheetP
                     {golfer.country}
                   </span>
                 ) : null}
-                <span className="rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 font-medium text-emerald-800">
+                <span className={`rounded-full border px-3 py-1 font-medium ${golferStatusClasses}`}>
                   {golferStatus}
                 </span>
               </div>

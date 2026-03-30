@@ -31,16 +31,13 @@ export function LeaderboardEmptyState({
     description = 'This pool has no entries. Standings cannot be calculated without participants.'
     eyebrow = 'Pool setup needed'
     accentClasses = 'border-slate-200 bg-slate-100 text-slate-700'
-  } else if (!hasScores) {
+  } else {
     title = 'Waiting for scores'
-    description = 'The tournament is live but no scoring data has been received yet. Standings will appear once the first scores come in.'
+    description = hasScores
+      ? 'Standings will appear after the next scoring refresh completes.'
+      : 'The tournament is live but no scoring data has been received yet. Standings will appear once the first scores come in.'
     eyebrow = 'Live scoring pending'
     accentClasses = 'border-amber-200 bg-amber-50 text-amber-800'
-  } else {
-    title = 'Standings unavailable'
-    description = 'We were unable to compute standings. This is likely a temporary issue.'
-    eyebrow = 'Temporary issue'
-    accentClasses = 'border-rose-200 bg-rose-50 text-rose-800'
   }
 
   return (
