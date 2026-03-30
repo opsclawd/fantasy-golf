@@ -1,6 +1,8 @@
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { getTrustStatusBarState } from '../TrustStatusBar'
+import { getTrustStatusBarState, TrustStatusBar } from '../TrustStatusBar'
 
 describe('getTrustStatusBarState', () => {
   it('returns the shared heading copy for live pools', () => {
@@ -135,7 +137,7 @@ describe('getTrustStatusBarState', () => {
       heading: 'Tournament status',
       lockLabel: 'Open',
       lockMessage: 'You can edit picks until the deadline.',
-      freshnessLabel: 'Current',
+      freshnessLabel: 'Refresh failed',
       freshnessMessage: 'Last refresh error: PGATour API timed out.',
       tone: 'error',
       role: 'alert',
@@ -143,6 +145,24 @@ describe('getTrustStatusBarState', () => {
       icon: '\uD83D\uDD13',
       showFreshness: false,
     })
+  })
+
+  it('renders a non-contradictory freshness label when a live pool has a refresh error', () => {
+    const markup = renderToStaticMarkup(
+      createElement(TrustStatusBar, {
+        isLocked: true,
+        poolStatus: 'live',
+        freshness: 'current',
+        refreshedAt: '2026-03-29T12:00:00.000Z',
+        lastRefreshError: 'PGATour API timed out',
+      }),
+    )
+
+    expect(markup).toContain('Freshness: Refresh failed')
+    expect(markup).toContain('Last refresh error: PGATour API timed out.')
+    expect(markup).not.toContain('Freshness: Current')
+    expect(markup).toContain('role="alert"')
+    expect(markup).toContain('aria-live="assertive"')
   })
 
   it('uses deadline-passed lock text when pool is locked while open', () => {

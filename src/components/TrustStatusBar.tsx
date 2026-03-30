@@ -17,7 +17,7 @@ interface TrustStatusBarState {
   heading: string
   lockLabel: 'Open' | 'Locked'
   lockMessage: string
-  freshnessLabel: 'Current' | 'Stale' | 'No data'
+  freshnessLabel: 'Current' | 'Stale' | 'No data' | 'Refresh failed'
   freshnessMessage: string
   showFreshness: boolean
   tone: TrustTone
@@ -98,7 +98,14 @@ function toneClasses(tone: TrustTone): string {
   }
 }
 
-function getFreshnessLabel(freshness: FreshnessStatus): TrustStatusBarState['freshnessLabel'] {
+function getFreshnessLabel(
+  freshness: FreshnessStatus,
+  lastRefreshError: string | null,
+): TrustStatusBarState['freshnessLabel'] {
+  if (lastRefreshError) {
+    return 'Refresh failed'
+  }
+
   if (freshness === 'current') {
     return 'Current'
   }
@@ -127,7 +134,7 @@ export function getTrustStatusBarState(
     heading,
     lockLabel,
     lockMessage,
-    freshnessLabel: getFreshnessLabel(input.freshness),
+    freshnessLabel: getFreshnessLabel(input.freshness, input.lastRefreshError),
     freshnessMessage: freshnessState.freshnessMessage,
     showFreshness,
     tone: freshnessState.tone,
