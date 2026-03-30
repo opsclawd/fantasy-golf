@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import { updatePoolConfigAction, type UpdatePoolConfigState } from './actions'
 import type { Pool } from '@/lib/supabase/types'
@@ -65,7 +65,7 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
   const isEditable = pool.status === 'open'
   const year = String(pool.year)
 
-  const loadTournaments = async () => {
+  const loadTournaments = useCallback(async () => {
     const cached = getCachedTournaments(year)
     if (cached) {
       setTournaments(cached)
@@ -106,13 +106,13 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
     } finally {
       setIsLoadingTournaments(false)
     }
-  }
+  }, [year])
 
   useEffect(() => {
     if (isEditing && isEditable) {
       void loadTournaments()
     }
-  }, [isEditing, isEditable])
+  }, [isEditing, isEditable, loadTournaments])
 
   const canSubmit = useMemo(() => {
     if (!isEditable || !isEditing) return false
