@@ -16,22 +16,26 @@ const VARIANT_CONFIG: Record<
     icon: string
     srPrefix: string
     classes: string
+    iconClasses: string
   }
 > = {
   error: {
     icon: '!',
     srPrefix: 'Error:',
     classes: 'border-red-200 bg-red-50/95 text-red-950',
+    iconClasses: 'border-red-200/80 bg-white text-red-700',
   },
   warning: {
     icon: '!',
     srPrefix: 'Warning:',
     classes: 'border-amber-200 bg-amber-50/95 text-amber-950',
+    iconClasses: 'border-amber-200/80 bg-white text-amber-700',
   },
   info: {
     icon: 'i',
     srPrefix: 'Info:',
     classes: 'border-sky-200 bg-sky-50/95 text-sky-950',
+    iconClasses: 'border-sky-200/80 bg-white text-sky-700',
   },
 }
 
@@ -40,7 +44,7 @@ export function DataAlert({ variant, title, message, className }: DataAlertProps
   const liveRegionProps = getDataAlertLiveRegion(variant)
   const classes = [
     panelClasses(),
-    'inline-flex items-start gap-3 border px-4 py-3 text-sm',
+    'flex items-start gap-3 border px-4 py-4 text-sm',
     config.classes,
     className,
   ]
@@ -51,18 +55,20 @@ export function DataAlert({ variant, title, message, className }: DataAlertProps
     <div className={classes} {...liveRegionProps}>
       <span
         aria-hidden="true"
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-current/10 bg-white/70 font-semibold leading-5"
+        className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border font-semibold leading-5 shadow-sm ${config.iconClasses}`}
       >
         {config.icon}
       </span>
-      <span className="flex min-w-0 flex-col gap-0.5">
+      <span className="flex min-w-0 flex-col gap-1">
         <span>
           <span className="sr-only">{config.srPrefix} </span>
-          <span className={`${sectionHeadingClasses().replace('text-emerald-800/70', 'text-current')} break-words`}>
+          <span
+            className={`${sectionHeadingClasses().replace('text-emerald-800/70', 'text-current').replace('uppercase', 'normal-case').replace('tracking-[0.18em]', 'tracking-[0.08em]')} break-words`}
+          >
             {title}
           </span>
         </span>
-        {message ? <span className="break-words text-sm normal-case tracking-normal">{message}</span> : null}
+        {message ? <span className="break-words text-sm leading-6 normal-case tracking-normal opacity-90">{message}</span> : null}
       </span>
     </div>
   )

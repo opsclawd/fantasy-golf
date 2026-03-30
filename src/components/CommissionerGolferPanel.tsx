@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { ScoreDisplay } from './score-display'
 import { GolferDetailSheet } from './GolferDetailSheet'
+import { panelClasses, sectionHeadingClasses } from './uiStyles'
 import { getGolferScorecard, getGolferPoolContext } from '@/lib/golfer-detail'
 import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
 
@@ -76,38 +77,51 @@ export function CommissionerGolferPanel({
     : null
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="p-4 border-b">
-        <h2 className="font-semibold">Golfer Overview ({pickedGolfers.length})</h2>
-        <p className="text-xs text-gray-500 mt-1">Golfers picked by at least one entry</p>
+    <div className={[panelClasses(), 'overflow-hidden'].join(' ')}>
+      <div className="border-b border-slate-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(242,247,241,0.92))] px-5 py-5">
+        <p className={sectionHeadingClasses()}>Commissioner view</p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
+          Golfer overview ({pickedGolfers.length})
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Review who picked each golfer, current scoring posture, and tap into detail without losing trust cues.
+        </p>
       </div>
 
-      <div className="p-3 border-b">
+      <div className="border-b border-slate-200/70 bg-white/70 px-4 py-4">
         <input
           type="text"
           placeholder="Search golfers..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full p-2 border rounded text-sm"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
           aria-label="Search golfers"
         />
       </div>
 
       <div className="max-h-96 overflow-y-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 sticky top-0">
+          <thead className="sticky top-0 bg-slate-50/95 backdrop-blur">
             <tr>
-              <th className="px-4 py-2 text-left">Golfer</th>
-              <th className="px-4 py-2 text-right">Score</th>
-              <th className="px-4 py-2 text-right">Picked By</th>
-              <th className="px-4 py-2 text-right">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Golfer</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Score</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Picked By</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
             </tr>
           </thead>
           <tbody>
             {filteredGolfers.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-gray-500">
-                  No golfers match your search.
+                <td colSpan={4} className="px-4 py-10">
+                  <div className="mx-auto max-w-md rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50/80 px-5 py-6 text-center">
+                    <p className={sectionHeadingClasses()}>Golfer search</p>
+                    <p className="mt-3 text-base font-semibold text-slate-950">
+                      No golfers match this search yet
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      Try a different player name to review scoring context and pool exposure.
+                    </p>
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -116,7 +130,7 @@ export function CommissionerGolferPanel({
                 return (
                   <tr
                     key={g.id}
-                    className="border-t hover:bg-gray-50 cursor-pointer"
+                    className="cursor-pointer border-t border-slate-200/70 transition hover:bg-emerald-50/40"
                     onClick={() => setSelectedGolferId(g.id)}
                     role="button"
                     tabIndex={0}
@@ -128,28 +142,30 @@ export function CommissionerGolferPanel({
                     }}
                     aria-label={`View ${g.name} details`}
                   >
-                    <td className="px-4 py-2">
-                      <div className={`font-medium ${isInactive ? 'line-through text-gray-400' : ''}`}>
+                    <td className="px-4 py-3">
+                      <div className={`font-medium text-slate-900 ${isInactive ? 'line-through text-slate-400' : ''}`}>
                         {g.name}
                       </div>
-                      <div className="text-xs text-gray-400">{g.country}</div>
+                      <div className="mt-1 text-xs text-slate-500">{g.country || 'Country pending'}</div>
                     </td>
-                    <td className="px-4 py-2 text-right font-mono">
+                    <td className="px-4 py-3 text-right font-mono text-sm font-semibold">
                       <ScoreDisplay score={g.totalScore} />
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right text-slate-700">
                       {g.entriesWithGolfer}/{entries.length}
-                      <span className="text-xs text-gray-400 ml-1">
+                      <span className="ml-1 text-xs text-slate-500">
                         ({Math.round(g.pickRate * 100)}%)
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                       {isInactive ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
                           {g.status === 'withdrawn' ? 'WD' : 'CUT'}
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">Active</span>
+                        <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                          Active
+                        </span>
                       )}
                     </td>
                   </tr>
