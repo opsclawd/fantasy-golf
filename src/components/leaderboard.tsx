@@ -173,7 +173,6 @@ export function Leaderboard({
         <LeaderboardEmptyState
           poolStatus={poolStatus}
           hasEntries={hasEntries}
-          hasScores={hasScores}
           lastRefreshError={lastRefreshError}
         />
       ) : (

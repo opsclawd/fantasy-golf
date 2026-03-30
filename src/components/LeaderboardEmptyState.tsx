@@ -5,14 +5,12 @@ import { panelClasses, sectionHeadingClasses } from './uiStyles'
 interface LeaderboardEmptyStateProps {
   poolStatus: PoolStatus
   hasEntries: boolean
-  hasScores: boolean
   lastRefreshError: string | null
 }
 
 export function LeaderboardEmptyState({
   poolStatus,
   hasEntries,
-  hasScores,
   lastRefreshError,
 }: LeaderboardEmptyStateProps) {
   let title: string
@@ -33,9 +31,8 @@ export function LeaderboardEmptyState({
     accentClasses = 'border-slate-200 bg-slate-100 text-slate-700'
   } else {
     title = 'Waiting for scores'
-    description = hasScores
-      ? 'Standings will appear after the next scoring refresh completes.'
-      : 'The tournament is live but no scoring data has been received yet. Standings will appear once the first scores come in.'
+    description =
+      'The tournament is live but no scoring data has been received yet. Standings will appear once the first scores come in.'
     eyebrow = 'Live scoring pending'
     accentClasses = 'border-amber-200 bg-amber-50 text-amber-800'
   }

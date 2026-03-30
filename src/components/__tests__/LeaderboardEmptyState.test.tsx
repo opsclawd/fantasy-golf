@@ -6,17 +6,35 @@ import { describe, expect, it } from 'vitest'
 import { LeaderboardEmptyState } from '../LeaderboardEmptyState'
 
 describe('LeaderboardEmptyState', () => {
-  it('keeps the live empty state focused on scoring pending instead of an unreachable failure branch', () => {
+  it('describes a live leaderboard with entries as waiting for first scores', () => {
     render(
       <LeaderboardEmptyState
         poolStatus="live"
         hasEntries={true}
-        hasScores={true}
         lastRefreshError={null}
       />,
     )
 
     expect(screen.getByText('Waiting for scores')).toBeInTheDocument()
-    expect(screen.queryByText('Standings unavailable')).not.toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'The tournament is live but no scoring data has been received yet. Standings will appear once the first scores come in.',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('describes a live leaderboard with no entries as needing pool setup', () => {
+    render(
+      <LeaderboardEmptyState
+        poolStatus="live"
+        hasEntries={false}
+        lastRefreshError={null}
+      />,
+    )
+
+    expect(screen.getByText('No entries in this pool')).toBeInTheDocument()
+    expect(
+      screen.getByText('This pool has no entries. Standings cannot be calculated without participants.'),
+    ).toBeInTheDocument()
   })
 })
