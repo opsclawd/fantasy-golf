@@ -9,6 +9,7 @@ import { DataAlert } from './DataAlert'
 import { LeaderboardHeader } from './LeaderboardHeader'
 import { LeaderboardRow, type RankedEntry } from './LeaderboardRow'
 import { shouldRenderLeaderboardTrustStatus } from './leaderboard-trust-status'
+import { buildFallbackGolfer } from '@/lib/golfer-catalog/service'
 import { panelClasses, scrollRegionFocusClasses } from './uiStyles'
 import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib/supabase/types'
 
@@ -141,11 +142,10 @@ export function Leaderboard({
   )
 
   const selectedGolfer: Golfer | null = selectedGolferId && data
-    ? {
-        id: selectedGolferId,
+    ? buildFallbackGolfer(selectedGolferId, {
         name: data.golferNames[selectedGolferId] ?? selectedGolferId,
         country: data.golferCountries?.[selectedGolferId] ?? '',
-      }
+      })
     : null
 
   const selectedGolferScore: TournamentScore | null =

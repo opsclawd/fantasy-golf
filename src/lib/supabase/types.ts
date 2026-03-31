@@ -46,6 +46,24 @@ export interface Golfer {
   id: string
   name: string
   country: string
+  search_name: string | null
+  world_rank: number | null
+  is_active: boolean
+  source: 'legacy' | 'monthly_sync' | 'tournament_sync' | 'manual_add'
+  external_player_id: string | null
+  last_synced_at: string | null
+}
+
+export interface GolferSyncRun {
+  id: string
+  run_type: 'monthly_baseline' | 'pre_tournament' | 'manual_add'
+  requested_by: string | null
+  tournament_id: string | null
+  api_calls_used: number
+  status: 'success' | 'failed' | 'blocked'
+  summary: Record<string, unknown>
+  error_message: string | null
+  created_at: string
 }
 
 export interface TournamentScore {

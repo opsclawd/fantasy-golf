@@ -5,6 +5,7 @@ import { ScoreDisplay } from './score-display'
 import { GolferDetailSheet } from './GolferDetailSheet'
 import { panelClasses, sectionHeadingClasses } from './uiStyles'
 import { getGolferScorecard, getGolferPoolContext } from '@/lib/golfer-detail'
+import { buildFallbackGolfer } from '@/lib/golfer-catalog/service'
 import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
 
 interface CommissionerGolferPanelProps {
@@ -69,7 +70,7 @@ export function CommissionerGolferPanel({
   )
 
   const selectedGolfer: Golfer | null = selectedGolferId
-    ? golferMap.get(selectedGolferId) ?? { id: selectedGolferId, name: selectedGolferId, country: '' }
+    ? golferMap.get(selectedGolferId) ?? buildFallbackGolfer(selectedGolferId)
     : null
 
   const selectedGolferScore = selectedGolferId

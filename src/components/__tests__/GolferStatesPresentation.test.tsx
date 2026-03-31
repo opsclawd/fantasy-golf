@@ -4,7 +4,7 @@ import { render, screen } from '@testing-library/react'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { GolferDetailSheet } from '../GolferDetailSheet'
-import type { TournamentScore } from '@/lib/supabase/types'
+import type { Golfer, TournamentScore } from '@/lib/supabase/types'
 
 beforeAll(() => {
   Object.defineProperty(HTMLDialogElement.prototype, 'showModal', {
@@ -40,15 +40,25 @@ function createScore(status: TournamentScore['status']): TournamentScore {
   }
 }
 
+function createGolfer(): Golfer {
+  return {
+    id: 'g1',
+    name: 'Scottie Scheffler',
+    country: 'USA',
+    search_name: 'scottie scheffler',
+    world_rank: 1,
+    is_active: true,
+    source: 'legacy',
+    external_player_id: null,
+    last_synced_at: null,
+  }
+}
+
 describe('GolferDetailSheet', () => {
   it('renders a polished empty state when scoring data is missing', () => {
     render(
       <GolferDetailSheet
-        golfer={{
-          id: 'g1',
-          name: 'Scottie Scheffler',
-          country: 'USA',
-        }}
+        golfer={createGolfer()}
         score={null}
         onClose={() => {}}
       />,
@@ -71,11 +81,7 @@ describe('GolferDetailSheet', () => {
   ] as const)('uses caution styling for %s scoring states', (status, label, expectedClasses) => {
     render(
       <GolferDetailSheet
-        golfer={{
-          id: 'g1',
-          name: 'Scottie Scheffler',
-          country: 'USA',
-        }}
+        golfer={createGolfer()}
         score={createScore(status)}
         onClose={() => {}}
       />,
@@ -87,11 +93,7 @@ describe('GolferDetailSheet', () => {
   it('uses neutral styling when the scoring feed is still pending', () => {
     render(
       <GolferDetailSheet
-        golfer={{
-          id: 'g1',
-          name: 'Scottie Scheffler',
-          country: 'USA',
-        }}
+        golfer={createGolfer()}
         score={null}
         onClose={() => {}}
       />,

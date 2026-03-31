@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { filterLocalGolfers } from '@/lib/golfer-catalog/normalize'
 import { createClient } from '@/lib/supabase/client'
 import { PickProgress } from './PickProgress'
 
@@ -8,6 +9,25 @@ interface Golfer {
   id: string
   name: string
   country: string
+  search_name: string | null
+  is_active: boolean
+}
+
+export function mergeVisibleGolfers({
+  golfers,
+  filteredGolfers,
+  selectedIds,
+}: {
+  golfers: Golfer[]
+  filteredGolfers: Golfer[]
+  selectedIds: string[]
+}): Golfer[] {
+  const filteredIds = new Set(filteredGolfers.map((golfer) => golfer.id))
+  const selectedInactiveGolfers = golfers.filter(
+    (golfer) => selectedIds.includes(golfer.id) && !golfer.is_active && !filteredIds.has(golfer.id),
+  )
+
+  return [...selectedInactiveGolfers, ...filteredGolfers]
 }
 
 interface GolferPickerProps {
@@ -29,7 +49,10 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
 
     const runFetch = async () => {
       try {
-        const { data, error } = await supabase.from('golfers').select('*').order('name')
+        const { data, error } = await supabase
+          .from('golfers')
+          .select('id, name, country, search_name, is_active')
+          .order('name')
 
         if (!isMounted) {
           return
@@ -78,11 +101,14 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
     }
   }
 
-  const filteredGolfers = golfers.filter((g) => {
-    const matchesSearch = g.name.toLowerCase().includes(search.toLowerCase().trim())
-    const matchesFilter = countryFilter === '' || g.country === countryFilter
-    return matchesSearch && matchesFilter
+  const filteredGolfers = filterLocalGolfers(golfers, {
+    search,
+    country: countryFilter,
   })
+
+  const visibleGolfers = useMemo(() => {
+    return mergeVisibleGolfers({ golfers, filteredGolfers, selectedIds })
+  }, [filteredGolfers, golfers, selectedIds])
 
   const countries = useMemo(
     () => Array.from(new Set(golfers.map((g) => g.country))).sort((a, b) => a.localeCompare(b)),
@@ -150,11 +176,11 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
           <p className="p-3 text-sm text-red-600" role="alert">
             {fetchError}
           </p>
-        ) : filteredGolfers.length === 0 ? (
+        ) : visibleGolfers.length === 0 ? (
           <p className="p-3 text-sm text-gray-500">No golfers match your filters.</p>
         ) : (
           <ul>
-            {filteredGolfers.map((golfer, index) => {
+            {visibleGolfers.map((golfer, index) => {
               const isSelected = selectedIds.includes(golfer.id)
               const isDisabled = !isSelected && selectedIds.length >= maxSelections
 

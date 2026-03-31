@@ -1,6 +1,8 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { DEFAULT_CATALOG_RUN_DECISION_INPUTS, decideCatalogRun } from '@/lib/golfer-catalog/service'
 import { createClient } from '@/lib/supabase/server'
 import {
   canTransitionStatus,
@@ -238,4 +240,78 @@ export async function updatePoolConfigAction(
   })
 
   redirect(`/commissioner/pools/${poolId}`)
+}
+
+export type GolferCatalogActionState = {
+  error?: string
+  success?: boolean
+} | null
+
+export async function refreshGolferCatalogAction(
+  _prevState: GolferCatalogActionState,
+  formData: FormData,
+): Promise<GolferCatalogActionState> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const poolId = String(formData.get('poolId') ?? '')
+  const runType = String(formData.get('runType') ?? 'monthly_baseline') as 'monthly_baseline' | 'pre_tournament'
+  const pool = await getPoolById(supabase, poolId)
+
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) {
+    return { error: 'Only the commissioner can refresh the golfer catalog.' }
+  }
+
+  const decision = decideCatalogRun({
+    runType,
+    ...DEFAULT_CATALOG_RUN_DECISION_INPUTS,
+  })
+
+  if (!decision.allowed) {
+    return { error: decision.reason }
+  }
+
+  revalidatePath(`/commissioner/pools/${poolId}`)
+  return { success: true }
+}
+
+export async function addMissingGolferAction(
+  _prevState: GolferCatalogActionState,
+  formData: FormData,
+): Promise<GolferCatalogActionState> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const poolId = String(formData.get('poolId') ?? '')
+  const firstName = String(formData.get('firstName') ?? '').trim()
+  const lastName = String(formData.get('lastName') ?? '').trim()
+  const pool = await getPoolById(supabase, poolId)
+
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can add golfers.' }
+
+  const fullName = [firstName, lastName].filter(Boolean).join(' ')
+
+  if (!fullName) {
+    return { error: 'Enter at least a first or last name.' }
+  }
+
+  const decision = decideCatalogRun({
+    runType: 'manual_add',
+    ...DEFAULT_CATALOG_RUN_DECISION_INPUTS,
+  })
+
+  if (!decision.allowed) {
+    return { error: decision.reason }
+  }
+
+  revalidatePath(`/commissioner/pools/${poolId}`)
+  return { success: true }
 }

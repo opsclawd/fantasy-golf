@@ -5,7 +5,9 @@ import { getScoresForTournament } from '@/lib/scoring-queries'
 import { StatusChip } from '@/components/StatusChip'
 import { TrustStatusBar } from '@/components/TrustStatusBar'
 import { CommissionerGolferPanel } from '@/components/CommissionerGolferPanel'
+import { GolferCatalogPanel } from '@/components/GolferCatalogPanel'
 import { classifyFreshness } from '@/lib/freshness'
+import { buildCatalogUsageSummary, createQuotaPolicy } from '@/lib/golfer-catalog/service'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReusePoolButton } from './ReusePoolButton'
 import InviteLinkSection from './InviteLinkSection'
@@ -96,6 +98,11 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
   const isInvalidDeadline = !parsedDeadline || Number.isNaN(parsedDeadline.getTime())
   const isDeadlineLocked = isInvalidDeadline || parsedDeadline <= new Date()
   const isLocked = pool.status !== 'open' || isDeadlineLocked
+  const usage = buildCatalogUsageSummary({
+    usedCalls: 0,
+    policy: createQuotaPolicy(),
+  })
+  const latestRun = null
 
   return (
     <div className="space-y-6">
@@ -146,6 +153,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
       <InviteLinkSection inviteCode={pool.invite_code} />
       <PoolConfigForm pool={pool} />
+      <GolferCatalogPanel poolId={poolId} usage={usage} latestRun={latestRun} />
 
       <section className={`${panelClasses()} overflow-hidden`}>
         <div className="border-b border-slate-200/80 px-5 py-4">
