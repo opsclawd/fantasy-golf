@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { GolferPicker, type Golfer } from '@/components/golfer-picker'
 import { SelectionSummaryCard } from '@/components/SelectionSummaryCard'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
-import { createClient } from '@/lib/supabase/client'
 
 import { submitPicks, type SubmitPicksState } from './actions'
 
@@ -16,6 +15,7 @@ type PicksFormProps = {
   picksPerEntry: number
   existingGolferIds: string[]
   existingGolferNames: Record<string, string>
+  rosterGolferNames: Record<string, string>
   rosterGolfers: Golfer[]
   isLocked: boolean
 }
@@ -40,60 +40,21 @@ export function PicksForm({
   picksPerEntry,
   existingGolferIds,
   existingGolferNames,
+  rosterGolferNames,
   rosterGolfers,
   isLocked,
 }: PicksFormProps) {
   const [state, formAction] = useFormState<SubmitPicksState, FormData>(submitPicks, null)
   const [selectedIds, setSelectedIds] = useState<string[]>(existingGolferIds)
-  const [golferNames, setGolferNames] = useState<Record<string, string>>(existingGolferNames)
 
-  useEffect(() => {
-    let cancelled = false
-
-    const missingIds = selectedIds.filter((id) => !golferNames[id])
-
-    if (missingIds.length === 0) {
-      return undefined
-    }
-
-    const loadGolferNames = async () => {
-      const supabase = createClient()
-      const { data } = await supabase.from('golfers').select('id, name').in('id', missingIds)
-
-      if (cancelled || !data?.length) {
-        return
-      }
-
-      setGolferNames((current) => {
-        const next = { ...current }
-        let changed = false
-
-        for (const golfer of data) {
-          if (golfer.id && golfer.name && next[golfer.id] !== golfer.name) {
-            next[golfer.id] = golfer.name
-            changed = true
-          }
-        }
-
-        return changed ? next : current
-      })
-    }
-
-    void loadGolferNames()
-
-    return () => {
-      cancelled = true
-    }
-  }, [golferNames, selectedIds, rosterGolfers])
-
-  const selectedGolferNames = selectedIds.map((id) => golferNames[id] ?? 'Loading pick...')
+  const selectedGolferNames = selectedIds.map((id) => rosterGolferNames[id] ?? existingGolferNames[id] ?? 'Unknown golfer')
 
   const hasEnoughPicks = selectedIds.length === picksPerEntry
   if (state?.success) {
     return (
       <div className="space-y-4">
         <SubmissionConfirmation
-          golferNames={golferNames}
+          golferNames={rosterGolferNames}
           golferIds={selectedIds}
           isLocked={isLocked}
           poolName={poolName}

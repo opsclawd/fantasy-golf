@@ -40,20 +40,6 @@ vi.mock('@/components/golfer-picker', () => ({
   ),
 }))
 
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        in: vi.fn((_column: string, ids: string[]) =>
-          Promise.resolve({
-            data: ids.map((id) => ({ id, name: golfersById[id as keyof typeof golfersById] })),
-          }),
-        ),
-      })),
-    })),
-  })),
-}))
-
 vi.mock('./actions', () => ({
   submitPicks: vi.fn(),
 }))
@@ -73,7 +59,14 @@ describe('PicksForm', () => {
           g2: 'Rory McIlroy',
           g3: 'Nelly Korda',
         }}
+        rosterGolferNames={{
+          g1: 'Scottie Scheffler',
+          g2: 'Rory McIlroy',
+          g3: 'Nelly Korda',
+          g4: 'Lydia Ko',
+        }}
         isLocked={false}
+        rosterGolfers={[]}
       />,
     )
 
@@ -98,6 +91,7 @@ describe('PicksForm', () => {
     })
 
     expect(within(summary).queryByText('Nelly Korda')).not.toBeInTheDocument()
+    expect(within(summary).queryByText('Loading pick...')).not.toBeInTheDocument()
     expect(golferIdsInput.value).toBe(JSON.stringify(['g1', 'g2', 'g4']))
   })
 })

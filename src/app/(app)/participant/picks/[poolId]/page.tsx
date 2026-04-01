@@ -51,6 +51,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   const existingGolferNames = Object.fromEntries(
     existingGolferIds.map((golferId) => [golferId, rosterGolferMap.get(golferId) ?? golferId]),
   )
+  const rosterGolferNames = Object.fromEntries(rosterGolfers.map((golfer) => [golfer.id, golfer.name]))
 
   if (showBreakdown) {
     const [scores, golfers] = await Promise.all([
@@ -114,6 +115,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
           picksPerEntry={pool.picks_per_entry}
           existingGolferIds={existingGolferIds}
           existingGolferNames={existingGolferNames}
+          rosterGolferNames={rosterGolferNames}
           rosterGolfers={rosterGolfers}
           isLocked={isLocked}
         />
