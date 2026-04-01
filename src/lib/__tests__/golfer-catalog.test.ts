@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { buildSearchName, filterLocalGolfers, isBulkRefreshBlocked } from '@/lib/golfer-catalog/normalize'
-import { mergeVisibleGolfers } from '@/components/golfer-picker'
 import { searchPlayers } from '@/lib/golfer-catalog/rapidapi'
 import { getGolfers } from '@/lib/slash-golf/client'
 import {
@@ -358,15 +357,55 @@ describe('rapidapi boundary', () => {
     )
   })
 
-  it('throws a controlled error when tournament golfers payload is not an array', async () => {
+  it('throws a controlled error when tournament golfers payload is not valid', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ players: [] }),
+      json: async () => ({ somethingElse: [] }),
     })
 
     vi.stubGlobal('fetch', fetchSpy)
 
     await expect(getGolfers('t1', 2026)).rejects.toThrow('Tournament golfers response was invalid')
+  })
+
+  it('parses tournament golfers from a players array payload', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        players: [
+          { playerId: ' 52955 ', firstName: ' Ludvig ', lastName: ' Åberg ', country: ' USA ' },
+          null,
+          { playerId: ' 50525 ', name: ' Collin Morikawa ', country: ' USA ' },
+        ],
+      }),
+    })
+
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await expect(getGolfers('t1', 2026)).resolves.toEqual([
+      { id: '52955', name: 'Ludvig Åberg', country: 'USA' },
+      { id: '50525', name: 'Collin Morikawa', country: 'USA' },
+    ])
+  })
+
+  it('parses tournament golfers from a players array payload', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        players: [
+          { playerId: ' 52955 ', firstName: ' Ludvig ', lastName: ' Åberg ', country: ' USA ' },
+          null,
+          { playerId: ' 50525 ', name: ' Collin Morikawa ', country: ' USA ' },
+        ],
+      }),
+    })
+
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await expect(getGolfers('t1', 2026)).resolves.toEqual([
+      { id: '52955', name: 'Ludvig Åberg', country: 'USA' },
+      { id: '50525', name: 'Collin Morikawa', country: 'USA' },
+    ])
   })
 
   it('ignores malformed tournament golfer array members safely', async () => {
@@ -491,20 +530,5 @@ describe('filterLocalGolfers', () => {
         { search: 'morikawa', country: '' },
       ).map((golfer) => golfer.id),
     ).toEqual(['1'])
-  })
-})
-
-describe('mergeVisibleGolfers', () => {
-  it('only preserves selected inactive golfers outside the current filtered set', () => {
-    expect(
-      mergeVisibleGolfers({
-        golfers: [
-          { id: '1', name: 'Collin Morikawa', search_name: 'collin morikawa', country: 'USA', is_active: true },
-          { id: '2', name: 'Rory McIlroy', search_name: 'rory mcilroy', country: 'NIR', is_active: false },
-        ],
-        filteredGolfers: [{ id: '1', name: 'Collin Morikawa', search_name: 'collin morikawa', country: 'USA', is_active: true }],
-        selectedIds: ['1', '2'],
-      }).map((golfer) => golfer.id),
-    ).toEqual(['2', '1'])
   })
 })

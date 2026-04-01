@@ -30,25 +30,33 @@ export async function getGolfers(tournamentId: string, year?: number): Promise<{
   })
   if (!res.ok) throw new Error('Failed to fetch golfers')
   const raw = await res.json()
+  const players = Array.isArray(raw)
+    ? raw
+    : Array.isArray((raw as { players?: unknown }).players)
+      ? (raw as { players: unknown[] }).players
+      : null
 
-  if (!Array.isArray(raw)) {
+  if (!players) {
     throw new Error('Tournament golfers response was invalid')
   }
 
-  return raw.flatMap((golfer: Record<string, unknown>) => {
+  return players.flatMap((golfer: unknown) => {
     if (!golfer || typeof golfer !== 'object') return []
+    const golferRecord = golfer as Record<string, unknown>
 
-    const idValue = typeof golfer.playerId === 'string'
-      ? golfer.playerId
-      : typeof golfer.id === 'string'
-        ? golfer.id
+    const idValue = typeof golferRecord.playerId === 'string'
+      ? golferRecord.playerId
+      : typeof golferRecord.id === 'string'
+        ? golferRecord.id
         : null
     const id = idValue?.trim()
-    const firstName = typeof golfer.firstName === 'string' ? golfer.firstName : ''
-    const lastName = typeof golfer.lastName === 'string' ? golfer.lastName : ''
-    const nameValue = typeof golfer.name === 'string' ? golfer.name : [firstName, lastName].filter(Boolean).join(' ').trim()
-    const name = nameValue.trim()
-    const country = typeof golfer.country === 'string' ? golfer.country.trim() : ''
+    const firstName = typeof golferRecord.firstName === 'string' ? golferRecord.firstName : ''
+    const lastName = typeof golferRecord.lastName === 'string' ? golferRecord.lastName : ''
+    const nameValue = typeof golferRecord.name === 'string'
+      ? golferRecord.name
+      : [firstName, lastName].filter(Boolean).join(' ').trim()
+    const name = nameValue.trim().replace(/\s+/g, ' ')
+    const country = typeof golferRecord.country === 'string' ? golferRecord.country.trim() : ''
 
     if (!id || !name) return []
 
