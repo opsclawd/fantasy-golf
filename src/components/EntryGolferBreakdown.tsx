@@ -4,12 +4,12 @@ import { useState, useMemo } from 'react'
 import { GolferContribution } from './GolferContribution'
 import { GolferDetailSheet } from './GolferDetailSheet'
 import { buildFallbackGolfer } from '@/lib/golfer-catalog/service'
-import { getEntryGolferSummaries } from '@/lib/golfer-detail'
-import type { TournamentScore, Golfer } from '@/lib/supabase/types'
+import { getEntryGolferSummaries, type GolferLike } from '@/lib/golfer-detail'
+import type { TournamentScore } from '@/lib/supabase/types'
 
 interface EntryGolferBreakdownProps {
   golferIds: string[]
-  golfers: Golfer[]
+  golfers: GolferLike[]
   golferScoresRecord: Record<string, TournamentScore>
 }
 
@@ -26,9 +26,9 @@ export function EntryGolferBreakdown({ golferIds, golfers, golferScoresRecord }:
     [golferIds, golferScores, golfers]
   )
 
-  const selectedGolfer: Golfer | null = useMemo(() => {
+  const selectedGolfer: GolferLike | null = useMemo(() => {
     if (!selectedGolferId) return null
-    return golfers.find(g => g.id === selectedGolferId) ?? buildFallbackGolfer(selectedGolferId)
+    return (golfers.find(g => g.id === selectedGolferId) ?? buildFallbackGolfer(selectedGolferId)) as GolferLike
   }, [selectedGolferId, golfers])
 
   const selectedGolferScore = selectedGolferId

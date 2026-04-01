@@ -23,10 +23,12 @@ export function GolferCatalogPanel({
   poolId,
   usage,
   latestRun,
+  rosterCount,
 }: {
   poolId: string
   usage: Usage
   latestRun: LatestRun
+  rosterCount?: number
 }) {
   const [refreshState, refreshAction] = useFormState<GolferCatalogActionState, FormData>(refreshGolferCatalogAction, null)
   const [addState, addAction] = useFormState<GolferCatalogActionState, FormData>(addMissingGolferAction, null)
@@ -37,8 +39,13 @@ export function GolferCatalogPanel({
   return (
     <section className="rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)]">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Golfer catalog</p>
-      <h2 className="mt-2 text-lg font-semibold text-slate-950">Keep participant search local and current</h2>
+      <h2 className="mt-2 text-lg font-semibold text-slate-950">Keep the golfer catalog current for this pool</h2>
       <p className="mt-2 text-sm text-slate-600">{usage.usedCalls} of 250 calls used. {usage.remainingCalls} remaining this month.</p>
+      {typeof rosterCount === 'number' ? (
+        <p className="mt-1 text-sm text-slate-500">
+          Current tournament roster: {rosterCount} golfer{rosterCount === 1 ? '' : 's'} loaded.
+        </p>
+      ) : null}
       {warningTone ? (
         <p
           data-testid="catalog-usage-status"

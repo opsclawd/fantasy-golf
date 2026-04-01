@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { filterLocalGolfers } from '@/lib/golfer-catalog/normalize'
-import { createClient } from '@/lib/supabase/client'
 import { PickProgress } from './PickProgress'
 
-interface Golfer {
+export interface Golfer {
   id: string
   name: string
   country: string
@@ -34,54 +33,13 @@ interface GolferPickerProps {
   selectedIds: string[]
   onSelectionChange: (ids: string[]) => void
   maxSelections: number
+  golfers: Golfer[]
 }
 
-export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: GolferPickerProps) {
-  const [golfers, setGolfers] = useState<Golfer[]>([])
+export function GolferPicker({ selectedIds, onSelectionChange, maxSelections, golfers }: GolferPickerProps) {
   const [search, setSearch] = useState('')
   const [countryFilter, setCountryFilter] = useState('')
-  const [fetchError, setFetchError] = useState<string | null>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const supabase = useMemo(() => createClient(), [])
-
-  useEffect(() => {
-    let isMounted = true
-
-    const runFetch = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('golfers')
-          .select('id, name, country, search_name, is_active')
-          .order('name')
-
-        if (!isMounted) {
-          return
-        }
-
-        if (error) {
-          setFetchError('Unable to load golfers right now. Please refresh and try again.')
-          setGolfers([])
-          return
-        }
-
-        setFetchError(null)
-        setGolfers(data ?? [])
-      } catch {
-        if (!isMounted) {
-          return
-        }
-
-        setFetchError('Unable to load golfers right now. Please refresh and try again.')
-        setGolfers([])
-      }
-    }
-
-    void runFetch()
-
-    return () => {
-      isMounted = false
-    }
-  }, [supabase])
 
   const focusNextOption = (startIndex: number, step: 1 | -1) => {
     if (optionRefs.current.length === 0) {
@@ -172,11 +130,7 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections }: 
         aria-multiselectable="true"
         aria-label="Available golfers"
       >
-        {fetchError ? (
-          <p className="p-3 text-sm text-red-600" role="alert">
-            {fetchError}
-          </p>
-        ) : visibleGolfers.length === 0 ? (
+        {visibleGolfers.length === 0 ? (
           <p className="p-3 text-sm text-gray-500">No golfers match your filters.</p>
         ) : (
           <ul>

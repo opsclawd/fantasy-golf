@@ -6,10 +6,11 @@ import { GolferDetailSheet } from './GolferDetailSheet'
 import { panelClasses, sectionHeadingClasses } from './uiStyles'
 import { getGolferScorecard, getGolferPoolContext } from '@/lib/golfer-detail'
 import { buildFallbackGolfer } from '@/lib/golfer-catalog/service'
-import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
+import type { TournamentScore, Entry } from '@/lib/supabase/types'
+import type { TournamentRosterGolfer } from '@/lib/tournament-roster/queries'
 
 interface CommissionerGolferPanelProps {
-  golfers: Golfer[]
+  golfers: TournamentRosterGolfer[]
   golferScoresRecord: Record<string, TournamentScore>
   entries: Entry[]
 }
@@ -69,8 +70,8 @@ export function CommissionerGolferPanel({
     g.name.toLowerCase().includes(search.toLowerCase().trim())
   )
 
-  const selectedGolfer: Golfer | null = selectedGolferId
-    ? golferMap.get(selectedGolferId) ?? buildFallbackGolfer(selectedGolferId)
+  const selectedGolfer: TournamentRosterGolfer | null = selectedGolferId
+    ? golferMap.get(selectedGolferId) ?? (buildFallbackGolfer(selectedGolferId) as TournamentRosterGolfer)
     : null
 
   const selectedGolferScore = selectedGolferId

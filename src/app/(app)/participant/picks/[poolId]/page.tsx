@@ -7,12 +7,13 @@ import { classifyFreshness } from '@/lib/freshness'
 import { isPoolLocked } from '@/lib/picks'
 import { getPoolById, isPoolMember } from '@/lib/pool-queries'
 import { getScoresForTournament } from '@/lib/scoring-queries'
-import { getGolfersByIds } from '@/lib/golfer-queries'
+import { getTournamentRosterGolfers, type TournamentRosterGolfer } from '@/lib/tournament-roster/queries'
 import { createClient } from '@/lib/supabase/server'
-import type { TournamentScore, Golfer } from '@/lib/supabase/types'
+import type { TournamentScore } from '@/lib/supabase/types'
 import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
 import { redirect } from 'next/navigation'
 import { PicksForm } from './PicksForm'
+import type { GolferLike } from '@/lib/golfer-detail'
 
 export default async function PicksPage({ params }: { params: Promise<{ poolId: string }> }) {
   const { poolId } = await params
@@ -34,27 +35,27 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   const hasEntry = existingEntry !== null && existingEntry.golfer_ids.length > 0
   const existingGolferIds = existingEntry?.golfer_ids ?? []
 
-  let existingGolferNames: Record<string, string> = {}
-  if (existingGolferIds.length > 0) {
-    const { data: golfers } = await supabase
-      .from('golfers')
-      .select('id, name')
-      .in('id', existingGolferIds)
-
-    if (golfers) {
-      existingGolferNames = Object.fromEntries(golfers.map((golfer) => [golfer.id, golfer.name]))
-    }
-  }
-
   let golferScoresMap = new Map<string, TournamentScore>()
-  let golfersList: Golfer[] = []
+  let golfersList: GolferLike[] = []
+  let rosterGolfers: TournamentRosterGolfer[] = []
 
   const showBreakdown = hasEntry && (pool.status === 'live' || pool.status === 'complete')
+
+  try {
+    rosterGolfers = await getTournamentRosterGolfers(supabase, pool.tournament_id)
+  } catch {
+    rosterGolfers = []
+  }
+
+  const rosterGolferMap = new Map(rosterGolfers.map((golfer) => [golfer.id, golfer.name]))
+  const existingGolferNames = Object.fromEntries(
+    existingGolferIds.map((golferId) => [golferId, rosterGolferMap.get(golferId) ?? golferId]),
+  )
 
   if (showBreakdown) {
     const [scores, golfers] = await Promise.all([
       getScoresForTournament(supabase, pool.tournament_id),
-      getGolfersByIds(supabase, existingGolferIds),
+      Promise.resolve(rosterGolfers.filter((golfer) => existingGolferIds.includes(golfer.id))),
     ])
 
     golferScoresMap = new Map(scores.map(s => [s.golfer_id, s]))
@@ -113,6 +114,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
           picksPerEntry={pool.picks_per_entry}
           existingGolferIds={existingGolferIds}
           existingGolferNames={existingGolferNames}
+          rosterGolfers={rosterGolfers}
           isLocked={isLocked}
         />
       )}

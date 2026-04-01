@@ -1,11 +1,13 @@
 'use client'
 
-import { GolferPicker } from '@/components/golfer-picker'
+import { useEffect, useState } from 'react'
+import { useFormState, useFormStatus } from 'react-dom'
+
+import { GolferPicker, type Golfer } from '@/components/golfer-picker'
 import { SelectionSummaryCard } from '@/components/SelectionSummaryCard'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-import { useFormState, useFormStatus } from 'react-dom'
+
 import { submitPicks, type SubmitPicksState } from './actions'
 
 type PicksFormProps = {
@@ -14,6 +16,7 @@ type PicksFormProps = {
   picksPerEntry: number
   existingGolferIds: string[]
   existingGolferNames: Record<string, string>
+  rosterGolfers: Golfer[]
   isLocked: boolean
 }
 
@@ -37,35 +40,53 @@ export function PicksForm({
   picksPerEntry,
   existingGolferIds,
   existingGolferNames,
+  rosterGolfers,
   isLocked,
 }: PicksFormProps) {
   const [state, formAction] = useFormState<SubmitPicksState, FormData>(submitPicks, null)
   const [selectedIds, setSelectedIds] = useState<string[]>(existingGolferIds)
   const [golferNames, setGolferNames] = useState<Record<string, string>>(existingGolferNames)
-  const selectedGolferNames = selectedIds.map((id) => golferNames[id] ?? 'Loading pick...')
 
   useEffect(() => {
-    if (selectedIds.length === 0) return
+    let cancelled = false
 
-    let active = true
-    const supabase = createClient()
+    const missingIds = selectedIds.filter((id) => !golferNames[id])
 
-    supabase
-      .from('golfers')
-      .select('id, name')
-      .in('id', selectedIds)
-      .then(({ data }: { data: Array<{ id: string; name: string }> | null }) => {
-        if (!active || !data) return
-        setGolferNames((prev) => ({
-          ...prev,
-          ...Object.fromEntries(data.map((golfer: { id: string; name: string }) => [golfer.id, golfer.name])),
-        }))
+    if (missingIds.length === 0) {
+      return undefined
+    }
+
+    const loadGolferNames = async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from('golfers').select('id, name').in('id', missingIds)
+
+      if (cancelled || !data?.length) {
+        return
+      }
+
+      setGolferNames((current) => {
+        const next = { ...current }
+        let changed = false
+
+        for (const golfer of data) {
+          if (golfer.id && golfer.name && next[golfer.id] !== golfer.name) {
+            next[golfer.id] = golfer.name
+            changed = true
+          }
+        }
+
+        return changed ? next : current
       })
+    }
+
+    void loadGolferNames()
 
     return () => {
-      active = false
+      cancelled = true
     }
-  }, [selectedIds])
+  }, [golferNames, selectedIds, rosterGolfers])
+
+  const selectedGolferNames = selectedIds.map((id) => golferNames[id] ?? 'Loading pick...')
 
   const hasEnoughPicks = selectedIds.length === picksPerEntry
   if (state?.success) {
@@ -113,6 +134,7 @@ export function PicksForm({
           selectedIds={selectedIds}
           onSelectionChange={setSelectedIds}
           maxSelections={picksPerEntry}
+          golfers={rosterGolfers}
         />
 
         <div className="mt-6">

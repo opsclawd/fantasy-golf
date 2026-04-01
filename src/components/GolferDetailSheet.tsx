@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef } from 'react'
 import { GolferScorecard } from './GolferScorecard'
 import { panelClasses, sectionHeadingClasses } from './uiStyles'
 import { getGolferScorecard } from '@/lib/golfer-detail'
-import type { TournamentScore, Golfer } from '@/lib/supabase/types'
+import type { TournamentScore } from '@/lib/supabase/types'
+import type { GolferLike } from '@/lib/golfer-detail'
 
 interface GolferDetailSheetProps {
-  golfer: Golfer
+  golfer: GolferLike
   score: TournamentScore | null
   onClose: () => void
 }

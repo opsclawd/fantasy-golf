@@ -11,3 +11,13 @@ export interface GolferScore {
   thru: number
   total: number
 }
+
+export interface RapidApiPlayer {
+  id: string
+  playerId?: string
+  firstName?: string
+  lastName?: string
+  name?: string
+  country?: string
+  worldRank?: number | null
+}

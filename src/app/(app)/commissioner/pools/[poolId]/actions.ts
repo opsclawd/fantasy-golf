@@ -5,17 +5,13 @@ import { redirect } from 'next/navigation'
 import { searchPlayers } from '@/lib/golfer-catalog/rapidapi'
 import {
   DEFAULT_CATALOG_RUN_DECISION_INPUTS,
-  buildGolferUpsertPayload,
   buildManualAddQuery,
-  buildTournamentFieldUpsertRows,
   decideCatalogRun,
 } from '@/lib/golfer-catalog/service'
 import {
   buildSyncRunInsert,
-  getGolferByExternalPlayerId,
   getMonthlyApiUsage,
   insertGolferSyncRun,
-  upsertGolfers,
 } from '@/lib/golfer-catalog/queries'
 import { getGolfers } from '@/lib/slash-golf/client'
 import { createClient } from '@/lib/supabase/server'
@@ -34,6 +30,7 @@ import {
   insertPool,
   insertPoolMember,
 } from '@/lib/pool-queries'
+import { buildTournamentRosterInsert } from '@/lib/tournament-roster/queries'
 import type { PoolFormat, PoolStatus } from '@/lib/supabase/types'
 
 // --- Status transition actions ---
@@ -286,7 +283,7 @@ export async function refreshGolferCatalogAction(
   if (!user) redirect('/sign-in')
 
   const poolId = String(formData.get('poolId') ?? '')
-  const runType = String(formData.get('runType') ?? 'monthly_baseline') as 'monthly_baseline' | 'pre_tournament'
+  const runType: 'pre_tournament' = 'pre_tournament'
   const pool = await getPoolById(supabase, poolId)
 
   if (!pool) return { error: 'Pool not found.' }
@@ -330,8 +327,15 @@ export async function refreshGolferCatalogAction(
 
   try {
     const golfers = await getGolfers(pool.tournament_id, pool.year)
-    const rows = buildTournamentFieldUpsertRows(golfers, nowIso)
-    const { error: upsertError } = await upsertGolfers(supabase, rows)
+    const rows = golfers.map((golfer) => buildTournamentRosterInsert({
+      tournamentId: pool.tournament_id,
+      golfer,
+      source: 'refresh',
+      syncedAt: nowIso,
+    }))
+    const { error: upsertError } = await supabase.from('tournament_golfers').upsert(rows, {
+      onConflict: 'tournament_id,external_player_id',
+    })
 
     if (upsertError) {
       const syncRunError = await recordGolferSyncRunOrError(supabase, {
@@ -341,7 +345,7 @@ export async function refreshGolferCatalogAction(
           apiCallsUsed: 1,
           status: 'failed',
           summary: { golfers_upserted: 0 },
-          errorMessage: upsertError,
+          errorMessage: upsertError.message,
         })
 
       if (syncRunError) {
@@ -464,30 +468,33 @@ export async function addMissingGolferAction(
       return { error: 'No golfer matched that search.' }
     }
 
-    const existing = await getGolferByExternalPlayerId(supabase, player.playerId)
+    const syncedAt = new Date().toISOString()
+    const row = buildTournamentRosterInsert({
+      tournamentId: pool.tournament_id,
+      golfer: { ...player, id: player.playerId },
+      source: 'manual_add',
+      syncedAt,
+    })
+    const { error: upsertError } = await supabase.from('tournament_golfers').upsert([row], {
+      onConflict: 'tournament_id,external_player_id',
+    })
 
-    if (!existing) {
-      const syncedAt = new Date().toISOString()
-      const payload = buildGolferUpsertPayload({ ...player, source: 'manual_add' })
-      const { error: upsertError } = await upsertGolfers(supabase, [{ ...payload, last_synced_at: syncedAt }])
+    if (upsertError) {
+      const syncRunError = await recordGolferSyncRunOrError(supabase, {
+          runType: 'manual_add',
+          requestedBy: user.id,
+          tournamentId: pool.tournament_id,
+          apiCallsUsed: 1,
+          status: 'failed',
+          summary: { golfers_upserted: 0 },
+          errorMessage: upsertError.message,
+        })
 
-      if (upsertError) {
-        const syncRunError = await recordGolferSyncRunOrError(supabase, {
-            runType: 'manual_add',
-            requestedBy: user.id,
-            tournamentId: pool.tournament_id,
-            apiCallsUsed: 1,
-            status: 'failed',
-            summary: { golfers_upserted: 0 },
-            errorMessage: upsertError,
-          })
-
-        if (syncRunError) {
-          return { error: syncRunError }
-        }
-
-        return { error: 'Failed to add golfer.' }
+      if (syncRunError) {
+        return { error: syncRunError }
       }
+
+      return { error: 'Failed to add golfer.' }
     }
 
     const syncRunError = await recordGolferSyncRunOrError(supabase, {
@@ -496,10 +503,7 @@ export async function addMissingGolferAction(
         tournamentId: pool.tournament_id,
         apiCallsUsed: 1,
         status: 'success',
-        summary: {
-          golfers_upserted: existing ? 0 : 1,
-          golfer_name: [player.firstName, player.lastName].filter(Boolean).join(' ').trim(),
-        },
+        summary: { golfers_upserted: 1, golfer_name: [player.firstName, player.lastName].filter(Boolean).join(' ').trim() },
         errorMessage: null,
       })
 

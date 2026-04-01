@@ -7,6 +7,7 @@ import { TrustStatusBar } from '@/components/TrustStatusBar'
 import { CommissionerGolferPanel } from '@/components/CommissionerGolferPanel'
 import { GolferCatalogPanel } from '@/components/GolferCatalogPanel'
 import { classifyFreshness } from '@/lib/freshness'
+import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReusePoolButton } from './ReusePoolButton'
 import InviteLinkSection from './InviteLinkSection'
@@ -16,6 +17,7 @@ import { loadGolferCatalogPanelState } from './golferCatalogPanelState'
 import Link from 'next/link'
 import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
 import { panelClasses, scrollRegionFocusClasses, sectionHeadingClasses } from '@/components/uiStyles'
+import type { TournamentRosterGolfer } from '@/lib/tournament-roster/queries'
 
 type PoolEntry = {
   id: string
@@ -66,19 +68,22 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
     ]
   })
 
-  const { data: allGolfers } = await supabase.from('golfers').select('*')
-  const golferMap = new Map(allGolfers?.map(g => [g.id, g.name]) || [])
+  let rosterGolfers: TournamentRosterGolfer[] = []
+  try {
+    rosterGolfers = await getTournamentRosterGolfers(supabase, pool.tournament_id)
+  } catch {
+    rosterGolfers = []
+  }
+  const golferMap = new Map(rosterGolfers.map(g => [g.id, g.name]))
 
   const showGolferPanel = pool.status === 'live' || pool.status === 'complete'
 
   let golferScoresRecord: Record<string, TournamentScore> = {}
-  let allGolfersList: Golfer[] = []
   let typedEntries: Entry[] = []
 
   if (showGolferPanel) {
     const scores = await getScoresForTournament(supabase, pool.tournament_id)
     golferScoresRecord = Object.fromEntries(scores.map(s => [s.golfer_id, s]))
-    allGolfersList = (allGolfers as Golfer[]) || []
     typedEntries = normalizedEntries.map(e => ({
       id: e.id,
       pool_id: poolId,
@@ -98,7 +103,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
   const isInvalidDeadline = !parsedDeadline || Number.isNaN(parsedDeadline.getTime())
   const isDeadlineLocked = isInvalidDeadline || parsedDeadline <= new Date()
   const isLocked = pool.status !== 'open' || isDeadlineLocked
-  const { latestRun, usage } = await loadGolferCatalogPanelState(supabase)
+  const { latestRun, usage, rosterCount = 0 } = await loadGolferCatalogPanelState(supabase, pool.tournament_id)
 
   return (
     <div className="space-y-6">
@@ -149,7 +154,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
       <InviteLinkSection inviteCode={pool.invite_code} />
       <PoolConfigForm pool={pool} />
-      <GolferCatalogPanel poolId={poolId} usage={usage} latestRun={latestRun} />
+      <GolferCatalogPanel poolId={poolId} usage={usage} latestRun={latestRun} rosterCount={rosterCount} />
 
       <section className={`${panelClasses()} overflow-hidden`}>
         <div className="border-b border-slate-200/80 px-5 py-4">
@@ -210,7 +215,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
       {showGolferPanel && (
         <CommissionerGolferPanel
-          golfers={allGolfersList}
+          golfers={rosterGolfers}
           golferScoresRecord={golferScoresRecord}
           entries={typedEntries}
         />
