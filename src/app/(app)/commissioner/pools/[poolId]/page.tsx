@@ -7,12 +7,12 @@ import { TrustStatusBar } from '@/components/TrustStatusBar'
 import { CommissionerGolferPanel } from '@/components/CommissionerGolferPanel'
 import { GolferCatalogPanel } from '@/components/GolferCatalogPanel'
 import { classifyFreshness } from '@/lib/freshness'
-import { buildCatalogUsageSummary, createQuotaPolicy } from '@/lib/golfer-catalog/service'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReusePoolButton } from './ReusePoolButton'
 import InviteLinkSection from './InviteLinkSection'
 import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
+import { loadGolferCatalogPanelState } from './golferCatalogPanelState'
 import Link from 'next/link'
 import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
 import { panelClasses, scrollRegionFocusClasses, sectionHeadingClasses } from '@/components/uiStyles'
@@ -98,11 +98,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
   const isInvalidDeadline = !parsedDeadline || Number.isNaN(parsedDeadline.getTime())
   const isDeadlineLocked = isInvalidDeadline || parsedDeadline <= new Date()
   const isLocked = pool.status !== 'open' || isDeadlineLocked
-  const usage = buildCatalogUsageSummary({
-    usedCalls: 0,
-    policy: createQuotaPolicy(),
-  })
-  const latestRun = null
+  const { latestRun, usage } = await loadGolferCatalogPanelState(supabase)
 
   return (
     <div className="space-y-6">

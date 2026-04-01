@@ -5,14 +5,19 @@ vi.mock('server-only', () => ({}))
 import { buildSearchName, filterLocalGolfers, isBulkRefreshBlocked } from '@/lib/golfer-catalog/normalize'
 import { mergeVisibleGolfers } from '@/components/golfer-picker'
 import { searchPlayers } from '@/lib/golfer-catalog/rapidapi'
+import { getGolfers } from '@/lib/slash-golf/client'
 import {
   DEFAULT_CATALOG_RUN_DECISION_INPUTS,
   buildCatalogUsageSummary,
   buildFallbackGolfer,
+  buildManualAddQuery,
   buildGolferUpsertPayload,
+  buildTournamentFieldUpsertRows,
+  buildUsageSnapshot,
   createQuotaPolicy,
   decideCatalogRun,
 } from '@/lib/golfer-catalog/service'
+import { buildSyncRunInsert, getLatestGolferSyncRun, getMonthlyApiUsage } from '@/lib/golfer-catalog/queries'
 
 describe('golfer catalog helpers', () => {
   it('normalizes golfer names for local search matching', () => {
@@ -98,6 +103,199 @@ describe('catalog service', () => {
       'Quota policy thresholds are invalid',
     )
   })
+
+  it('builds a sync run insert payload with summary metadata', () => {
+    expect(
+      buildSyncRunInsert({
+        runType: 'manual_add',
+        requestedBy: 'user-1',
+        tournamentId: 't1',
+        apiCallsUsed: 1,
+        status: 'success',
+        summary: { golfers_upserted: 1 },
+        errorMessage: null,
+      }),
+    ).toEqual({
+      run_type: 'manual_add',
+      requested_by: 'user-1',
+      tournament_id: 't1',
+      api_calls_used: 1,
+      status: 'success',
+      summary: { golfers_upserted: 1 },
+      error_message: null,
+    })
+  })
+
+  it('exposes only the task 1 query helpers', async () => {
+    const queries = await import('@/lib/golfer-catalog/queries')
+
+    expect(queries).not.toHaveProperty('buildGolferUpsertRows')
+  })
+
+  it('throws when loading the latest golfer sync run fails', async () => {
+    const supabase = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          order: vi.fn().mockReturnValue({
+            limit: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'permission denied' },
+              }),
+            }),
+          }),
+        }),
+      }),
+    }
+
+    await expect(getLatestGolferSyncRun(supabase as never)).rejects.toThrow(
+      'Failed to load latest golfer sync run: permission denied',
+    )
+  })
+
+  it('ignores malformed monthly usage values while summing valid API calls', async () => {
+    const supabase = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          gte: vi.fn().mockReturnValue({
+            lt: vi.fn().mockResolvedValue({
+              data: [
+                { api_calls_used: 2 },
+                { api_calls_used: null },
+                { api_calls_used: '3' },
+                { api_calls_used: Number.NaN },
+                {},
+                { api_calls_used: 4 },
+              ],
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    }
+
+    await expect(getMonthlyApiUsage(supabase as never, new Date('2026-03-31T00:00:00.000Z'))).resolves.toBe(6)
+  })
+
+  it('ignores negative monthly usage values while summing valid API calls', async () => {
+    const supabase = {
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          gte: vi.fn().mockReturnValue({
+            lt: vi.fn().mockResolvedValue({
+              data: [
+                { api_calls_used: 2 },
+                { api_calls_used: -3 },
+                { api_calls_used: 4 },
+              ],
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    }
+
+    await expect(getMonthlyApiUsage(supabase as never, new Date('2026-03-31T00:00:00.000Z'))).resolves.toBe(6)
+  })
+
+  it('builds tournament field upsert rows with tournament sync metadata', () => {
+    expect(
+      buildTournamentFieldUpsertRows([
+        { id: 'g1', name: 'Collin Morikawa', country: 'USA' },
+      ], '2026-03-31T00:00:00.000Z'),
+    ).toEqual([
+      {
+        id: 'g1',
+        name: 'Collin Morikawa',
+        country: 'USA',
+        search_name: 'collin morikawa',
+        world_rank: null,
+        is_active: true,
+        source: 'tournament_sync',
+        external_player_id: 'g1',
+        last_synced_at: '2026-03-31T00:00:00.000Z',
+      },
+    ])
+  })
+
+  it('upserts tournament golfers with tournament_sync source and synced timestamp', () => {
+    const syncedAt = '2026-04-01T12:34:56.000Z'
+
+    expect(
+      buildTournamentFieldUpsertRows([
+        { id: 'g1', name: 'Collin Morikawa', country: 'USA' },
+        { id: 'g2', name: 'Rory McIlroy', country: 'NIR' },
+      ], syncedAt),
+    ).toEqual([
+      expect.objectContaining({
+        id: 'g1',
+        external_player_id: 'g1',
+        source: 'tournament_sync',
+        last_synced_at: syncedAt,
+      }),
+      expect.objectContaining({
+        id: 'g2',
+        external_player_id: 'g2',
+        source: 'tournament_sync',
+        last_synced_at: syncedAt,
+      }),
+    ])
+  })
+
+  it('builds manual-add search params from commissioner input', () => {
+    expect(buildManualAddQuery({ firstName: '  Collin ', lastName: ' Morikawa  ' })).toEqual({
+      firstName: 'Collin',
+      lastName: 'Morikawa',
+    })
+  })
+
+  it('omits blank manual-add names after trimming', () => {
+    expect(buildManualAddQuery({ firstName: '  ', lastName: ' Morikawa ' })).toEqual({
+      lastName: 'Morikawa',
+    })
+  })
+
+  it('rejects manual-add queries that have no usable name parts', () => {
+    expect(() => buildManualAddQuery({ firstName: '  ', lastName: '\n' })).toThrow(
+      'Provide firstName or lastName',
+    )
+  })
+
+  it('trims tournament golfers before building upsert rows', () => {
+    expect(
+      buildTournamentFieldUpsertRows([
+        { id: ' g1 ', name: '  Collin   Morikawa  ', country: ' USA ' },
+      ], '2026-03-31T00:00:00.000Z'),
+    ).toEqual([
+      {
+        id: 'g1',
+        name: 'Collin Morikawa',
+        country: 'USA',
+        search_name: 'collin morikawa',
+        world_rank: null,
+        is_active: true,
+        source: 'tournament_sync',
+        external_player_id: 'g1',
+        last_synced_at: '2026-03-31T00:00:00.000Z',
+      },
+    ])
+  })
+
+  it('rejects tournament golfers with blank ids or names after trimming', () => {
+    expect(() =>
+      buildTournamentFieldUpsertRows([
+        { id: '   ', name: 'Collin Morikawa', country: 'USA' },
+      ], '2026-03-31T00:00:00.000Z')).toThrow('Tournament golfer must include a usable id and name')
+
+    expect(() =>
+      buildTournamentFieldUpsertRows([
+        { id: 'g1', name: '   ', country: 'USA' },
+      ], '2026-03-31T00:00:00.000Z')).toThrow('Tournament golfer must include a usable id and name')
+  })
+
+  it('builds a usage snapshot from monthly usage and policy', () => {
+    expect(buildUsageSnapshot(220).status).toBe('warning')
+  })
 })
 
 describe('rapidapi boundary', () => {
@@ -158,6 +356,30 @@ describe('rapidapi boundary', () => {
         },
       },
     )
+  })
+
+  it('throws a controlled error when tournament golfers payload is not an array', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ players: [] }),
+    })
+
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await expect(getGolfers('t1', 2026)).rejects.toThrow('Tournament golfers response was invalid')
+  })
+
+  it('ignores malformed tournament golfer array members safely', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [null, 'bad-row', { playerId: ' g1 ', name: ' Collin Morikawa ', country: ' USA ' }],
+    })
+
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await expect(getGolfers('t1', 2026)).resolves.toEqual([
+      { id: 'g1', name: 'Collin Morikawa', country: 'USA' },
+    ])
   })
 })
 

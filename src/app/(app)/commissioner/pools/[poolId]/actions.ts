@@ -2,7 +2,22 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { DEFAULT_CATALOG_RUN_DECISION_INPUTS, decideCatalogRun } from '@/lib/golfer-catalog/service'
+import { searchPlayers } from '@/lib/golfer-catalog/rapidapi'
+import {
+  DEFAULT_CATALOG_RUN_DECISION_INPUTS,
+  buildGolferUpsertPayload,
+  buildManualAddQuery,
+  buildTournamentFieldUpsertRows,
+  decideCatalogRun,
+} from '@/lib/golfer-catalog/service'
+import {
+  buildSyncRunInsert,
+  getGolferByExternalPlayerId,
+  getMonthlyApiUsage,
+  insertGolferSyncRun,
+  upsertGolfers,
+} from '@/lib/golfer-catalog/queries'
+import { getGolfers } from '@/lib/slash-golf/client'
 import { createClient } from '@/lib/supabase/server'
 import {
   canTransitionStatus,
@@ -247,6 +262,19 @@ export type GolferCatalogActionState = {
   success?: boolean
 } | null
 
+async function recordGolferSyncRunOrError(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  payload: Parameters<typeof buildSyncRunInsert>[0],
+): Promise<string | null> {
+  const { error } = await insertGolferSyncRun(supabase, buildSyncRunInsert(payload))
+
+  if (error) {
+    return 'Failed to record golfer catalog sync run.'
+  }
+
+  return null
+}
+
 export async function refreshGolferCatalogAction(
   _prevState: GolferCatalogActionState,
   formData: FormData,
@@ -266,13 +294,92 @@ export async function refreshGolferCatalogAction(
     return { error: 'Only the commissioner can refresh the golfer catalog.' }
   }
 
+  let usedCalls: number
+
+  try {
+    usedCalls = await getMonthlyApiUsage(supabase, new Date())
+  } catch {
+    return { error: 'Failed to load golfer catalog usage.' }
+  }
+
   const decision = decideCatalogRun({
-    runType,
     ...DEFAULT_CATALOG_RUN_DECISION_INPUTS,
+    runType,
+    usedCalls,
   })
 
   if (!decision.allowed) {
+    const syncRunError = await recordGolferSyncRunOrError(supabase, {
+        runType,
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 0,
+        status: 'blocked',
+        summary: { reason: decision.reason },
+        errorMessage: decision.reason,
+      })
+
+    if (syncRunError) {
+      return { error: syncRunError }
+    }
+
     return { error: decision.reason }
+  }
+
+  const nowIso = new Date().toISOString()
+
+  try {
+    const golfers = await getGolfers(pool.tournament_id, pool.year)
+    const rows = buildTournamentFieldUpsertRows(golfers, nowIso)
+    const { error: upsertError } = await upsertGolfers(supabase, rows)
+
+    if (upsertError) {
+      const syncRunError = await recordGolferSyncRunOrError(supabase, {
+          runType,
+          requestedBy: user.id,
+          tournamentId: pool.tournament_id,
+          apiCallsUsed: 1,
+          status: 'failed',
+          summary: { golfers_upserted: 0 },
+          errorMessage: upsertError,
+        })
+
+      if (syncRunError) {
+        return { error: syncRunError }
+      }
+
+      return { error: 'Failed to refresh golfer catalog.' }
+    }
+
+    const syncRunError = await recordGolferSyncRunOrError(supabase, {
+        runType,
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 1,
+        status: 'success',
+        summary: { golfers_upserted: rows.length },
+        errorMessage: null,
+      })
+
+    if (syncRunError) {
+      return { error: syncRunError }
+    }
+  } catch {
+    const syncRunError = await recordGolferSyncRunOrError(supabase, {
+        runType,
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 1,
+        status: 'failed',
+        summary: { golfers_upserted: 0 },
+        errorMessage: 'Failed to refresh golfer catalog.',
+      })
+
+    if (syncRunError) {
+      return { error: syncRunError }
+    }
+
+    return { error: 'Failed to refresh golfer catalog.' }
   }
 
   revalidatePath(`/commissioner/pools/${poolId}`)
@@ -303,13 +410,118 @@ export async function addMissingGolferAction(
     return { error: 'Enter at least a first or last name.' }
   }
 
+  let usedCalls: number
+
+  try {
+    usedCalls = await getMonthlyApiUsage(supabase, new Date())
+  } catch {
+    return { error: 'Failed to load golfer catalog usage.' }
+  }
+
   const decision = decideCatalogRun({
-    runType: 'manual_add',
     ...DEFAULT_CATALOG_RUN_DECISION_INPUTS,
+    runType: 'manual_add',
+    usedCalls,
   })
 
   if (!decision.allowed) {
+    const syncRunError = await recordGolferSyncRunOrError(supabase, {
+        runType: 'manual_add',
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 0,
+        status: 'blocked',
+        summary: { reason: decision.reason },
+        errorMessage: decision.reason,
+      })
+
+    if (syncRunError) {
+      return { error: syncRunError }
+    }
+
     return { error: decision.reason }
+  }
+
+  try {
+    const players = await searchPlayers(buildManualAddQuery({ firstName, lastName }))
+    const player = players[0]
+
+    if (!player) {
+      const syncRunError = await recordGolferSyncRunOrError(supabase, {
+          runType: 'manual_add',
+          requestedBy: user.id,
+          tournamentId: pool.tournament_id,
+          apiCallsUsed: 1,
+          status: 'failed',
+          summary: { golfers_upserted: 0 },
+          errorMessage: 'No golfer matched that search.',
+        })
+
+      if (syncRunError) {
+        return { error: syncRunError }
+      }
+
+      return { error: 'No golfer matched that search.' }
+    }
+
+    const existing = await getGolferByExternalPlayerId(supabase, player.playerId)
+
+    if (!existing) {
+      const syncedAt = new Date().toISOString()
+      const payload = buildGolferUpsertPayload({ ...player, source: 'manual_add' })
+      const { error: upsertError } = await upsertGolfers(supabase, [{ ...payload, last_synced_at: syncedAt }])
+
+      if (upsertError) {
+        const syncRunError = await recordGolferSyncRunOrError(supabase, {
+            runType: 'manual_add',
+            requestedBy: user.id,
+            tournamentId: pool.tournament_id,
+            apiCallsUsed: 1,
+            status: 'failed',
+            summary: { golfers_upserted: 0 },
+            errorMessage: upsertError,
+          })
+
+        if (syncRunError) {
+          return { error: syncRunError }
+        }
+
+        return { error: 'Failed to add golfer.' }
+      }
+    }
+
+    const syncRunError = await recordGolferSyncRunOrError(supabase, {
+        runType: 'manual_add',
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 1,
+        status: 'success',
+        summary: {
+          golfers_upserted: existing ? 0 : 1,
+          golfer_name: [player.firstName, player.lastName].filter(Boolean).join(' ').trim(),
+        },
+        errorMessage: null,
+      })
+
+    if (syncRunError) {
+      return { error: syncRunError }
+    }
+  } catch {
+    const syncRunError = await recordGolferSyncRunOrError(supabase, {
+        runType: 'manual_add',
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 1,
+        status: 'failed',
+        summary: { golfers_upserted: 0 },
+        errorMessage: 'Failed to add golfer.',
+      })
+
+    if (syncRunError) {
+      return { error: syncRunError }
+    }
+
+    return { error: 'Failed to add golfer.' }
   }
 
   revalidatePath(`/commissioner/pools/${poolId}`)

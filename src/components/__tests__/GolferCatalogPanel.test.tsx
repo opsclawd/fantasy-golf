@@ -3,6 +3,81 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
+}))
+
+vi.mock('next/navigation', () => ({
+  redirect: vi.fn(),
+}))
+
+vi.mock('@/lib/pool-queries', () => ({
+  getPoolById: vi.fn(),
+  getPoolMembers: vi.fn(),
+  getEntriesForPool: vi.fn(),
+}))
+
+vi.mock('@/lib/scoring-queries', () => ({
+  getScoresForTournament: vi.fn(),
+}))
+
+vi.mock('@/components/StatusChip', () => ({
+  StatusChip: () => null,
+}))
+
+vi.mock('@/components/TrustStatusBar', () => ({
+  TrustStatusBar: () => null,
+}))
+
+vi.mock('@/components/CommissionerGolferPanel', () => ({
+  CommissionerGolferPanel: () => null,
+}))
+
+vi.mock('@/lib/freshness', () => ({
+  classifyFreshness: vi.fn(),
+}))
+
+vi.mock('./PoolActions', () => ({
+  StartPoolButton: () => null,
+  ClosePoolButton: () => null,
+}))
+
+vi.mock('./ReusePoolButton', () => ({
+  ReusePoolButton: () => null,
+}))
+
+vi.mock('./InviteLinkSection', () => ({
+  default: () => null,
+}))
+
+vi.mock('./PoolConfigForm', () => ({
+  PoolConfigForm: () => null,
+}))
+
+vi.mock('./PoolStatusSection', () => ({
+  PoolStatusSection: () => null,
+}))
+
+vi.mock('next/link', () => ({
+  default: () => null,
+}))
+
+vi.mock('@/components/uiStyles', () => ({
+  panelClasses: () => '',
+  scrollRegionFocusClasses: () => '',
+  sectionHeadingClasses: () => '',
+}))
+
+vi.mock('@/lib/golfer-catalog/queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/golfer-catalog/queries')>()
+
+  return {
+    ...actual,
+    getLatestGolferSyncRun: vi.fn(),
+    getMonthlyApiUsage: vi.fn(),
+  }
+})
+
 const { mockUseFormState } = vi.hoisted(() => ({
   mockUseFormState: vi.fn(),
 }))
@@ -22,8 +97,24 @@ vi.mock('@/app/(app)/commissioner/pools/[poolId]/actions', () => ({
 }))
 
 import { GolferCatalogPanel } from '@/components/GolferCatalogPanel'
+import { getLatestGolferSyncRun, getMonthlyApiUsage } from '@/lib/golfer-catalog/queries'
+import { loadGolferCatalogPanelState } from '@/app/(app)/commissioner/pools/[poolId]/golferCatalogPanelState'
 
 describe('GolferCatalogPanel', () => {
+  it('falls back to safe panel state when catalog reads fail', async () => {
+    vi.mocked(getLatestGolferSyncRun).mockRejectedValue(new Error('latest run unavailable'))
+    vi.mocked(getMonthlyApiUsage).mockRejectedValue(new Error('quota unavailable'))
+
+    await expect(loadGolferCatalogPanelState({} as never)).resolves.toEqual({
+      latestRun: null,
+      usage: {
+        usedCalls: 0,
+        remainingCalls: 250,
+        status: 'ok',
+      },
+    })
+  })
+
   it('shows quota usage and commissioner maintenance actions', () => {
     mockUseFormState.mockReset()
     mockUseFormState.mockReturnValue([null, '/mock-action'])
@@ -89,6 +180,23 @@ describe('GolferCatalogPanel', () => {
     )
     expect(screen.getByRole('button', { name: 'Refresh monthly catalog' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Refresh tournament field' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add missing golfer' })).toBeEnabled()
+  })
+
+  it('shows a latest-run timestamp and keeps manual add available when blocked', () => {
+    mockUseFormState.mockReset()
+    mockUseFormState.mockReturnValue([null, '/mock-action'])
+
+    render(
+      <GolferCatalogPanel
+        poolId="pool-1"
+        usage={{ usedCalls: 250, remainingCalls: 0, status: 'blocked' }}
+        latestRun={{ created_at: '2026-03-31T00:00:00.000Z', status: 'success' }}
+      />,
+    )
+
+    expect(screen.getByText(/Last sync success/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh monthly catalog' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Add missing golfer' })).toBeEnabled()
   })
 })

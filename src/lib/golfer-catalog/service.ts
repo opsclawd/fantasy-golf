@@ -2,6 +2,17 @@ import { buildSearchName } from './normalize'
 import type { CatalogQuotaPolicy, CatalogSource, CatalogUsageSummary, RapidApiPlayer } from './types'
 import type { Golfer } from '@/lib/supabase/types'
 
+type TournamentFieldGolfer = {
+  id: string
+  name: string
+  country: string
+}
+
+function trimToUndefined(value: string): string | undefined {
+  const trimmed = value.trim()
+  return trimmed ? trimmed : undefined
+}
+
 export const DEFAULT_CATALOG_RUN_DECISION_INPUTS = {
   usedCalls: 0,
   monthlyLimit: 250,
@@ -86,6 +97,27 @@ export function buildCatalogUsageSummary({
   }
 }
 
+export function buildUsageSnapshot(usedCalls: number): CatalogUsageSummary {
+  return buildCatalogUsageSummary({
+    usedCalls,
+    policy: createQuotaPolicy(),
+  })
+}
+
+export function buildManualAddQuery(input: { firstName: string; lastName: string }) {
+  const firstName = trimToUndefined(input.firstName)
+  const lastName = trimToUndefined(input.lastName)
+
+  if (!firstName && !lastName) {
+    throw new Error('Provide firstName or lastName')
+  }
+
+  return {
+    ...(firstName ? { firstName } : {}),
+    ...(lastName ? { lastName } : {}),
+  }
+}
+
 export function buildGolferUpsertPayload(player: RapidApiPlayer & { source: CatalogSource }) {
   const playerId = player.playerId?.trim()
   const name = [player.firstName, player.lastName].filter(Boolean).join(' ').trim()
@@ -109,6 +141,31 @@ export function buildGolferUpsertPayload(player: RapidApiPlayer & { source: Cata
     is_active: true,
     source: player.source,
   }
+}
+
+export function buildTournamentFieldUpsertRows(golfers: TournamentFieldGolfer[], syncedAt: string) {
+  return golfers.map((golfer) => ({
+    ...(function buildNormalizedTournamentGolfer() {
+      const id = trimToUndefined(golfer.id)
+      const name = trimToUndefined(golfer.name)
+
+      if (!id || !name) {
+        throw new Error('Tournament golfer must include a usable id and name')
+      }
+
+      return {
+        id,
+        name: name.replace(/\s+/g, ' '),
+        country: golfer.country.trim(),
+        search_name: buildSearchName(name),
+        external_player_id: id,
+      }
+    })(),
+    world_rank: null,
+    is_active: true,
+    source: 'tournament_sync' as const,
+    last_synced_at: syncedAt,
+  }))
 }
 
 export function buildFallbackGolfer(id: string, overrides?: Partial<Pick<Golfer, 'name' | 'country'>>): Golfer {

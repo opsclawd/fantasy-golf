@@ -29,5 +29,29 @@ export async function getGolfers(tournamentId: string, year?: number): Promise<{
     next: { revalidate: 3600 }
   })
   if (!res.ok) throw new Error('Failed to fetch golfers')
-  return res.json()
+  const raw = await res.json()
+
+  if (!Array.isArray(raw)) {
+    throw new Error('Tournament golfers response was invalid')
+  }
+
+  return raw.flatMap((golfer: Record<string, unknown>) => {
+    if (!golfer || typeof golfer !== 'object') return []
+
+    const idValue = typeof golfer.playerId === 'string'
+      ? golfer.playerId
+      : typeof golfer.id === 'string'
+        ? golfer.id
+        : null
+    const id = idValue?.trim()
+    const firstName = typeof golfer.firstName === 'string' ? golfer.firstName : ''
+    const lastName = typeof golfer.lastName === 'string' ? golfer.lastName : ''
+    const nameValue = typeof golfer.name === 'string' ? golfer.name : [firstName, lastName].filter(Boolean).join(' ').trim()
+    const name = nameValue.trim()
+    const country = typeof golfer.country === 'string' ? golfer.country.trim() : ''
+
+    if (!id || !name) return []
+
+    return [{ id, name, country }]
+  })
 }
