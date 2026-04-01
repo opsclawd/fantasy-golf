@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getTournamentScores } from '@/lib/slash-golf/client'
 import { rankEntries } from '@/lib/scoring'
 import { buildRefreshAuditDetails } from '@/lib/audit'
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   isUpdating = true
 
   try {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Step 1: Auto-lock any open pools past their deadline
     const poolsToLock = await getOpenPoolsPastDeadline(supabase)

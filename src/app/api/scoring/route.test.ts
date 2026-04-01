@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { POST } from './route'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getTournamentScores } from '@/lib/slash-golf/client'
 import { rankEntries } from '@/lib/scoring'
 import { buildRefreshAuditDetails } from '@/lib/audit'
@@ -18,6 +19,10 @@ import {
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
+}))
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
 }))
 
 vi.mock('@/lib/slash-golf/client', () => ({
@@ -79,6 +84,19 @@ describe('POST /api/scoring', () => {
       }),
       channel: vi.fn().mockReturnValue({ send }),
     } as never)
+    vi.mocked(createAdminClient).mockReturnValue({
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'entries') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({ data: entries }),
+            }),
+          }
+        }
+        throw new Error(`Unexpected table: ${table}`)
+      }),
+      channel: vi.fn().mockReturnValue({ send }),
+    } as never)
 
     vi.mocked(getOpenPoolsPastDeadline).mockResolvedValue([])
     vi.mocked(getActivePool).mockResolvedValue({
@@ -112,6 +130,7 @@ describe('POST /api/scoring', () => {
     const response = await POST(request)
 
     expect(response.status).toBe(200)
+    expect(createAdminClient).toHaveBeenCalledTimes(1)
     expect(buildRefreshAuditDetails).toHaveBeenCalledWith(
       expect.any(Map),
       refreshedScores,
@@ -136,6 +155,19 @@ describe('POST /api/scoring', () => {
 
   it('fails refresh when any score upsert fails and records failure audit metadata', async () => {
     vi.mocked(createClient).mockResolvedValue({
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'entries') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({ data: [] }),
+            }),
+          }
+        }
+        throw new Error(`Unexpected table: ${table}`)
+      }),
+      channel: vi.fn().mockReturnValue({ send: vi.fn() }),
+    } as never)
+    vi.mocked(createAdminClient).mockReturnValue({
       from: vi.fn().mockImplementation((table: string) => {
         if (table === 'entries') {
           return {
