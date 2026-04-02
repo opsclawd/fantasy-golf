@@ -29,6 +29,10 @@ vi.mock('@/lib/pool-queries', () => ({
   isPoolMember: vi.fn(),
 }))
 
+vi.mock('@/lib/tournament-roster/queries', () => ({
+  getTournamentRosterGolfers: vi.fn(),
+}))
+
 describe('submitPicks', () => {
   beforeEach(() => {
     vi.clearAllMocks()

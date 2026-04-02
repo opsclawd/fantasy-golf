@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import type { Golfer, GolferSyncRun } from '@/lib/supabase/types'
+import type { GolferSyncRun } from '@/lib/supabase/types'
 
 type SyncRunInsert = {
   run_type: GolferSyncRun['run_type']
@@ -83,26 +83,4 @@ export async function getMonthlyApiUsage(
 
     return sum + apiCallsUsed
   }, 0)
-}
-
-export async function upsertGolfers(
-  supabase: SupabaseClient,
-  golfers: Array<Omit<Golfer, 'last_synced_at'> & { last_synced_at?: string | null }>,
-): Promise<{ error: string | null }> {
-  const { error } = await supabase.from('golfers').upsert(golfers, { onConflict: 'id' })
-  if (error) return { error: error.message }
-  return { error: null }
-}
-
-export async function getGolferByExternalPlayerId(
-  supabase: SupabaseClient,
-  externalPlayerId: string,
-): Promise<Golfer | null> {
-  const { data } = await supabase
-    .from('golfers')
-    .select('*')
-    .eq('external_player_id', externalPlayerId)
-    .maybeSingle()
-
-  return data as Golfer | null
 }

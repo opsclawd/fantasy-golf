@@ -37,6 +37,7 @@ describe('validateCreatePoolInput', () => {
       tournamentName: 'The Masters',
       year: 2026,
       deadline: '2026-04-10T08:00:00Z',
+      timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: true })
   })
@@ -48,6 +49,7 @@ describe('validateCreatePoolInput', () => {
       tournamentName: 'The Masters',
       year: 2026,
       deadline: '2026-04-10T08:00:00Z',
+      timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: false, error: 'Pool name is required.' })
   })
@@ -59,6 +61,7 @@ describe('validateCreatePoolInput', () => {
       tournamentName: 'The Masters',
       year: 2026,
       deadline: '2026-04-10T08:00:00Z',
+      timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: false, error: 'Pool name must be 100 characters or fewer.' })
   })
@@ -70,6 +73,7 @@ describe('validateCreatePoolInput', () => {
       tournamentName: 'The Masters',
       year: 2026,
       deadline: '2026-04-10T08:00:00Z',
+      timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: false, error: 'Tournament selection is required.' })
   })
@@ -81,6 +85,7 @@ describe('validateCreatePoolInput', () => {
       tournamentName: 'The Masters',
       year: 2026,
       deadline: '',
+      timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: false, error: 'Picks deadline is required.' })
   })
@@ -92,8 +97,21 @@ describe('validateCreatePoolInput', () => {
       tournamentName: 'The Masters',
       year: 2026,
       deadline: '2020-01-01T00:00:00Z',
+      timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: false, error: 'Picks deadline must be in the future.' })
+  })
+
+  it('rejects an invalid timezone', () => {
+    const result = validateCreatePoolInput({
+      name: 'Masters Pool',
+      tournamentId: 't1',
+      tournamentName: 'The Masters',
+      year: 2026,
+      deadline: '2026-04-10T08:00:00Z',
+      timezone: 'Not/A_Timezone',
+    })
+    expect(result).toEqual({ ok: false, error: 'Timezone must be a valid IANA timezone.' })
   })
 })
 
@@ -165,6 +183,7 @@ describe('buildClonePoolInput', () => {
       tournament_name: 'Old Tournament',
       year: 2025,
       deadline: '2025-04-10T08:00:00Z',
+      timezone: 'America/New_York',
       format: 'best_ball',
       picks_per_entry: 4,
       invite_code: 'oldcode1',

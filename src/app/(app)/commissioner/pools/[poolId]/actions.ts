@@ -132,6 +132,7 @@ export async function reusePool(
       tournament_name: '',
       year: new Date().getFullYear(),
       deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      timezone: sourcePool.timezone,
       format: cloneInput.format,
       picks_per_entry: cloneInput.picks_per_entry,
       invite_code: inviteCode,
@@ -205,6 +206,7 @@ export async function updatePoolConfigAction(
   const tournamentId = (formData.get('tournamentId') as string) ?? pool.tournament_id
   const tournamentName = (formData.get('tournamentName') as string) ?? pool.tournament_name
   const deadline = (formData.get('deadline') as string) ?? pool.deadline
+  const timezone = (formData.get('timezone') as string) ?? pool.timezone
   const yearStr = ((formData.get('year') as string) ?? String(pool.year)).trim()
   const format = ((formData.get('format') as string) ?? pool.format) as PoolFormat
   const picksPerEntryStr = ((formData.get('picksPerEntry') as string) ?? String(pool.picks_per_entry)).trim()
@@ -226,6 +228,7 @@ export async function updatePoolConfigAction(
     tournamentName,
     year,
     deadline,
+    timezone,
   })
 
   if (!inputValidation.ok) return { error: inputValidation.error }
@@ -238,6 +241,7 @@ export async function updatePoolConfigAction(
     tournament_name: tournamentName,
     year,
     deadline,
+    timezone: timezone.trim(),
     format,
     picks_per_entry: picksPerEntry,
   })
@@ -329,7 +333,7 @@ export async function refreshGolferCatalogAction(
     const golfers = await getGolfers(pool.tournament_id, pool.year)
     const rows = golfers.map((golfer) => buildTournamentRosterInsert({
       tournamentId: pool.tournament_id,
-      golfer,
+      golfer: { ...golfer, id: golfer.id },
       source: 'refresh',
       syncedAt: nowIso,
     }))
@@ -339,14 +343,14 @@ export async function refreshGolferCatalogAction(
 
     if (upsertError) {
       const syncRunError = await recordGolferSyncRunOrError(supabase, {
-          runType,
-          requestedBy: user.id,
-          tournamentId: pool.tournament_id,
-          apiCallsUsed: 1,
-          status: 'failed',
-          summary: { golfers_upserted: 0 },
-          errorMessage: upsertError.message,
-        })
+        runType,
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 1,
+        status: 'failed',
+        summary: { golfers_upserted: 0 },
+        errorMessage: upsertError.message,
+      })
 
       if (syncRunError) {
         return { error: syncRunError }
@@ -481,14 +485,14 @@ export async function addMissingGolferAction(
 
     if (upsertError) {
       const syncRunError = await recordGolferSyncRunOrError(supabase, {
-          runType: 'manual_add',
-          requestedBy: user.id,
-          tournamentId: pool.tournament_id,
-          apiCallsUsed: 1,
-          status: 'failed',
-          summary: { golfers_upserted: 0 },
-          errorMessage: upsertError.message,
-        })
+        runType: 'manual_add',
+        requestedBy: user.id,
+        tournamentId: pool.tournament_id,
+        apiCallsUsed: 1,
+        status: 'failed',
+        summary: { golfers_upserted: 0 },
+        errorMessage: upsertError.message,
+      })
 
       if (syncRunError) {
         return { error: syncRunError }

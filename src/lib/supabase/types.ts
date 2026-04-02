@@ -15,6 +15,7 @@ export interface Pool {
   tournament_name: string
   year: number
   deadline: string
+  timezone: string
   format: PoolFormat
   picks_per_entry: number
   invite_code: string

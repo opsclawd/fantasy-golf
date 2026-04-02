@@ -31,6 +31,7 @@ export async function createPool(
   const tournamentName = (formData.get('tournamentName') as string) ?? ''
   const yearStr = (formData.get('year') as string) ?? ''
   const deadline = (formData.get('deadline') as string) ?? ''
+  const timezone = (formData.get('timezone') as string) ?? ''
   const format = ((formData.get('format') as string) ?? 'best_ball') as PoolFormat
   const picksPerEntryStr = (formData.get('picksPerEntry') as string) ?? '4'
   const year = parseInt(yearStr, 10)
@@ -56,6 +57,7 @@ export async function createPool(
     tournamentName: normalizedTournamentName,
     year,
     deadline,
+    timezone,
   })
   if (!inputValidation.ok) {
     return { error: inputValidation.error }
@@ -75,6 +77,7 @@ export async function createPool(
     tournament_name: normalizedTournamentName,
     year,
     deadline,
+    timezone: timezone.trim(),
     format,
     picks_per_entry: picksPerEntry,
     invite_code: inviteCode,

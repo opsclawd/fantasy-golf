@@ -6,6 +6,8 @@ import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getActivePool,
   getOpenPoolsPastDeadline,
+  getPoolsByTournament,
+  getEntriesForPool,
   updatePoolStatus,
   updatePoolRefreshMetadata,
   insertAuditEvent,
@@ -51,6 +53,9 @@ export async function POST(request: Request) {
     if (!pool) {
       return NextResponse.json({ data: { message: 'No live pool' }, error: null })
     }
+
+    const tournamentPools = await getPoolsByTournament(supabase, pool.tournament_id)
+    const livePools = tournamentPools.filter((tournamentPool) => tournamentPool.status === 'live')
 
     const existingScores = await getScoresForTournament(supabase, pool.tournament_id)
     const oldScoresMap = new Map<string, TournamentScore>()
@@ -144,11 +149,6 @@ export async function POST(request: Request) {
     // Step 6: Compute and broadcast ranked leaderboard
     const allScores = await getScoresForTournament(supabase, pool.tournament_id)
 
-    const { data: entries } = await supabase
-      .from('entries')
-      .select('*')
-      .eq('pool_id', pool.id)
-
     const golferScoresMap = new Map<string, TournamentScore>()
     for (const score of allScores) {
       golferScoresMap.set(score.golfer_id, score)
@@ -158,32 +158,38 @@ export async function POST(request: Request) {
       ? Math.min(...slashScores.map(s => s.thru))
       : 0
 
-    const ranked = rankEntries(entries || [], golferScoresMap, completedHoles)
-
-    // Broadcast via Supabase real-time
-    await supabase.channel('pool_updates').send({
-      type: 'broadcast',
-      event: 'scores',
-      payload: { ranked, completedHoles, updatedAt: refreshedAt },
-    })
-
     const refreshDetails = buildRefreshAuditDetails(
       oldScoresMap,
       allScores,
       completedHoles,
       allScores.length
     )
-    const scoreRefreshDetails: Record<string, unknown> = {
-      ...refreshDetails,
-      entryCount: (entries || []).length,
-    }
 
-    await insertAuditEvent(supabase, {
-      pool_id: pool.id,
-      user_id: null,
-      action: 'scoreRefreshCompleted',
-      details: scoreRefreshDetails,
-    })
+    for (const tournamentPool of livePools) {
+      const entries = await getEntriesForPool(supabase, tournamentPool.id)
+      const ranked = rankEntries(entries as never[], golferScoresMap, completedHoles)
+
+      await supabase.channel('pool_updates').send({
+        type: 'broadcast',
+        event: 'scores',
+        payload: { poolId: tournamentPool.id, ranked, completedHoles, updatedAt: refreshedAt },
+      })
+
+      await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
+        refreshed_at: refreshedAt,
+        last_refresh_error: null,
+      })
+
+      await insertAuditEvent(supabase, {
+        pool_id: tournamentPool.id,
+        user_id: null,
+        action: 'scoreRefreshCompleted',
+        details: {
+          ...refreshDetails,
+          entryCount: (entries || []).length,
+        },
+      })
+    }
 
     return NextResponse.json({
       data: { completedHoles, refreshedAt },

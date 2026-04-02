@@ -12,7 +12,18 @@ interface TournamentOption {
   startDate: string
 }
 
+interface TimezoneOption {
+  value: string
+  label: string
+}
+
 const CACHE_KEY = 'tournament_schedule_cache'
+const TIMEZONE_OPTIONS: TimezoneOption[] = [
+  { value: 'America/New_York', label: 'Eastern Time' },
+  { value: 'America/Chicago', label: 'Central Time' },
+  { value: 'America/Denver', label: 'Mountain Time' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time' },
+]
 
 function getCachedTournaments(year: string): TournamentOption[] | null {
   if (typeof window === 'undefined') return null
@@ -60,6 +71,7 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
   const [selectedTournamentId, setSelectedTournamentId] = useState(pool.tournament_id)
   const [selectedTournamentName, setSelectedTournamentName] = useState(pool.tournament_name)
   const [selectedDeadline, setSelectedDeadline] = useState(pool.deadline)
+  const [selectedTimezone, setSelectedTimezone] = useState(pool.timezone)
   const [picksPerEntry, setPicksPerEntry] = useState(String(pool.picks_per_entry))
 
   const isEditable = pool.status === 'open'
@@ -193,6 +205,24 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
                 ))}
               </select>
               {tournamentError && <p className="mt-2 text-sm text-rose-700">{tournamentError}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="timezone" className="mb-1 block text-sm font-medium text-slate-700">
+                Timezone
+              </label>
+              <select
+                id="timezone"
+                name="timezone"
+                value={selectedTimezone}
+                onChange={(event) => setSelectedTimezone(event.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
+                required
+              >
+                {TIMEZONE_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
 
             <div>

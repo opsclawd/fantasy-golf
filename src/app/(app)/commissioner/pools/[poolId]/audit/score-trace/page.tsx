@@ -5,6 +5,7 @@ import { getPoolById } from '@/lib/pool-queries'
 import { deriveCompletedHoles, getEntryHoleScore, rankEntries, getHoleScore } from '@/lib/scoring'
 import { createClient } from '@/lib/supabase/server'
 import type { Entry, TournamentScore } from '@/lib/supabase/types'
+import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 
 type HoleTrace = {
   hole: number
@@ -112,12 +113,12 @@ export default async function CommissionerPoolAuditScoreTracePage({
   }
 
   const golferIds = Array.from(new Set(entries.flatMap((entry) => entry.golfer_ids)))
-  const { data: golferRows } = golferIds.length
-    ? await supabase.from('golfers').select('id, name').in('id', golferIds)
-    : { data: [] as Array<{ id: string; name: string }> }
+  const golferRows = golferIds.length
+    ? (await getTournamentRosterGolfers(supabase, pool.tournament_id)).filter((golfer) => golferIds.includes(golfer.id))
+    : []
 
   const golferNameById = new Map<string, string>()
-  for (const golfer of golferRows ?? []) {
+  for (const golfer of golferRows) {
     golferNameById.set(golfer.id, golfer.name)
   }
 

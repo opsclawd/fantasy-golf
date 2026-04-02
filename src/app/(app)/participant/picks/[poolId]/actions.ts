@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getEntryByPoolAndUser, upsertEntry } from '@/lib/entry-queries'
 import { isPoolLocked, validatePickSubmission } from '@/lib/picks'
 import { getPoolById, insertAuditEvent, isPoolMember } from '@/lib/pool-queries'
+import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 import { redirect } from 'next/navigation'
 
 export type SubmitPicksState = {
@@ -74,21 +75,15 @@ export async function submitPicks(
       return { error: validation.error }
     }
 
-    const { data: golfers, error: golferLookupError } = await supabase
-      .from('golfers')
-      .select('id')
-      .in('id', selectedGolferIds)
+    const rosterGolfers = await getTournamentRosterGolfers(supabase, pool.tournament_id)
+    const rosterGolferIds = new Set(rosterGolfers.map((golfer) => golfer.id))
 
-    if (golferLookupError) {
+    if (selectedGolferIds.some((golferId) => !rosterGolferIds.has(golferId))) {
       console.error('Failed to validate golfer IDs', {
         poolId,
         userId: user.id,
-        error: golferLookupError,
+        error: 'One or more selected golfers are invalid.',
       })
-      return { error: 'Failed to submit picks.' }
-    }
-
-    if (!golfers || golfers.length !== selectedGolferIds.length) {
       return { error: 'One or more selected golfers are invalid.' }
     }
 

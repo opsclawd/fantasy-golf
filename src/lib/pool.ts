@@ -6,6 +6,7 @@ export interface CreatePoolInput {
   tournamentName: string
   year: number
   deadline: string
+  timezone: string
 }
 
 export interface ClonePoolInput {
@@ -37,6 +38,7 @@ export function generateInviteCode(): string {
 
 export function validateCreatePoolInput(input: CreatePoolInput): ValidationResult {
   const trimmedName = input.name.trim()
+  const trimmedTimezone = input.timezone.trim()
   if (!trimmedName) {
     return { ok: false, error: 'Pool name is required.' }
   }
@@ -48,6 +50,14 @@ export function validateCreatePoolInput(input: CreatePoolInput): ValidationResul
   }
   if (!input.deadline.trim()) {
     return { ok: false, error: 'Picks deadline is required.' }
+  }
+  if (!trimmedTimezone) {
+    return { ok: false, error: 'Timezone is required.' }
+  }
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: trimmedTimezone })
+  } catch {
+    return { ok: false, error: 'Timezone must be a valid IANA timezone.' }
   }
   if (new Date(input.deadline) <= new Date()) {
     return { ok: false, error: 'Picks deadline must be in the future.' }

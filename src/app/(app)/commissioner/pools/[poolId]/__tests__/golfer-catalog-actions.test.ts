@@ -3,20 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { getPoolById, insertAuditEvent, insertPool, insertPoolMember, updatePoolConfig, updatePoolStatus } from '@/lib/pool-queries'
-import {
-  buildGolferUpsertPayload,
-  buildManualAddQuery,
-  buildTournamentFieldUpsertRows,
-  decideCatalogRun,
-} from '@/lib/golfer-catalog/service'
-import {
-  getGolferByExternalPlayerId,
-  getMonthlyApiUsage,
-  insertGolferSyncRun,
-  upsertGolfers,
-} from '@/lib/golfer-catalog/queries'
+import { buildManualAddQuery, decideCatalogRun } from '@/lib/golfer-catalog/service'
+import { getMonthlyApiUsage, insertGolferSyncRun } from '@/lib/golfer-catalog/queries'
 import { searchPlayers } from '@/lib/golfer-catalog/rapidapi'
 import { getGolfers } from '@/lib/slash-golf/client'
+import { buildTournamentRosterInsert } from '@/lib/tournament-roster/queries'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
@@ -44,9 +35,7 @@ vi.mock('@/lib/golfer-catalog/service', async () => {
   return {
     ...actual,
     decideCatalogRun: vi.fn(),
-    buildTournamentFieldUpsertRows: vi.fn(),
     buildManualAddQuery: vi.fn(),
-    buildGolferUpsertPayload: vi.fn(),
   }
 })
 
@@ -55,9 +44,7 @@ vi.mock('@/lib/golfer-catalog/queries', async () => {
   return {
     ...actual,
     getMonthlyApiUsage: vi.fn(),
-    upsertGolfers: vi.fn(),
     insertGolferSyncRun: vi.fn(),
-    getGolferByExternalPlayerId: vi.fn(),
   }
 })
 
@@ -69,6 +56,14 @@ vi.mock('@/lib/slash-golf/client', () => ({
   getGolfers: vi.fn(),
 }))
 
+vi.mock('@/lib/tournament-roster/queries', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/tournament-roster/queries')>('@/lib/tournament-roster/queries')
+  return {
+    ...actual,
+    buildTournamentRosterInsert: vi.fn(actual.buildTournamentRosterInsert),
+  }
+})
+
 import { addMissingGolferAction, refreshGolferCatalogAction } from '../actions'
 
 const commissioner = { id: 'user-1' }
@@ -79,16 +74,21 @@ const pool = {
   year: 2026,
 }
 
+let supabaseMock: any
+let upsertMock: ReturnType<typeof vi.fn>
+
 function mockAuthenticatedSupabase() {
-  const supabase = {
+  upsertMock = vi.fn().mockResolvedValue({ error: null })
+  supabaseMock = {
     auth: {
       getUser: vi.fn().mockResolvedValue({ data: { user: commissioner } }),
     },
+    from: vi.fn(() => ({ upsert: upsertMock })),
   }
 
-  vi.mocked(createClient).mockResolvedValue(supabase as never)
+  vi.mocked(createClient).mockResolvedValue(supabaseMock as never)
 
-  return supabase
+  return supabaseMock
 }
 
 describe('golfer catalog commissioner actions', () => {
@@ -106,34 +106,17 @@ describe('golfer catalog commissioner actions', () => {
     vi.mocked(updatePoolStatus).mockResolvedValue({ error: null } as never)
   })
 
-  it('returns success only after a tournament refresh upserts golfers and records usage', async () => {
-    const rows = [
-      {
-        id: 'g1',
-        name: 'Collin Morikawa',
-        country: 'USA',
-        search_name: 'collin morikawa',
-        world_rank: null,
-        is_active: true,
-        source: 'tournament_sync' as const,
-        external_player_id: 'g1',
-        last_synced_at: '2026-03-31T00:00:00.000Z',
-      },
-    ]
-
+  it('refreshes the tournament roster and records a successful sync run', async () => {
     vi.mocked(getMonthlyApiUsage).mockResolvedValue(199)
     vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
     vi.mocked(getGolfers).mockResolvedValue([{ id: 'g1', name: 'Collin Morikawa', country: 'USA' }])
-    vi.mocked(buildTournamentFieldUpsertRows).mockReturnValue(rows)
-    vi.mocked(upsertGolfers).mockResolvedValue({ error: null })
 
     const formData = new FormData()
     formData.set('poolId', 'pool-1')
-    formData.set('runType', 'pre_tournament')
+    formData.set('runType', 'manual_add')
 
     await expect(refreshGolferCatalogAction(null, formData)).resolves.toEqual({ success: true })
 
-    expect(getMonthlyApiUsage).toHaveBeenCalledWith(expect.anything(), expect.any(Date))
     expect(decideCatalogRun).toHaveBeenCalledWith({
       runType: 'pre_tournament',
       usedCalls: 199,
@@ -142,11 +125,30 @@ describe('golfer catalog commissioner actions', () => {
       blockBulkAt: 235,
     })
     expect(getGolfers).toHaveBeenCalledWith('tournament-1', 2026)
-    expect(buildTournamentFieldUpsertRows).toHaveBeenCalledWith(
-      [{ id: 'g1', name: 'Collin Morikawa', country: 'USA' }],
-      expect.any(String),
+    expect(buildTournamentRosterInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tournamentId: 'tournament-1',
+        source: 'refresh',
+        syncedAt: expect.any(String),
+      }),
     )
-    expect(upsertGolfers).toHaveBeenCalledWith(expect.anything(), rows)
+    expect(supabaseMock.from).toHaveBeenCalledWith('tournament_golfers')
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tournament_id: 'tournament-1',
+          id: 'g1',
+          external_player_id: 'g1',
+          name: 'Collin Morikawa',
+          search_name: 'collin morikawa',
+          country: 'USA',
+          world_rank: null,
+          is_active: true,
+          source: 'refresh',
+        }),
+      ]),
+      { onConflict: 'tournament_id,external_player_id' },
+    )
     expect(insertGolferSyncRun).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -178,24 +180,8 @@ describe('golfer catalog commissioner actions', () => {
   })
 
   it('returns an explicit error when refresh sync-run logging fails', async () => {
-    const rows = [
-      {
-        id: 'g1',
-        name: 'Collin Morikawa',
-        country: 'USA',
-        search_name: 'collin morikawa',
-        world_rank: null,
-        is_active: true,
-        source: 'tournament_sync' as const,
-        external_player_id: 'g1',
-        last_synced_at: '2026-03-31T00:00:00.000Z',
-      },
-    ]
-
     vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
     vi.mocked(getGolfers).mockResolvedValue([{ id: 'g1', name: 'Collin Morikawa', country: 'USA' }])
-    vi.mocked(buildTournamentFieldUpsertRows).mockReturnValue(rows)
-    vi.mocked(upsertGolfers).mockResolvedValue({ error: null })
     vi.mocked(insertGolferSyncRun).mockResolvedValue({ data: null, error: 'insert failed' })
 
     const formData = new FormData()
@@ -236,101 +222,6 @@ describe('golfer catalog commissioner actions', () => {
     expect(getGolfers).not.toHaveBeenCalled()
   })
 
-  it('records blocked sync runs without consuming API calls', async () => {
-    vi.mocked(getMonthlyApiUsage).mockResolvedValue(235)
-    vi.mocked(decideCatalogRun).mockReturnValue({
-      allowed: false,
-      reason: 'Monthly API budget is reserved for manual golfer adds.',
-    })
-
-    const formData = new FormData()
-    formData.set('poolId', 'pool-1')
-    formData.set('runType', 'monthly_baseline')
-
-    await expect(refreshGolferCatalogAction(null, formData)).resolves.toEqual({
-      error: 'Monthly API budget is reserved for manual golfer adds.',
-    })
-
-    expect(insertGolferSyncRun).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        run_type: 'monthly_baseline',
-        requested_by: 'user-1',
-        tournament_id: 'tournament-1',
-        api_calls_used: 0,
-        status: 'blocked',
-        summary: { reason: 'Monthly API budget is reserved for manual golfer adds.' },
-        error_message: 'Monthly API budget is reserved for manual golfer adds.',
-      }),
-    )
-    expect(getGolfers).not.toHaveBeenCalled()
-  })
-
-  it('logs and returns a refresh failure when tournament golfer loading fails', async () => {
-    vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
-    vi.mocked(getGolfers).mockRejectedValue(new Error('rapidapi failed'))
-
-    const formData = new FormData()
-    formData.set('poolId', 'pool-1')
-    formData.set('runType', 'pre_tournament')
-
-    await expect(refreshGolferCatalogAction(null, formData)).resolves.toEqual({
-      error: 'Failed to refresh golfer catalog.',
-    })
-
-    expect(insertGolferSyncRun).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        run_type: 'pre_tournament',
-        api_calls_used: 1,
-        status: 'failed',
-        summary: { golfers_upserted: 0 },
-        error_message: 'Failed to refresh golfer catalog.',
-      }),
-    )
-    expect(upsertGolfers).not.toHaveBeenCalled()
-  })
-
-  it('logs and returns a refresh failure when golfer upsert fails', async () => {
-    const rows = [
-      {
-        id: 'g1',
-        name: 'Collin Morikawa',
-        country: 'USA',
-        search_name: 'collin morikawa',
-        world_rank: null,
-        is_active: true,
-        source: 'tournament_sync' as const,
-        external_player_id: 'g1',
-        last_synced_at: '2026-03-31T00:00:00.000Z',
-      },
-    ]
-
-    vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
-    vi.mocked(getGolfers).mockResolvedValue([{ id: 'g1', name: 'Collin Morikawa', country: 'USA' }])
-    vi.mocked(buildTournamentFieldUpsertRows).mockReturnValue(rows)
-    vi.mocked(upsertGolfers).mockResolvedValue({ error: 'upsert failed' })
-
-    const formData = new FormData()
-    formData.set('poolId', 'pool-1')
-    formData.set('runType', 'pre_tournament')
-
-    await expect(refreshGolferCatalogAction(null, formData)).resolves.toEqual({
-      error: 'Failed to refresh golfer catalog.',
-    })
-
-    expect(insertGolferSyncRun).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        run_type: 'pre_tournament',
-        api_calls_used: 1,
-        status: 'failed',
-        summary: { golfers_upserted: 0 },
-        error_message: 'upsert failed',
-      }),
-    )
-  })
-
   it('adds a missing golfer and records one API call', async () => {
     const player = {
       playerId: '50525',
@@ -339,24 +230,11 @@ describe('golfer catalog commissioner actions', () => {
       country: 'USA',
       worldRank: 4,
     }
-    const upsertPayload = {
-      id: '50525',
-      external_player_id: '50525',
-      name: 'Collin Morikawa',
-      search_name: 'collin morikawa',
-      country: 'USA',
-      world_rank: 4,
-      is_active: true,
-      source: 'manual_add' as const,
-    }
 
     vi.mocked(getMonthlyApiUsage).mockResolvedValue(12)
     vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
     vi.mocked(buildManualAddQuery).mockReturnValue({ firstName: 'Collin', lastName: 'Morikawa' })
     vi.mocked(searchPlayers).mockResolvedValue([player])
-    vi.mocked(getGolferByExternalPlayerId).mockResolvedValue(null)
-    vi.mocked(buildGolferUpsertPayload).mockReturnValue(upsertPayload)
-    vi.mocked(upsertGolfers).mockResolvedValue({ error: null })
 
     const formData = new FormData()
     formData.set('poolId', 'pool-1')
@@ -374,10 +252,29 @@ describe('golfer catalog commissioner actions', () => {
     })
     expect(buildManualAddQuery).toHaveBeenCalledWith({ firstName: 'Collin', lastName: 'Morikawa' })
     expect(searchPlayers).toHaveBeenCalledWith({ firstName: 'Collin', lastName: 'Morikawa' })
-    expect(getGolferByExternalPlayerId).toHaveBeenCalledWith(expect.anything(), '50525')
-    expect(upsertGolfers).toHaveBeenCalledWith(
-      expect.anything(),
-      [expect.objectContaining({ ...upsertPayload, last_synced_at: expect.any(String) })],
+    expect(buildTournamentRosterInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tournamentId: 'tournament-1',
+        source: 'manual_add',
+        syncedAt: expect.any(String),
+      }),
+    )
+    expect(supabaseMock.from).toHaveBeenCalledWith('tournament_golfers')
+    expect(upsertMock).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tournament_id: 'tournament-1',
+          id: '50525',
+          external_player_id: '50525',
+          name: 'Collin Morikawa',
+          search_name: 'collin morikawa',
+          country: 'USA',
+          world_rank: 4,
+          is_active: true,
+          source: 'manual_add',
+        }),
+      ]),
+      { onConflict: 'tournament_id,external_player_id' },
     )
     expect(insertGolferSyncRun).toHaveBeenCalledWith(
       expect.anything(),
@@ -418,23 +315,10 @@ describe('golfer catalog commissioner actions', () => {
       country: 'USA',
       worldRank: 4,
     }
-    const upsertPayload = {
-      id: '50525',
-      external_player_id: '50525',
-      name: 'Collin Morikawa',
-      search_name: 'collin morikawa',
-      country: 'USA',
-      world_rank: 4,
-      is_active: true,
-      source: 'manual_add' as const,
-    }
 
     vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
     vi.mocked(buildManualAddQuery).mockReturnValue({ firstName: 'Collin', lastName: 'Morikawa' })
     vi.mocked(searchPlayers).mockResolvedValue([player])
-    vi.mocked(getGolferByExternalPlayerId).mockResolvedValue(null)
-    vi.mocked(buildGolferUpsertPayload).mockReturnValue(upsertPayload)
-    vi.mocked(upsertGolfers).mockResolvedValue({ error: null })
     vi.mocked(insertGolferSyncRun).mockResolvedValue({ data: null, error: 'insert failed' })
 
     const formData = new FormData()
@@ -501,7 +385,7 @@ describe('golfer catalog commissioner actions', () => {
         error_message: 'No golfer matched that search.',
       }),
     )
-    expect(upsertGolfers).not.toHaveBeenCalled()
+    expect(upsertMock).not.toHaveBeenCalled()
   })
 
   it('records one API call for manual add even when no golfer matches', async () => {
@@ -530,91 +414,6 @@ describe('golfer catalog commissioner actions', () => {
         error_message: 'No golfer matched that search.',
       }),
     )
-    expect(upsertGolfers).not.toHaveBeenCalled()
-  })
-
-  it('logs and returns a manual-add failure when golfer upsert fails', async () => {
-    const player = {
-      playerId: '50525',
-      firstName: 'Collin',
-      lastName: 'Morikawa',
-      country: 'USA',
-      worldRank: 4,
-    }
-    const upsertPayload = {
-      id: '50525',
-      external_player_id: '50525',
-      name: 'Collin Morikawa',
-      search_name: 'collin morikawa',
-      country: 'USA',
-      world_rank: 4,
-      is_active: true,
-      source: 'manual_add' as const,
-    }
-
-    vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
-    vi.mocked(buildManualAddQuery).mockReturnValue({ firstName: 'Collin', lastName: 'Morikawa' })
-    vi.mocked(searchPlayers).mockResolvedValue([player])
-    vi.mocked(getGolferByExternalPlayerId).mockResolvedValue(null)
-    vi.mocked(buildGolferUpsertPayload).mockReturnValue(upsertPayload)
-    vi.mocked(upsertGolfers).mockResolvedValue({ error: 'upsert failed' })
-
-    const formData = new FormData()
-    formData.set('poolId', 'pool-1')
-    formData.set('firstName', 'Collin')
-    formData.set('lastName', 'Morikawa')
-
-    await expect(addMissingGolferAction(null, formData)).resolves.toEqual({
-      error: 'Failed to add golfer.',
-    })
-
-    expect(insertGolferSyncRun).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        run_type: 'manual_add',
-        api_calls_used: 1,
-        status: 'failed',
-        summary: { golfers_upserted: 0 },
-        error_message: 'upsert failed',
-      }),
-    )
-  })
-
-  it('records a no-op success when the golfer already exists', async () => {
-    const player = {
-      playerId: '50525',
-      firstName: 'Collin',
-      lastName: 'Morikawa',
-      country: 'USA',
-      worldRank: 4,
-    }
-
-    vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
-    vi.mocked(buildManualAddQuery).mockReturnValue({ firstName: 'Collin', lastName: 'Morikawa' })
-    vi.mocked(searchPlayers).mockResolvedValue([player])
-    vi.mocked(getGolferByExternalPlayerId).mockResolvedValue({
-      id: '50525',
-      external_player_id: '50525',
-    } as never)
-
-    const formData = new FormData()
-    formData.set('poolId', 'pool-1')
-    formData.set('firstName', 'Collin')
-    formData.set('lastName', 'Morikawa')
-
-    await expect(addMissingGolferAction(null, formData)).resolves.toEqual({ success: true })
-
-    expect(upsertGolfers).not.toHaveBeenCalled()
-    expect(insertGolferSyncRun).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({
-        run_type: 'manual_add',
-        api_calls_used: 1,
-        status: 'success',
-        summary: { golfers_upserted: 0, golfer_name: 'Collin Morikawa' },
-        error_message: null,
-      }),
-    )
-    expect(revalidatePath).toHaveBeenCalledWith('/commissioner/pools/pool-1')
+    expect(upsertMock).not.toHaveBeenCalled()
   })
 })

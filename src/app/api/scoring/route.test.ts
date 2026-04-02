@@ -9,6 +9,8 @@ import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getActivePool,
   getOpenPoolsPastDeadline,
+  getPoolsByTournament,
+  getEntriesForPool,
   updatePoolRefreshMetadata,
   insertAuditEvent,
 } from '@/lib/pool-queries'
@@ -40,6 +42,8 @@ vi.mock('@/lib/audit', () => ({
 vi.mock('@/lib/pool-queries', () => ({
   getActivePool: vi.fn(),
   getOpenPoolsPastDeadline: vi.fn(),
+  getPoolsByTournament: vi.fn(),
+  getEntriesForPool: vi.fn(),
   updatePoolStatus: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
   insertAuditEvent: vi.fn(),
@@ -102,7 +106,12 @@ describe('POST /api/scoring', () => {
     vi.mocked(getActivePool).mockResolvedValue({
       id: 'pool-1',
       tournament_id: 't-1',
+      status: 'live',
     } as never)
+    vi.mocked(getPoolsByTournament).mockResolvedValue([
+      { id: 'pool-1', tournament_id: 't-1', status: 'live' },
+    ] as never)
+    vi.mocked(getEntriesForPool).mockResolvedValue(entries as never)
     vi.mocked(getScoresForTournament)
       .mockResolvedValueOnce(existingScores as never)
       .mockResolvedValueOnce(refreshedScores as never)
@@ -151,6 +160,72 @@ describe('POST /api/scoring', () => {
         entryCount: entries.length,
       },
     })
+  })
+
+  it('fans out scoring metadata to every live pool on the same tournament', async () => {
+    const entriesPool1 = [{ id: 'entry-1', pool_id: 'pool-1' }]
+    const entriesPool2 = [{ id: 'entry-2', pool_id: 'pool-2' }]
+
+    vi.mocked(createClient).mockResolvedValue({
+      channel: vi.fn().mockReturnValue({ send: vi.fn() }),
+      from: vi.fn(),
+    } as never)
+    vi.mocked(createAdminClient).mockReturnValue({
+      channel: vi.fn().mockReturnValue({ send: vi.fn() }),
+      from: vi.fn(),
+    } as never)
+
+    vi.mocked(getOpenPoolsPastDeadline).mockResolvedValue([])
+    vi.mocked(getActivePool).mockResolvedValue({
+      id: 'pool-1',
+      tournament_id: 't-1',
+      status: 'live',
+    } as never)
+    vi.mocked(getPoolsByTournament).mockResolvedValue([
+      { id: 'pool-1', tournament_id: 't-1', status: 'live' },
+      { id: 'pool-2', tournament_id: 't-1', status: 'live' },
+    ] as never)
+    vi.mocked(getEntriesForPool)
+      .mockResolvedValueOnce(entriesPool1 as never)
+      .mockResolvedValueOnce(entriesPool2 as never)
+    vi.mocked(getScoresForTournament)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([] as never)
+    vi.mocked(getTournamentScores).mockResolvedValue([
+      { golfer_id: 'g1', hole_scores: [-1, 0], thru: 2 },
+    ] as never)
+    vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
+    vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(rankEntries).mockReturnValue([])
+    vi.mocked(buildRefreshAuditDetails).mockReturnValue({
+      completedHoles: 2,
+      golferCount: 1,
+      changedGolfers: ['g1'],
+      newGolfers: [],
+      droppedGolfers: [],
+      diffs: {},
+    })
+    vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
+
+    const request = new Request('http://localhost/api/scoring', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer secret' },
+    })
+
+    await POST(request)
+
+    expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-1')
+    expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-2')
+    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anything(), 'pool-1', {
+      refreshed_at: expect.any(String),
+      last_refresh_error: null,
+    })
+    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anything(), 'pool-2', {
+      refreshed_at: expect.any(String),
+      last_refresh_error: null,
+    })
+    expect(insertAuditEvent).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ pool_id: 'pool-1' }))
+    expect(insertAuditEvent).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ pool_id: 'pool-2' }))
   })
 
   it('fails refresh when any score upsert fails and records failure audit metadata', async () => {

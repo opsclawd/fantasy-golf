@@ -80,25 +80,16 @@ Open [http://localhost:3000](http://localhost:3000)
 2. Configure real-time subscriptions in Supabase dashboard
 3. Deploy Next.js app
 
-## Scoring Cron Job
+## Tournament Scoring Cron
 
-The scoring API polls Slash Golf every 15 minutes during tournament hours. Configure a cron job to call:
+Supabase runs an hourly UTC dispatcher. The dispatcher checks each pool's timezone and triggers scoring when the tournament is at local midnight on Thursday through Sunday.
 
-```
-GET /api/cron/scoring
-Authorization: Bearer <CRON_SECRET>
-```
+Required Supabase Vault secrets:
 
-On Vercel, use Vercel Cron with `vercel.json`:
+- `app_url`
+- `cron_secret`
 
-```json
-{
-  "crons": [{
-    "path": "/api/cron/scoring",
-    "schedule": "*/15 * * * *"
-  }]
-}
-```
+The dispatcher calls `/api/cron/scoring`, which fans out scoring by tournament.
 
 ## Project Structure
 

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { deriveCompletedHoles, rankEntries } from '@/lib/scoring'
 import { classifyFreshness } from '@/lib/freshness'
 import type { TournamentScore } from '@/lib/supabase/types'
+import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 
 export async function GET(
   request: Request,
@@ -93,14 +94,11 @@ export async function GET(
       }
     }
 
-    const { data: golferRows } = await supabase
-      .from('golfers')
-      .select('id, name, country')
-      .in('id', Array.from(allGolferIds))
-
     const golferNames: Record<string, string> = {}
     const golferCountries: Record<string, string> = {}
-    for (const g of golferRows || []) {
+    const golferRows = await getTournamentRosterGolfers(supabase, pool.tournament_id)
+
+    for (const g of golferRows.filter((golfer) => allGolferIds.has(golfer.id))) {
       golferNames[g.id] = g.name
       golferCountries[g.id] = g.country ?? ''
     }

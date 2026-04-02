@@ -10,7 +10,18 @@ interface TournamentOption {
   startDate: string
 }
 
+interface TimezoneOption {
+  value: string
+  label: string
+}
+
 const CACHE_KEY = 'tournament_schedule_cache'
+const TIMEZONE_OPTIONS: TimezoneOption[] = [
+  { value: 'America/New_York', label: 'Eastern Time' },
+  { value: 'America/Chicago', label: 'Central Time' },
+  { value: 'America/Denver', label: 'Mountain Time' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time' },
+]
 
 function getCachedTournaments(year: string): TournamentOption[] | null {
   if (typeof window === 'undefined') return null
@@ -56,6 +67,7 @@ export function CreatePoolForm() {
   const [tournamentId, setTournamentId] = useState('')
   const [tournamentName, setTournamentName] = useState('')
   const [deadline, setDeadline] = useState('')
+  const [timezone, setTimezone] = useState('America/New_York')
   const [picksPerEntry, setPicksPerEntry] = useState('4')
   const [tournaments, setTournaments] = useState<TournamentOption[]>([])
   const [availableTournaments, setAvailableTournaments] = useState<TournamentOption[]>([])
@@ -171,6 +183,22 @@ export function CreatePoolForm() {
           )}
           <input type="hidden" name="tournamentName" value={tournamentName} />
           <input type="hidden" name="year" value={currentYear} />
+        </div>
+
+        <div>
+          <label htmlFor="timezone" className="block text-sm font-medium mb-1">Timezone</label>
+          <select
+            id="timezone"
+            name="timezone"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            required
+          >
+            {TIMEZONE_OPTIONS.map(option => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
         </div>
 
         {deadline && (

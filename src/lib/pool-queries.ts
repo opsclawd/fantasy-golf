@@ -61,6 +61,19 @@ export async function getPoolsByCommissioner(
   return (data as Pool[]) || []
 }
 
+export async function getPoolsByTournament(
+  supabase: SupabaseClient,
+  tournamentId: string
+): Promise<Pool[]> {
+  const { data } = await supabase
+    .from('pools')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('created_at', { ascending: false })
+
+  return (data as Pool[]) || []
+}
+
 export async function getPoolMembers(
   supabase: SupabaseClient,
   poolId: string
@@ -120,6 +133,7 @@ export async function updatePoolConfig(
     tournament_name?: string
     year?: number
     deadline?: string
+    timezone?: string
     format?: string
     picks_per_entry?: number
   }
