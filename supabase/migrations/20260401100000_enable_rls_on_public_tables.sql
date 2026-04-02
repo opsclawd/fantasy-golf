@@ -34,11 +34,12 @@ on public.pool_members
 for select
 to authenticated
 using (
-  exists (
+  user_id = auth.uid()
+  or exists (
     select 1
-    from public.pool_members pm
-    where pm.pool_id = pool_members.pool_id
-      and pm.user_id = auth.uid()
+    from public.pools p
+    where p.id = pool_members.pool_id
+      and p.commissioner_id = auth.uid()
   )
 );
 

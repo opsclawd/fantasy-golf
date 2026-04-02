@@ -22,3 +22,5 @@ create index tournament_golfers_tournament_id_idx
 
 create index tournament_golfers_search_name_idx
   on tournament_golfers (tournament_id, search_name);
+
+grant select, insert, update, delete on table public.tournament_golfers to authenticated;
