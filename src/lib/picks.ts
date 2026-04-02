@@ -70,6 +70,19 @@ export function isPoolLocked(
   return !(status === 'open' && lockAt.getTime() > now.getTime())
 }
 
+export function isCommissionerPoolLocked(
+  status: PoolStatus,
+  deadline: string,
+  now: Date = new Date()
+): boolean {
+  const lockAt = getTournamentLockInstant(deadline)
+  if (!lockAt) {
+    return true
+  }
+
+  return status !== 'open' || lockAt.getTime() <= now.getTime()
+}
+
 export function calculateRemainingPicks(
   currentCount: number,
   picksPerEntry: number

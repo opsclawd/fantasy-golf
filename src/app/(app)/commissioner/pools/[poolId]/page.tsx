@@ -7,6 +7,7 @@ import { TrustStatusBar } from '@/components/TrustStatusBar'
 import { CommissionerGolferPanel } from '@/components/CommissionerGolferPanel'
 import { GolferCatalogPanel } from '@/components/GolferCatalogPanel'
 import { classifyFreshness } from '@/lib/freshness'
+import { isCommissionerPoolLocked } from '@/lib/picks'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReusePoolButton } from './ReusePoolButton'
@@ -99,11 +100,9 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
   const playerMembers = members.filter(m => m.role === 'player')
   const membersWithoutEntries = playerMembers.filter(m => !playersWithEntries.has(m.user_id))
 
-  const parsedDeadline = typeof pool.deadline === 'string' ? new Date(pool.deadline) : null
-  const isInvalidDeadline = !parsedDeadline || Number.isNaN(parsedDeadline.getTime())
-  const isDeadlineLocked = isInvalidDeadline || parsedDeadline <= new Date()
-  const isLocked = pool.status !== 'open' || isDeadlineLocked
-  const { latestRun, usage, rosterCount = 0 } = await loadGolferCatalogPanelState(supabase, pool.tournament_id)
+  const isLocked = isCommissionerPoolLocked(pool.status, pool.deadline)
+  const { latestRun, usage } = await loadGolferCatalogPanelState(supabase)
+  const rosterCount = rosterGolfers.length
 
   return (
     <div className="space-y-6">

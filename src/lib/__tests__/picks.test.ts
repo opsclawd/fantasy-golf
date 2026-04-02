@@ -255,3 +255,15 @@ describe('shouldAutoLock', () => {
     expect(shouldAutoLock('open', deadline, new Date(2026, 3, 2, 0, 0, 0))).toBe(true)
   })
 })
+
+describe('getTournamentLockInstant', () => {
+  it('maps a UTC deadline date to browser-local midnight for that calendar day', () => {
+    const lockAt = getTournamentLockInstant('2026-04-02T00:00:00+00:00')
+
+    expect(lockAt?.getFullYear()).toBe(2026)
+    expect(lockAt?.getMonth()).toBe(3)
+    expect(lockAt?.getDate()).toBe(2)
+    expect(lockAt?.getHours()).toBe(0)
+    expect(lockAt?.getMinutes()).toBe(0)
+  })
+})
