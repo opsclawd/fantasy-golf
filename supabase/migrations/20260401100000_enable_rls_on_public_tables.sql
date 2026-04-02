@@ -28,6 +28,14 @@ for select
 to anon, authenticated
 using (true);
 
+drop policy if exists "Pool commissioners can update pools" on public.pools;
+create policy "Pool commissioners can update pools"
+on public.pools
+for update
+to authenticated
+using (commissioner_id = auth.uid())
+with check (commissioner_id = auth.uid());
+
 drop policy if exists "Members can read pool membership" on public.pool_members;
 create policy "Members can read pool membership"
 on public.pool_members

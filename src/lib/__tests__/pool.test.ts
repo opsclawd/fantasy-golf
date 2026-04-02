@@ -7,6 +7,8 @@ import {
   buildClonePoolInput,
 } from '../pool'
 import type { Pool } from '../supabase/types'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 describe('generateInviteCode', () => {
   it('returns a string of 8 alphanumeric characters', () => {
@@ -137,6 +139,19 @@ describe('canTransitionStatus', () => {
   it('blocks complete -> anything', () => {
     expect(canTransitionStatus('complete', 'open')).toBe(false)
     expect(canTransitionStatus('complete', 'live')).toBe(false)
+  })
+})
+
+describe('pool update RLS policy', () => {
+  it('includes a commissioner-only update policy for pools', () => {
+    const migration = readFileSync(
+      join(process.cwd(), 'supabase/migrations/20260401100000_enable_rls_on_public_tables.sql'),
+      'utf8'
+    )
+
+    expect(migration).toContain('Pool commissioners can update pools')
+    expect(migration).toContain('for update')
+    expect(migration).toContain('commissioner_id = auth.uid()')
   })
 })
 
