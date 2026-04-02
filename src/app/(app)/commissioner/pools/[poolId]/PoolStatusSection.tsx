@@ -1,5 +1,6 @@
 import type { Pool } from '@/lib/supabase/types'
 import { metricCardClasses, sectionHeadingClasses } from '@/components/uiStyles'
+import { getTournamentLockInstant } from '@/lib/picks'
 
 interface PoolStatusSectionProps {
   pool: Pool
@@ -16,6 +17,9 @@ export function PoolStatusSection({
   isLocked,
   pendingCount,
 }: PoolStatusSectionProps) {
+  const lockInstant = getTournamentLockInstant(pool.deadline)
+  const formattedDeadline = lockInstant ? lockInstant.toLocaleString() : 'Deadline unavailable'
+
   return (
     <section className="grid gap-4 md:grid-cols-4" aria-label="Pool overview">
       <article className={metricCardClasses()}>
@@ -37,7 +41,7 @@ export function PoolStatusSection({
         <p className={sectionHeadingClasses()}>Lock state</p>
         <p className="mt-3 text-lg font-semibold text-slate-950">{isLocked ? 'Locked' : 'Open until deadline'}</p>
         <p className="mt-2 text-sm text-slate-500">
-          {pool.deadline ? new Date(pool.deadline).toLocaleString() : 'Deadline unavailable'}
+          {formattedDeadline}
         </p>
       </article>
     </section>

@@ -1,4 +1,5 @@
 import { panelClasses, sectionHeadingClasses } from './uiStyles'
+import { getTournamentLockInstant } from '@/lib/picks'
 
 interface LockBannerProps {
   isLocked: boolean
@@ -19,16 +20,12 @@ function getLockedMessage(poolStatus: string): string {
 
 function formatDeadline(deadline: string): string {
   const fallback = 'Deadline not available'
-  if (!deadline.trim()) {
+  const deadlineInstant = getTournamentLockInstant(deadline)
+  if (!deadlineInstant) {
     return fallback
   }
 
-  const deadlineDate = new Date(deadline)
-  if (Number.isNaN(deadlineDate.getTime())) {
-    return fallback
-  }
-
-  return deadlineDate.toLocaleString(undefined, {
+  return deadlineInstant.toLocaleString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',

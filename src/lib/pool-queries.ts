@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Pool, PoolMember, AuditEvent, PoolStatus } from './supabase/types'
+import { getTournamentLockInstant } from './picks'
 
 export async function insertPool(
   supabase: SupabaseClient,
@@ -216,6 +217,13 @@ export async function getOpenPoolsPastDeadline(
     .from('pools')
     .select('*')
     .eq('status', 'open')
-    .lte('deadline', now.toISOString())
-  return (data as Pool[]) || []
+
+  return ((data as Pool[]) || []).filter((pool) => {
+    if (pool.status !== 'open') {
+      return false
+    }
+
+    const lockAt = getTournamentLockInstant(pool.deadline)
+    return lockAt !== null && lockAt.getTime() <= now.getTime()
+  })
 }

@@ -4,6 +4,7 @@ import {
   isPoolLocked,
   calculateRemainingPicks,
   shouldAutoLock,
+  getTournamentLockInstant,
 } from '../picks'
 
 describe('validatePickSubmission', () => {
@@ -188,8 +189,8 @@ describe('isPoolLocked', () => {
   it('supports explicit now parameter', () => {
     const deadline = '2099-04-10T08:00:00Z'
 
-    expect(isPoolLocked('open', deadline, new Date('2099-04-10T07:59:59Z'))).toBe(false)
-    expect(isPoolLocked('open', deadline, new Date('2099-04-10T08:00:00Z'))).toBe(true)
+    expect(isPoolLocked('open', deadline, new Date(2099, 3, 9, 23, 59, 59))).toBe(false)
+    expect(isPoolLocked('open', deadline, new Date(2099, 3, 10, 0, 0, 0))).toBe(true)
   })
 })
 
@@ -220,7 +221,7 @@ describe('shouldAutoLock', () => {
 
   it('returns false when pool is open and deadline is in the future', () => {
     expect(
-      shouldAutoLock('open', '2026-04-10T08:00:00Z', new Date('2026-04-10T07:00:00Z'))
+      shouldAutoLock('open', '2026-04-10T08:00:00Z', new Date(2026, 3, 9, 23, 0, 0))
     ).toBe(false)
   })
 
@@ -242,9 +243,15 @@ describe('shouldAutoLock', () => {
     ).toBe(false)
   })
 
-  it('returns true at exact deadline moment', () => {
-    expect(
-      shouldAutoLock('open', '2026-04-10T08:00:00Z', new Date('2026-04-10T08:00:00Z'))
-    ).toBe(true)
+  it('keeps the pool open through the deadline day until the UTC calendar date rolls over locally', () => {
+    const deadline = '2026-04-02T00:00:00'
+    const lockAt = getTournamentLockInstant(deadline)
+
+    expect(lockAt?.getFullYear()).toBe(2026)
+    expect(lockAt?.getMonth()).toBe(3)
+    expect(lockAt?.getDate()).toBe(2)
+    expect(lockAt?.getHours()).toBe(0)
+    expect(shouldAutoLock('open', deadline, new Date(2026, 3, 1, 23, 59, 59, 999))).toBe(false)
+    expect(shouldAutoLock('open', deadline, new Date(2026, 3, 2, 0, 0, 0))).toBe(true)
   })
 })

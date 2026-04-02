@@ -10,6 +10,19 @@ export type PickValidationResult =
   | { ok: true }
   | { ok: false; error: string }
 
+export function getTournamentLockInstant(deadline: string): Date | null {
+  const deadlineDate = new Date(deadline)
+  if (Number.isNaN(deadlineDate.getTime())) {
+    return null
+  }
+
+  return new Date(
+    deadlineDate.getUTCFullYear(),
+    deadlineDate.getUTCMonth(),
+    deadlineDate.getUTCDate()
+  )
+}
+
 export function validatePickSubmission(
   input: PickSubmissionInput
 ): PickValidationResult {
@@ -49,12 +62,12 @@ export function isPoolLocked(
   deadline: string,
   now: Date = new Date()
 ): boolean {
-  const deadlineTime = Date.parse(deadline)
-  if (Number.isNaN(deadlineTime)) {
+  const lockAt = getTournamentLockInstant(deadline)
+  if (!lockAt) {
     return true
   }
 
-  return !(status === 'open' && deadlineTime > now.getTime())
+  return !(status === 'open' && lockAt.getTime() > now.getTime())
 }
 
 export function calculateRemainingPicks(
@@ -75,8 +88,8 @@ export function shouldAutoLock(
 ): boolean {
   if (status !== 'open') return false
 
-  const deadlineTime = Date.parse(deadline)
-  if (Number.isNaN(deadlineTime)) return false
+  const lockAt = getTournamentLockInstant(deadline)
+  if (!lockAt) return false
 
-  return now.getTime() >= deadlineTime
+  return now.getTime() >= lockAt.getTime()
 }
