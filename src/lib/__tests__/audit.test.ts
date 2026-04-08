@@ -4,59 +4,65 @@ import { computeScoreDiff, buildRefreshAuditDetails } from '../audit'
 
 function createScore(
   golferId: string,
-  holes: (number | null)[],
+  roundId: number | null,
+  roundScore: number | null,
+  totalScore: number | null,
   status: GolferStatus = 'active',
   birdies: number = 0
 ): TournamentScore {
-  const score: Record<string, unknown> = {
+  return {
     golfer_id: golferId,
     tournament_id: 't1',
+    round_id: roundId,
+    round_score: roundScore,
+    total_score: totalScore,
     total_birdies: birdies,
     status,
+    position: null,
+    round_status: null,
+    current_hole: null,
+    tee_time: null,
+    updated_at: null,
   }
-  for (let i = 1; i <= 18; i++) {
-    score[`hole_${i}`] = i <= holes.length ? holes[i - 1] : null
-  }
-  return score as unknown as TournamentScore
 }
 
 describe('audit', () => {
   describe('computeScoreDiff', () => {
     it('returns empty diff when scores are identical', () => {
-      const oldScore = createScore('g1', [-1, 0, 1])
-      const newScore = createScore('g1', [-1, 0, 1])
+      const oldScore = createScore('g1', 1, -1, -2)
+      const newScore = createScore('g1', 1, -1, -2)
       const diff = computeScoreDiff(oldScore, newScore)
       expect(diff.changed).toBe(false)
-      expect(diff.holes).toEqual({})
+      expect(diff.fields).toEqual({})
     })
 
-    it('detects hole score changes', () => {
-      const oldScore = createScore('g1', [-1, 0, 1])
-      const newScore = createScore('g1', [-1, -1, 1])
+    it('detects round score changes', () => {
+      const oldScore = createScore('g1', 1, -1, -2)
+      const newScore = createScore('g1', 1, -2, -3)
       const diff = computeScoreDiff(oldScore, newScore)
       expect(diff.changed).toBe(true)
-      expect(diff.holes).toEqual({ hole_2: { old: 0, new: -1 } })
+      expect(diff.fields).toEqual({ round_score: { old: -1, new: -2 }, total_score: { old: -2, new: -3 } })
     })
 
-    it('detects new hole scores where old was null', () => {
-      const oldScore = createScore('g1', [-1])
-      const newScore = createScore('g1', [-1, 0])
+    it('detects round id changes', () => {
+      const oldScore = createScore('g1', 1, -1, -2)
+      const newScore = createScore('g1', 2, -1, -3)
       const diff = computeScoreDiff(oldScore, newScore)
       expect(diff.changed).toBe(true)
-      expect(diff.holes).toEqual({ hole_2: { old: null, new: 0 } })
+      expect(diff.fields.round_id).toEqual({ old: 1, new: 2 })
     })
 
     it('detects status changes', () => {
-      const oldScore = createScore('g1', [-1, 0], 'active')
-      const newScore = createScore('g1', [-1, 0], 'withdrawn')
+      const oldScore = createScore('g1', 1, -1, -2, 'active')
+      const newScore = createScore('g1', 1, -1, -2, 'withdrawn')
       const diff = computeScoreDiff(oldScore, newScore)
       expect(diff.changed).toBe(true)
       expect(diff.statusChange).toEqual({ old: 'active', new: 'withdrawn' })
     })
 
     it('detects birdie count changes', () => {
-      const oldScore = createScore('g1', [-1, 0], 'active', 1)
-      const newScore = createScore('g1', [-1, 0], 'active', 2)
+      const oldScore = createScore('g1', 1, -1, -2, 'active', 1)
+      const newScore = createScore('g1', 1, -1, -2, 'active', 2)
       const diff = computeScoreDiff(oldScore, newScore)
       expect(diff.changed).toBe(true)
       expect(diff.birdiesChange).toEqual({ old: 1, new: 2 })
@@ -66,26 +72,26 @@ describe('audit', () => {
   describe('buildRefreshAuditDetails', () => {
     it('summarizes diffs across multiple golfers', () => {
       const oldScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', [-1, 0])],
-        ['g2', createScore('g2', [0, 0])],
+        ['g1', createScore('g1', 1, -1, -2)],
+        ['g2', createScore('g2', 1, 0, 0)],
       ])
       const newScores: TournamentScore[] = [
-        createScore('g1', [-1, -1]),
-        createScore('g2', [0, 0]),
+        createScore('g1', 2, -2, -3),
+        createScore('g2', 1, 0, 0),
       ]
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 2)
-      expect(details.completedHoles).toBe(2)
+      expect(details.completedRounds).toBe(2)
       expect(details.golferCount).toBe(2)
       expect(details.changedGolfers).toEqual(['g1'])
-      expect(details.diffs.g1.holes).toEqual({ hole_2: { old: 0, new: -1 } })
+      expect(details.diffs.g1.fields.round_id).toEqual({ old: 1, new: 2 })
     })
 
     it('returns empty diffs when nothing changed', () => {
       const oldScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', [-1, 0])],
+        ['g1', createScore('g1', 1, -1, -2)],
       ])
       const newScores: TournamentScore[] = [
-        createScore('g1', [-1, 0]),
+        createScore('g1', 1, -1, -2),
       ]
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
       expect(details.changedGolfers).toEqual([])
@@ -95,7 +101,7 @@ describe('audit', () => {
     it('handles new golfers not in old scores', () => {
       const oldScores = new Map<string, TournamentScore>()
       const newScores: TournamentScore[] = [
-        createScore('g1', [-1, 0]),
+        createScore('g1', 1, -1, -2),
       ]
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
       expect(details.changedGolfers).toEqual(['g1'])
@@ -104,11 +110,11 @@ describe('audit', () => {
 
     it('detects golfers dropped from external feed', () => {
       const oldScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', [-1, 0])],
-        ['g2', createScore('g2', [0, 1])],
+        ['g1', createScore('g1', 1, -1, -2)],
+        ['g2', createScore('g2', 1, 0, 0)],
       ])
       const newScores: TournamentScore[] = [
-        createScore('g1', [-1, 0]),
+        createScore('g1', 1, -1, -2),
       ]
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
       expect(details.droppedGolfers).toEqual(['g2'])
@@ -116,25 +122,25 @@ describe('audit', () => {
 
     it('dedupes changed golfers when duplicate incoming rows exist', () => {
       const oldScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', [-1, 0])],
+        ['g1', createScore('g1', 1, -1, -2)],
       ])
       const newScores: TournamentScore[] = [
-        createScore('g1', [-1, -1]),
-        createScore('g1', [-1, -1]),
+        createScore('g1', 2, -2, -3),
+        createScore('g1', 2, -2, -3),
       ]
 
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)
 
       expect(details.changedGolfers).toEqual(['g1'])
       expect(details.newGolfers).toEqual([])
-      expect(details.diffs.g1.holes).toEqual({ hole_2: { old: 0, new: -1 } })
+      expect(details.diffs.g1.fields.round_id).toEqual({ old: 1, new: 2 })
     })
 
     it('dedupes new golfers when duplicate incoming rows exist', () => {
       const oldScores = new Map<string, TournamentScore>()
       const newScores: TournamentScore[] = [
-        createScore('g3', [-1, 0]),
-        createScore('g3', [-1, 0]),
+        createScore('g3', 1, -1, -2),
+        createScore('g3', 1, -1, -2),
       ]
 
       const details = buildRefreshAuditDetails(oldScores, newScores, 2, 1)

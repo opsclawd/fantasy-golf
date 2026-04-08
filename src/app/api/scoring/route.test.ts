@@ -70,8 +70,8 @@ describe('POST /api/scoring', () => {
     const entries = [{ id: 'entry-1', pool_id: 'pool-1' }]
     const existingScores: Array<Record<string, unknown>> = []
     const refreshedScores: Array<Record<string, unknown>> = [
-      { golfer_id: 'g1', total_birdies: 1, status: 'active' },
-      { golfer_id: 'g2', total_birdies: 0, status: 'active' },
+      { golfer_id: 'g1', round_id: 1, round_score: -1, total_score: -2, total_birdies: 1, status: 'active' },
+      { golfer_id: 'g2', round_id: 1, round_score: 0, total_score: -1, total_birdies: 0, status: 'active' },
     ]
 
     const send = vi.fn().mockResolvedValue(undefined)
@@ -117,13 +117,13 @@ describe('POST /api/scoring', () => {
       .mockResolvedValueOnce(existingScores as never)
       .mockResolvedValueOnce(refreshedScores as never)
     vi.mocked(getTournamentScores).mockResolvedValue([
-      { golfer_id: 'g1', hole_scores: [-1, 0], thru: 2 },
+      { golfer_id: 'g1', round_id: 1, round_score: -1, total_score: -2, total_birdies: 1, status: 'active' },
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
-      completedHoles: 2,
+      completedRounds: 2,
       golferCount: 2,
       changedGolfers: ['g1'],
       newGolfers: [],
@@ -144,7 +144,7 @@ describe('POST /api/scoring', () => {
     expect(buildRefreshAuditDetails).toHaveBeenCalledWith(
       expect.any(Map),
       refreshedScores,
-      2,
+      1,
       refreshedScores.length
     )
     expect(getTournamentScores).toHaveBeenCalledWith('t-1', 2026)
@@ -152,11 +152,11 @@ describe('POST /api/scoring', () => {
       pool_id: 'pool-1',
       user_id: null,
       action: 'scoreRefreshCompleted',
-      details: {
-        completedHoles: 2,
-        golferCount: 2,
-        changedGolfers: ['g1'],
-        newGolfers: [],
+        details: {
+          completedRounds: 2,
+           golferCount: 2,
+           changedGolfers: ['g1'],
+           newGolfers: [],
         droppedGolfers: [],
         diffs: {},
         entryCount: entries.length,
@@ -195,13 +195,13 @@ describe('POST /api/scoring', () => {
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([] as never)
     vi.mocked(getTournamentScores).mockResolvedValue([
-      { golfer_id: 'g1', hole_scores: [-1, 0], thru: 2 },
+      { golfer_id: 'g1', round_id: 1, round_score: -1, total_score: -2, total_birdies: 1, status: 'active' },
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
-      completedHoles: 2,
+      completedRounds: 2,
       golferCount: 1,
       changedGolfers: ['g1'],
       newGolfers: [],

@@ -2,71 +2,52 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ScoreDisplay } from '@/components/score-display'
 import { getPoolById } from '@/lib/pool-queries'
-import { deriveCompletedHoles, getEntryHoleScore, rankEntries, getHoleScore } from '@/lib/scoring'
+import { deriveCompletedRounds, getEntryRoundScore, rankEntries } from '@/lib/scoring'
 import { createClient } from '@/lib/supabase/server'
 import type { Entry, TournamentScore } from '@/lib/supabase/types'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 
-type HoleTrace = {
-  hole: number
-  bestBall: number | null
-  includedInTotal: boolean
-  golferValues: Array<{
-    golferId: string
-    score: number | null
-    status: TournamentScore['status'] | 'missing'
-    contributes: boolean
-  }>
+type RoundTrace = {
+  golferId: string
+  round: number | null
+  roundScore: number | null
+  totalScore: number | null
+  status: TournamentScore['status'] | 'missing'
+  contributes: boolean
 }
 
-function buildHoleTrace(
+function buildRoundTrace(
   entry: Entry,
-  golferScores: Map<string, TournamentScore>,
-  completedHoles: number
-): HoleTrace[] {
-  const rows: HoleTrace[] = []
-  let totalStillRunning = true
+  golferScores: Map<string, TournamentScore>
+): RoundTrace[] {
+  const bestBall = getEntryRoundScore(golferScores, entry.golfer_ids)
 
-  for (let hole = 1; hole <= completedHoles; hole++) {
-    const bestBall = getEntryHoleScore(golferScores, entry.golfer_ids, hole)
-    const includedInTotal = totalStillRunning && bestBall !== null
-
-    if (bestBall === null) {
-      totalStillRunning = false
-    }
-
-    const golferValues = entry.golfer_ids.map((golferId) => {
-      const golferScore = golferScores.get(golferId)
-      if (!golferScore) {
-        return {
-          golferId,
-          score: null,
-          status: 'missing' as const,
-          contributes: false,
-        }
-      }
-
-      const score = getHoleScore(golferScore, hole)
-      const inactive = golferScore.status === 'withdrawn' || golferScore.status === 'cut'
-      const contributes = !inactive && score !== null && bestBall !== null && score === bestBall
-
+  return entry.golfer_ids.map((golferId) => {
+    const golferScore = golferScores.get(golferId)
+    if (!golferScore) {
       return {
         golferId,
-        score,
-        status: golferScore.status,
-        contributes,
+        round: null,
+        roundScore: null,
+        totalScore: null,
+        status: 'missing' as const,
+        contributes: false,
       }
-    })
+    }
 
-    rows.push({
-      hole,
-      bestBall,
-      includedInTotal,
-      golferValues,
-    })
-  }
+    const roundScore = golferScore.round_score ?? golferScore.total_score ?? null
+    const totalScore = golferScore.total_score ?? golferScore.round_score ?? null
+    const inactive = golferScore.status === 'withdrawn' || golferScore.status === 'cut'
 
-  return rows
+    return {
+      golferId,
+      round: golferScore.round_id ?? null,
+      roundScore,
+      totalScore,
+      status: golferScore.status,
+      contributes: !inactive && roundScore !== null && bestBall !== null && roundScore === bestBall,
+    }
+  })
 }
 
 function shortUserId(userId: string): string {
@@ -122,8 +103,8 @@ export default async function CommissionerPoolAuditScoreTracePage({
     golferNameById.set(golfer.id, golfer.name)
   }
 
-  const completedHoles = deriveCompletedHoles(allScores)
-  const ranked = rankEntries(entries, golferScores, completedHoles)
+  const completedRounds = deriveCompletedRounds(allScores)
+  const ranked = rankEntries(entries, golferScores, completedRounds)
 
   return (
     <div className="space-y-6">
@@ -151,7 +132,7 @@ export default async function CommissionerPoolAuditScoreTracePage({
             <span className="font-medium text-gray-900">Entries:</span> {entries.length}
           </p>
           <p>
-            <span className="font-medium text-gray-900">Scored holes (global):</span> {completedHoles}
+            <span className="font-medium text-gray-900">Scored rounds (global):</span> {completedRounds}
           </p>
           <p>
             <span className="font-medium text-gray-900">Tournament score rows:</span> {allScores.length}
@@ -163,16 +144,17 @@ export default async function CommissionerPoolAuditScoreTracePage({
         <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center">
           <p className="font-medium text-gray-700">No entries to trace</p>
           <p className="mt-1 text-sm text-gray-500">
-            Add entries and refresh scores to see hole-by-hole score derivation.
+            Add entries and refresh scores to see round-level score derivation.
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {ranked.map((entry) => {
-            const holeTrace = buildHoleTrace(entry, golferScores, completedHoles)
-            const derivedTotal = holeTrace
-              .filter((row) => row.includedInTotal && row.bestBall !== null)
-              .reduce((sum, row) => sum + (row.bestBall ?? 0), 0)
+            const roundTrace = buildRoundTrace(entry, golferScores)
+            const derivedTotal = roundTrace
+              .map((row) => row.roundScore)
+              .filter((score): score is number => score !== null)
+              .reduce((sum, score) => sum + score, 0)
             const totalMatches = derivedTotal === entry.totalScore
 
             return (
@@ -204,52 +186,49 @@ export default async function CommissionerPoolAuditScoreTracePage({
                   </div>
                 </div>
 
-                {completedHoles === 0 ? (
-                  <p className="mt-3 text-sm text-gray-500">No stored hole scores yet.</p>
-                ) : (
-                  <div className="mt-4 overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-gray-600">
-                          <th className="px-2 py-2">Hole</th>
-                          <th className="px-2 py-2">Best Ball</th>
-                          {entry.golfer_ids.map((golferId) => (
-                            <th key={golferId} className="px-2 py-2">
-                              {golferNameById.get(golferId) ?? shortGolferId(golferId)}
-                            </th>
-                          ))}
-                          <th className="px-2 py-2">In Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {holeTrace.map((row) => (
-                          <tr key={row.hole} className="border-b last:border-b-0">
-                            <td className="px-2 py-2 font-medium text-gray-700">{row.hole}</td>
-                            <td className="px-2 py-2">
-                              {row.bestBall === null ? (
-                                <span className="text-gray-400">-</span>
-                              ) : (
-                                <ScoreDisplay score={row.bestBall} />
-                              )}
-                            </td>
-                            {row.golferValues.map((value) => (
-                              <td
-                                key={value.golferId}
-                                className={`px-2 py-2 ${value.contributes ? 'bg-emerald-50 font-semibold text-emerald-800' : ''}`}
-                              >
-                                {value.status === 'withdrawn' || value.status === 'cut' ? (
-                                  <span className="text-amber-700">{value.status}</span>
-                                ) : value.score === null ? (
+                  {completedRounds === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">No stored round scores yet.</p>
+                  ) : (
+                    <div className="mt-4 overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-left text-gray-600">
+                            <th className="px-2 py-2">Golfer</th>
+                            <th className="px-2 py-2">Round</th>
+                            <th className="px-2 py-2">Round Score</th>
+                            <th className="px-2 py-2">Total Score</th>
+                            <th className="px-2 py-2">Status</th>
+                            <th className="px-2 py-2">In Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {roundTrace.map((row) => (
+                            <tr key={row.golferId} className="border-b last:border-b-0">
+                              <td className="px-2 py-2 font-medium text-gray-700">
+                                {golferNameById.get(row.golferId) ?? shortGolferId(row.golferId)}
+                              </td>
+                              <td className="px-2 py-2 text-gray-600">{row.round ?? '-'}</td>
+                              <td className={`px-2 py-2 ${row.contributes ? 'bg-emerald-50 font-semibold text-emerald-800' : ''}`}>
+                                {row.roundScore === null ? (
                                   <span className="text-gray-400">-</span>
                                 ) : (
-                                  <ScoreDisplay score={value.score} />
+                                  <ScoreDisplay score={row.roundScore} />
                                 )}
                               </td>
-                            ))}
-                            <td className="px-2 py-2 text-gray-600">{row.includedInTotal ? 'yes' : 'no'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
+                              <td className="px-2 py-2">
+                                {row.totalScore === null ? (
+                                  <span className="text-gray-400">-</span>
+                                ) : (
+                                  <ScoreDisplay score={row.totalScore} />
+                                )}
+                              </td>
+                              <td className="px-2 py-2 text-gray-600">
+                                {row.status === 'missing' ? 'missing' : row.status}
+                              </td>
+                              <td className="px-2 py-2 text-gray-600">{row.contributes ? 'yes' : 'no'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
                     </table>
                   </div>
                 )}

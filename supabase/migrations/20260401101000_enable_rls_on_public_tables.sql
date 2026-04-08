@@ -1,4 +1,13 @@
-alter table public.golfers enable row level security;
+do $$
+begin
+  if to_regclass('public.golfers') is not null then
+    execute 'alter table public.golfers enable row level security';
+    execute 'grant select on table public.golfers to anon, authenticated';
+    execute 'drop policy if exists "Public golfers are readable" on public.golfers';
+    execute 'create policy "Public golfers are readable" on public.golfers for select to anon, authenticated using (true)';
+  end if;
+end
+$$;
 alter table public.pools enable row level security;
 alter table public.pool_members enable row level security;
 alter table public.entries enable row level security;
@@ -6,20 +15,12 @@ alter table public.audit_events enable row level security;
 alter table public.tournament_scores enable row level security;
 alter table public.golfer_sync_runs enable row level security;
 
-grant select on table public.golfers to anon, authenticated;
 grant select on table public.pools to anon, authenticated;
 grant select on table public.pool_members to authenticated;
 grant select, insert, update, delete on table public.entries to authenticated;
 grant select, insert on table public.audit_events to authenticated;
 grant select, insert, update, delete on table public.tournament_scores to authenticated;
 grant select, insert, update, delete on table public.golfer_sync_runs to authenticated;
-
-drop policy if exists "Public golfers are readable" on public.golfers;
-create policy "Public golfers are readable"
-on public.golfers
-for select
-to anon, authenticated
-using (true);
 
 drop policy if exists "Public pools are readable" on public.pools;
 create policy "Public pools are readable"

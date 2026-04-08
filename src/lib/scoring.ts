@@ -1,40 +1,40 @@
 import { TournamentScore, Entry } from './supabase/types'
 
-export function getHoleScore(score: TournamentScore, hole: number): number | null {
-  const key = `hole_${hole}` as keyof TournamentScore
-  return score[key] as number | null
+function isRoundBasedScore(score: TournamentScore): boolean {
+  return typeof score.total_score === 'number' || typeof score.round_score === 'number'
 }
 
-export function getEntryHoleScore(
+function getRoundScore(score: TournamentScore): number | null {
+  if (typeof score.total_score === 'number') return score.total_score
+  if (typeof score.round_score === 'number') return score.round_score
+  return null
+}
+
+export function getEntryRoundScore(
   golferScores: Map<string, TournamentScore>,
-  golferIds: string[],
-  hole: number
+  golferIds: string[]
 ): number | null {
-  const scores: number[] = []
-  let hasActiveGolferWithoutScore = false
+  const roundBasedScores: number[] = []
 
   for (const id of golferIds) {
     const golferScore = golferScores.get(id)
 
     // Golfer not in scores map at all — no data received yet
     if (!golferScore) {
-      hasActiveGolferWithoutScore = true
       continue
     }
 
     // Skip withdrawn/cut golfers entirely — they don't contribute to best-ball
     if (golferScore.status === 'withdrawn' || golferScore.status === 'cut') continue
 
-    const holeScore = getHoleScore(golferScore, hole)
-    if (holeScore === null) {
-      hasActiveGolferWithoutScore = true
-      continue
+    if (isRoundBasedScore(golferScore)) {
+      const roundScore = getRoundScore(golferScore)
+      if (roundScore === null) continue
+      roundBasedScores.push(roundScore)
     }
-    scores.push(holeScore)
   }
 
-  // If we collected at least one valid score, use it (best ball among available)
-  if (scores.length > 0) return Math.min(...scores)
+  if (roundBasedScores.length > 0) return Math.min(...roundBasedScores)
 
   // No scores at all — either all withdrawn or no data
   return null
@@ -43,17 +43,15 @@ export function getEntryHoleScore(
 export function calculateEntryTotalScore(
   golferScores: Map<string, TournamentScore>,
   golferIds: string[],
-  completedHoles: number
+  _completedRounds: number
 ): number {
-  let total = 0
-  
-  for (let hole = 1; hole <= completedHoles; hole++) {
-    const holeScore = getEntryHoleScore(golferScores, golferIds, hole)
-    if (holeScore === null) break
-    total += holeScore
-  }
-  
-  return total
+  const roundScores = golferIds
+    .map((id) => golferScores.get(id))
+    .filter((score): score is TournamentScore => Boolean(score))
+    .map(getRoundScore)
+    .filter((score): score is number => score !== null)
+
+  return roundScores.length > 0 ? Math.min(...roundScores) : 0
 }
 
 export function calculateEntryBirdies(
@@ -72,32 +70,25 @@ export function calculateEntryBirdies(
   return totalBirdies
 }
 
-export function deriveCompletedHoles(allScores: TournamentScore[]): number {
-  const startedScores = allScores.filter((score) => score.hole_1 !== null)
-  if (startedScores.length === 0) return 0
+export function deriveCompletedRounds(allScores: TournamentScore[]): number {
+  if (allScores.some(isRoundBasedScore)) {
+    const completedRounds = allScores
+      .map((score) => score.round_id)
+      .filter((roundId): roundId is number => typeof roundId === 'number' && Number.isFinite(roundId))
+    return completedRounds.length > 0 ? Math.max(...completedRounds) : 0
+  }
 
-  return Math.min(
-    ...startedScores.map((score) => {
-      let thru = 0
-      for (let hole = 1; hole <= 18; hole++) {
-        if (getHoleScore(score, hole) !== null) {
-          thru = hole
-          continue
-        }
-        break
-      }
-      return thru
-    })
-  )
+  const rounds = allScores.map((score) => score.round_id ?? 0).filter((roundId) => roundId > 0)
+  return rounds.length > 0 ? Math.max(...rounds) : 0
 }
 
 export function rankEntries(
   entries: Entry[],
   golferScores: Map<string, TournamentScore>,
-  completedHoles: number
+  completedRounds: number
 ): (Entry & { totalScore: number; totalBirdies: number; rank: number })[] {
   const withScores = entries.map(entry => {
-    const totalScore = calculateEntryTotalScore(golferScores, entry.golfer_ids, completedHoles)
+    const totalScore = calculateEntryTotalScore(golferScores, entry.golfer_ids, completedRounds)
     const totalBirdies = calculateEntryBirdies(golferScores, entry.golfer_ids)
     return { ...entry, totalScore, totalBirdies }
   })

@@ -31,12 +31,12 @@ export function GolferContribution({ summary, onSelect }: GolferContributionProp
         </div>
         <div className="text-xs text-gray-500 mt-0.5">
           {summary.country}
-          {summary.completedHoles > 0 && (
-            <span className="ml-2">Thru {summary.completedHoles}</span>
+          {summary.completedRounds > 0 && (
+            <span className="ml-2">Round {summary.completedRounds}</span>
           )}
-          {summary.contributingHoles > 0 && (
+          {summary.contributingRounds > 0 && (
             <span className="ml-2">
-              Best ball on {summary.contributingHoles} hole{summary.contributingHoles !== 1 ? 's' : ''}
+              Counted in {summary.contributingRounds} round{summary.contributingRounds !== 1 ? 's' : ''}
             </span>
           )}
         </div>

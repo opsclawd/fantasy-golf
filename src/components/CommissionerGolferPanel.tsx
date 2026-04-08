@@ -58,7 +58,7 @@ export function CommissionerGolferPanel({
           country: golfer?.country ?? '',
           status: scorecard?.status ?? 'active',
           totalScore: scorecard?.totalScore ?? 0,
-          completedHoles: scorecard?.completedHoles ?? 0,
+          completedRounds: scorecard?.completedRounds ?? 0,
           pickRate: context.pickRate,
           entriesWithGolfer: context.entriesWithGolfer,
         }

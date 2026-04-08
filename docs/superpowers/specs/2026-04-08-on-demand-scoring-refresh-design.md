@@ -4,17 +4,19 @@
 
 **Goal:** Replace unreliable cron-only scoring with a user-triggered on-demand refresh that checks if data is stale (>15 minutes) before fetching fresh scores. Cron remains as a safety net.
 
-**Architecture:** User page load triggers a staleness check. If data is >15 minutes old, a refresh is initiated. User sees "Refreshing... • Last updated Xm ago" inline with the timestamp. Cron continues firing every 4 hours for baseline reliability when no users visit.
+**Architecture:** When the leaderboard API route detects stale data, it triggers a background refresh server-side and returns `isRefreshing: true` to the client. The client shows "Refreshing..." inline with the timestamp. Once the refresh completes, Supabase Realtime broadcasts the update to all connected clients. The existing 30-second poll also catches updates. Cron continues firing every 4 hours for baseline reliability.
 
 ---
 
 ## Scope
 
-- On-demand refresh triggered by user page load
-- Staleness check using `pool.refreshed_at` timestamp
-- Inline "Refreshing..." indicator tied to timestamp
-- Cron remains as safety net
-- Error handling: show stale data with timestamp (no banner)
+- On-demand refresh triggered server-side when leaderboard data is stale
+- Staleness check using `pool.refreshed_at` timestamp (15-minute threshold)
+- New `POST /api/scoring/refresh` endpoint for pool-specific refresh
+- Shared scoring logic extracted from existing cron route to avoid duplication
+- Inline "Refreshing..." indicator in TrustStatusBar
+- Cron remains as safety net (unchanged)
+- Error handling: show stale data with honest timestamp (no error banner)
 
 ---
 
@@ -23,31 +25,35 @@
 ### On-Demand Refresh Flow
 
 1. User navigates to leaderboard page
-2. Server reads `pool.refreshed_at` from database
-3. If `now - refreshed_at > 15 minutes`:
-   - Initiate refresh from external API
-   - Return response with `isRefreshing: true` flag and current `refreshedAt`
-4. User sees: "Refreshing... • Last updated 18m ago"
-5. After refresh completes, broadcast updates via Supabase Realtime
-6. All connected clients receive updated scores
+2. Client fetches `GET /api/leaderboard/[poolId]`
+3. Server checks `pool.refreshed_at` — if stale (>15 minutes old or null):
+   a. **Server-side** fires a background `POST /api/scoring/refresh` call (fire-and-forget, using `CRON_SECRET` from the server environment)
+   b. Returns response with `isRefreshing: true` and current `refreshedAt`
+4. Client shows: "Refreshing... • Last updated 18m ago"
+5. Refresh endpoint fetches scores from external API, upserts to DB, broadcasts via Supabase Realtime
+6. All connected clients receive the update via Realtime (or via the existing 30-second poll)
+
+**Key design choice:** The leaderboard route triggers the refresh server-side. The client never calls the refresh endpoint directly. This avoids exposing `CRON_SECRET` to the browser and needs no new auth mechanism.
 
 ### Staleness Check
 
 - Threshold: `STALE_THRESHOLD_MS = 15 * 60 * 1000` (15 minutes)
+- Replaces the current `DEFAULT_STALE_THRESHOLD_MS` of 10 minutes in `src/lib/freshness.ts`
 - Fixed global constant — not configurable per pool/tournament
-- If `refreshed_at` is null, treat as stale
+- If `refreshed_at` is null, treat as stale (`classifyFreshness` returns `'unknown'`)
 
 ### Cron (Safety Net)
 
 - Continues firing every 4 hours as baseline reliability
-- Handles cases where no users visit during between-cron gaps
-- Does not conflict with on-demand refreshes
+- Handles cases where no users visit between cron runs
+- The cron route (`POST /api/scoring`) keeps its auto-lock and active-pool-finding logic
+- The new refresh route (`POST /api/scoring/refresh`) is a targeted, pool-specific variant
 
 ### Error Handling
 
-- If refresh fails, return stale data with honest timestamp
-- No error banner — just "Last updated Xm ago"
-- Error is logged but user experience is not degraded
+- If refresh fails, user sees stale data with honest timestamp ("Last updated 23m ago")
+- No error banner — just the timestamp age
+- Errors are logged server-side and recorded in `pool.last_refresh_error`
 
 ---
 
@@ -55,13 +61,18 @@
 
 ### New Files
 
-- `src/app/api/scoring/refresh/route.ts` — on-demand refresh endpoint
+- `src/lib/scoring-refresh.ts` — shared scoring refresh logic (extracted from cron route)
+- `src/lib/__tests__/scoring-refresh.test.ts` — tests for the shared logic
+- `src/app/api/scoring/refresh/route.ts` — on-demand refresh endpoint (thin wrapper)
+- `src/app/api/scoring/refresh/route.test.ts` — endpoint tests
 
 ### Modify
 
-- `src/app/api/leaderboard/[poolId]/route.ts` — add staleness check and `isRefreshing` flag
-- `src/app/(app)/leaderboard/page.tsx` — handle refreshing state in UI
-- `src/lib/scoring.ts` or constants file — add `STALE_THRESHOLD_MS` constant
+- `src/app/api/scoring/route.ts` — refactor to call shared `refreshScoresForPool()`
+- `src/app/api/leaderboard/[poolId]/route.ts` — add staleness check, fire-and-forget refresh trigger, return `isRefreshing`
+- `src/lib/freshness.ts` — update threshold from 10m to 15m
+- `src/components/leaderboard.tsx` — pass `isRefreshing` to TrustStatusBar
+- `src/components/TrustStatusBar.tsx` — show "Refreshing..." state
 
 ---
 
@@ -69,7 +80,7 @@
 
 ### `POST /api/scoring/refresh`
 
-**Auth:** Bearer token (CRON_SECRET)
+**Auth:** Bearer token (`CRON_SECRET`) — only called server-to-server, never from client
 
 **Request Body:**
 ```json
@@ -99,58 +110,74 @@
 
 ### `GET /api/leaderboard/[poolId]`
 
-**Response additions:**
+**New fields in response:**
 ```json
 {
   "data": {
-    "pool": { ... },
-    "ranked": [...],
+    "entries": [...],
     "completedRounds": 2,
     "refreshedAt": "2026-04-08T11:45:00.000Z",
-    "isRefreshing": true
+    "freshness": "stale",
+    "isRefreshing": true,
+    "poolStatus": "live",
+    "lastRefreshError": null,
+    "golferStatuses": {},
+    "golferNames": {},
+    "golferCountries": {},
+    "golferScores": {}
   }
 }
 ```
+
+`isRefreshing` is `true` when the server detected staleness and triggered a background refresh. It is `false` when data is current.
 
 ---
 
 ## Components
 
-### Staleness Check (`isPoolStale`)
+### Shared Scoring Logic (`refreshScoresForPool`)
+
+Extracted from `src/app/api/scoring/route.ts` into `src/lib/scoring-refresh.ts`:
 
 ```ts
-const STALE_THRESHOLD_MS = 15 * 60 * 1000
-
-export function isPoolStale(pool: Pool): boolean {
-  if (!pool.refreshed_at) return true
-  const age = Date.now() - new Date(pool.refreshed_at).getTime()
-  return age > STALE_THRESHOLD_MS
-}
+export async function refreshScoresForPool(
+  supabase: AdminSupabaseClient,
+  pool: Pool
+): Promise<RefreshResult>
 ```
+
+This function handles: fetch from external API, upsert scores, update refresh metadata, compute rankings, broadcast via Realtime, write audit events. Both the cron route and the refresh endpoint call this function.
+
+### Staleness Detection (existing `classifyFreshness`)
+
+Already exists in `src/lib/freshness.ts`. The leaderboard route already calls it. We just need to:
+1. Update the threshold from 10m to 15m
+2. Use the result to set `isRefreshing` in the response
 
 ### Refresh Indicator UI
 
-Location: inline with "Last updated" timestamp in leaderboard header
+Location: inline with freshness section in TrustStatusBar
 
 States:
-- **Current**: "Last updated 12m ago"
-- **Refreshing**: "Refreshing... • Last updated 18m ago"
-- **Error/Stale**: "Last updated 23m ago" (no indicator, just honest age)
+- **Current**: "Scores are current. Last updated at {timestamp}."
+- **Refreshing**: "Refreshing scores... Last updated {relative time} ago."
+- **Stale (no refresh running)**: "Scores may be delayed. Data is stale."
 
 ---
 
 ## Implementation Notes
 
-- Multiple simultaneous users triggering refreshes is acceptable — cron fills gaps if redundant
-- Realtime broadcast ensures all connected clients see updates after refresh
-- Pool's `refreshed_at` updated on both cron-triggered and on-demand refreshes
-- The `isUpdating` mutex in `/api/scoring` prevents concurrent refresh operations
+- **No client-side auth needed:** The leaderboard route runs server-side and has access to `CRON_SECRET`. It triggers the refresh internally.
+- **Existing infrastructure handles delivery:** Supabase Realtime broadcasts are already wired up in the leaderboard component. The 30-second poll is a fallback.
+- **The `isUpdating` mutex** in the refresh endpoint prevents concurrent refresh operations. If a cron run is already in progress, the on-demand trigger gets a 409 and the client simply waits for the next poll.
+- **Multiple simultaneous visitors** may cause the leaderboard route to fire multiple refresh requests. The mutex ensures only one runs; the rest get 409s (which are silently ignored since the trigger is fire-and-forget).
 
 ---
 
 ## Out of Scope
 
 - Per-pool or per-tournament configurable thresholds
-- Deduplication of simultaneous refresh requests
+- Client-side refresh button
 - Error banners or toast notifications for failed refreshes
 - Webhooks from external scoring API
+- Deduplication of simultaneous refresh triggers (mutex is sufficient)

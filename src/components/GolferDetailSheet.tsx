@@ -55,7 +55,7 @@ export function GolferDetailSheet({ golfer, score, onClose }: GolferDetailSheetP
       ? 'Withdrawn'
       : scorecard.status === 'cut'
         ? 'Cut'
-        : `Thru ${scorecard.completedHoles} holes`
+        : `Round ${scorecard.completedRounds}`
     : 'Awaiting scoring feed'
   const golferStatusClasses = scorecard
     ? scorecard.status === 'withdrawn' || scorecard.status === 'cut'
@@ -106,7 +106,7 @@ export function GolferDetailSheet({ golfer, score, onClose }: GolferDetailSheetP
             <div className="border-b border-slate-200/70 px-5 py-4">
               <p className={sectionHeadingClasses()}>Scoring details</p>
               <p className="mt-2 text-sm text-slate-600">
-                Hole-by-hole scoring stays visible here so players and commissioners can verify the latest confirmed progress.
+                Round-level scoring stays visible here so players and commissioners can verify the latest confirmed progress.
               </p>
             </div>
             <div className="px-5 py-5">
@@ -126,7 +126,7 @@ export function GolferDetailSheet({ golfer, score, onClose }: GolferDetailSheetP
               Scoring details coming soon
             </h3>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              We have not received hole-by-hole scoring data for this golfer yet.
+              We have not received round scoring data for this golfer yet.
             </p>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Check back after the next leaderboard refresh to see round progress and scoring context.

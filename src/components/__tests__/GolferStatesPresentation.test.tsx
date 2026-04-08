@@ -17,26 +17,16 @@ function createScore(status: TournamentScore['status']): TournamentScore {
   return {
     golfer_id: 'g1',
     tournament_id: 't1',
+    round_id: 1,
+    round_score: -1,
+    total_score: -1,
     total_birdies: 1,
     status,
-    hole_1: -1,
-    hole_2: 0,
-    hole_3: null,
-    hole_4: null,
-    hole_5: null,
-    hole_6: null,
-    hole_7: null,
-    hole_8: null,
-    hole_9: null,
-    hole_10: null,
-    hole_11: null,
-    hole_12: null,
-    hole_13: null,
-    hole_14: null,
-    hole_15: null,
-    hole_16: null,
-    hole_17: null,
-    hole_18: null,
+    position: null,
+    round_status: null,
+    current_hole: null,
+    tee_time: null,
+    updated_at: null,
   }
 }
 
@@ -68,7 +58,7 @@ describe('GolferDetailSheet', () => {
       screen.getByRole('heading', { name: 'Scoring details coming soon' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('We have not received hole-by-hole scoring data for this golfer yet.'),
+      screen.getByText('We have not received round scoring data for this golfer yet.'),
     ).toBeInTheDocument()
     expect(
       screen.getByText('Check back after the next leaderboard refresh to see round progress and scoring context.'),

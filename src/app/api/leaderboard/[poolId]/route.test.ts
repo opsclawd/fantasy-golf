@@ -14,7 +14,7 @@ vi.mock('@/lib/freshness', () => ({
 }))
 
 vi.mock('@/lib/scoring', () => ({
-  deriveCompletedHoles: vi.fn(),
+  deriveCompletedRounds: vi.fn(),
   rankEntries: vi.fn(),
 }))
 
@@ -86,6 +86,6 @@ describe('GET /api/leaderboard/[poolId]', () => {
     expect(response.status).toBe(200)
     expect(rankEntries).toHaveBeenCalledWith(entries, expect.any(Map), 0)
     expect(body.data.entries).toEqual(rankedEntries)
-    expect(body.data.completedHoles).toBe(0)
+    expect(body.data.completedRounds).toBe(0)
   })
 })

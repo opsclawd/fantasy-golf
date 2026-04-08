@@ -8,21 +8,17 @@ interface GolferScorecardProps {
 }
 
 export function GolferScorecard({ scorecard }: GolferScorecardProps) {
-  const frontNine = scorecard.holes.slice(0, 9)
-  const backNine = scorecard.holes.slice(9, 18)
-
-  const frontTotal = frontNine.reduce((sum, h) => sum + (h.score ?? 0), 0)
-  const backTotal = backNine.reduce((sum, h) => sum + (h.score ?? 0), 0)
+  const round = scorecard.rounds?.[0]
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700">
-            Thru {scorecard.completedHoles} holes
+            Round {round?.round ?? scorecard.completedRounds}
           </span>
           {scorecard.status !== 'active' && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+            <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
               {scorecard.status === 'withdrawn' ? 'WD' : 'CUT'}
             </span>
           )}
@@ -32,60 +28,13 @@ export function GolferScorecard({ scorecard }: GolferScorecardProps) {
         </div>
       </div>
 
-      {/* Front 9 */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm" aria-label="Front nine scores">
-          <thead>
-            <tr className="bg-gray-50">
-              {frontNine.map(h => (
-                <th key={h.hole} className="px-2 py-1 text-center text-xs text-gray-500 font-normal">
-                  {h.hole}
-                </th>
-              ))}
-              <th className="px-2 py-1 text-center text-xs text-gray-700 font-semibold border-l">OUT</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              {frontNine.map(h => (
-                <td key={h.hole} className="px-2 py-1 text-center font-mono">
-                  {h.score !== null ? <ScoreDisplay score={h.score} /> : <span className="text-gray-300">-</span>}
-                </td>
-              ))}
-              <td className="px-2 py-1 text-center font-mono font-semibold border-l">
-                <ScoreDisplay score={frontTotal} />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      {/* Back 9 */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm" aria-label="Back nine scores">
-          <thead>
-            <tr className="bg-gray-50">
-              {backNine.map(h => (
-                <th key={h.hole} className="px-2 py-1 text-center text-xs text-gray-500 font-normal">
-                  {h.hole}
-                </th>
-              ))}
-              <th className="px-2 py-1 text-center text-xs text-gray-700 font-semibold border-l">IN</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              {backNine.map(h => (
-                <td key={h.hole} className="px-2 py-1 text-center font-mono">
-                  {h.score !== null ? <ScoreDisplay score={h.score} /> : <span className="text-gray-300">-</span>}
-                </td>
-              ))}
-              <td className="px-2 py-1 text-center font-mono font-semibold border-l">
-                <ScoreDisplay score={backTotal} />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+        <div className="flex flex-wrap gap-4">
+          <span>Round score: <strong className="font-mono"><ScoreDisplay score={round?.score ?? 0} /></strong></span>
+          {round?.position ? <span>Position: {round.position}</span> : null}
+          {round?.roundStatus ? <span>Status: {round.roundStatus}</span> : null}
+          {round?.teeTime ? <span>Tee time: {round.teeTime}</span> : null}
+        </div>
       </div>
     </div>
   )

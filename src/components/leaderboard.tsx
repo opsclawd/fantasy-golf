@@ -15,7 +15,7 @@ import type { FreshnessStatus, PoolStatus, TournamentScore, Golfer } from '@/lib
 
 interface LeaderboardData {
   entries: RankedEntry[]
-  completedHoles: number
+  completedRounds: number
   refreshedAt: string | null
   freshness: FreshnessStatus
   poolStatus: PoolStatus
@@ -66,7 +66,7 @@ export function Leaderboard({
         if (json.entries) {
           setData({
             entries: json.entries,
-            completedHoles: json.completedHoles ?? 0,
+            completedRounds: json.completedRounds ?? 0,
             refreshedAt: json.updatedAt ?? null,
             freshness: 'unknown',
             poolStatus: 'live',
@@ -129,9 +129,9 @@ export function Leaderboard({
 
   if (!data) return null
 
-  const { entries, completedHoles, refreshedAt, freshness, poolStatus, lastRefreshError, golferStatuses } = data
+  const { entries, completedRounds, refreshedAt, freshness, poolStatus, lastRefreshError, golferStatuses } = data
   const hasEntries = entries.length > 0
-  const hasScores = completedHoles > 0
+  const hasScores = completedRounds > 0
   const showTrustStatusHeader = shouldRenderLeaderboardTrustStatus(poolStatus, hideTrustStatusHeader)
 
   // Detect which golfer IDs in entries are withdrawn
@@ -155,7 +155,7 @@ export function Leaderboard({
 
   return (
     <div className={`${panelClasses()} overflow-hidden`}>
-      <LeaderboardHeader completedHoles={completedHoles} />
+      <LeaderboardHeader completedRounds={completedRounds} />
       {showTrustStatusHeader && (
         <div className="px-4 pb-4 pt-4 sm:px-5">
           <TrustStatusBar

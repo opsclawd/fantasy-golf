@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { deriveCompletedHoles, rankEntries } from '@/lib/scoring'
+import { deriveCompletedRounds, rankEntries } from '@/lib/scoring'
 import { classifyFreshness } from '@/lib/freshness'
 import type { TournamentScore } from '@/lib/supabase/types'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
@@ -37,7 +37,7 @@ export async function GET(
       return NextResponse.json({
         data: {
           entries: [],
-          completedHoles: 0,
+          completedRounds: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
           poolStatus: pool.status,
@@ -62,7 +62,7 @@ export async function GET(
       return NextResponse.json({
         data: {
           entries: rankedWithoutScores,
-          completedHoles: 0,
+          completedRounds: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
           poolStatus: pool.status,
@@ -103,14 +103,14 @@ export async function GET(
       golferCountries[g.id] = g.country ?? ''
     }
 
-    const completedHoles = deriveCompletedHoles(allScores as TournamentScore[])
+    const completedRounds = deriveCompletedRounds(allScores as TournamentScore[])
 
-    const ranked = rankEntries(entries, golferScoresMap, completedHoles)
+    const ranked = rankEntries(entries, golferScoresMap, completedRounds)
 
     return NextResponse.json({
       data: {
         entries: ranked,
-        completedHoles,
+        completedRounds,
         refreshedAt: pool.refreshed_at,
         freshness,
         poolStatus: pool.status,

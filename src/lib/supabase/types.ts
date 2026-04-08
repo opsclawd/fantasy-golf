@@ -70,24 +70,32 @@ export interface GolferSyncRun {
 export interface TournamentScore {
   golfer_id: string
   tournament_id: string
-  hole_1: number | null
-  hole_2: number | null
-  hole_3: number | null
-  hole_4: number | null
-  hole_5: number | null
-  hole_6: number | null
-  hole_7: number | null
-  hole_8: number | null
-  hole_9: number | null
-  hole_10: number | null
-  hole_11: number | null
-  hole_12: number | null
-  hole_13: number | null
-  hole_14: number | null
-  hole_15: number | null
-  hole_16: number | null
-  hole_17: number | null
-  hole_18: number | null
+  round_id?: number | null
+  round_score?: number | null
+  total_score?: number | null
+  position?: string | null
+  round_status?: string | null
+  current_hole?: number | null
+  tee_time?: string | null
+  updated_at?: string | null
+  hole_1?: number | null
+  hole_2?: number | null
+  hole_3?: number | null
+  hole_4?: number | null
+  hole_5?: number | null
+  hole_6?: number | null
+  hole_7?: number | null
+  hole_8?: number | null
+  hole_9?: number | null
+  hole_10?: number | null
+  hole_11?: number | null
+  hole_12?: number | null
+  hole_13?: number | null
+  hole_14?: number | null
+  hole_15?: number | null
+  hole_16?: number | null
+  hole_17?: number | null
+  hole_18?: number | null
   total_birdies: number
   status: GolferStatus
 }

@@ -89,18 +89,22 @@ export async function POST(request: Request) {
     }
 
     // Step 4: Upsert scores into DB
+    const refreshedAt = new Date().toISOString()
     const upsertFailures: Array<{ golfer_id: string; error: string }> = []
     for (const score of slashScores) {
-      const holeScores: Record<string, number | null> = {}
-      for (let i = 1; i <= 18; i++) {
-        holeScores[`hole_${i}`] = score.hole_scores[i - 1] ?? null
-      }
-
       const upsertResult = await upsertTournamentScore(supabase, {
         golfer_id: score.golfer_id,
         tournament_id: pool.tournament_id,
-        ...holeScores,
-        total_birdies: countBirdies(score.hole_scores),
+        round_id: score.round_id ?? null,
+        round_score: score.round_score ?? null,
+        total_score: score.total_score ?? null,
+        position: score.position ?? null,
+        round_status: score.round_status ?? null,
+        current_hole: score.current_hole ?? null,
+        tee_time: score.tee_time ?? null,
+        updated_at: score.updated_at ?? refreshedAt,
+        total_birdies: score.total_birdies ?? 0,
+        status: score.status ?? 'active',
       } as any)
 
       if (upsertResult.error) {
@@ -140,7 +144,6 @@ export async function POST(request: Request) {
     }
 
     // Step 5: Update refresh metadata (success)
-    const refreshedAt = new Date().toISOString()
     await updatePoolRefreshMetadata(supabase, pool.id, {
       refreshed_at: refreshedAt,
       last_refresh_error: null,
@@ -154,25 +157,25 @@ export async function POST(request: Request) {
       golferScoresMap.set(score.golfer_id, score)
     }
 
-    const completedHoles = slashScores.length > 0
-      ? Math.min(...slashScores.map(s => s.thru))
+    const completedRounds = slashScores.length > 0
+      ? Math.max(...slashScores.map((s) => s.round_id ?? 0))
       : 0
 
     const refreshDetails = buildRefreshAuditDetails(
       oldScoresMap,
       allScores,
-      completedHoles,
+      completedRounds,
       allScores.length
     )
 
     for (const tournamentPool of livePools) {
       const entries = await getEntriesForPool(supabase, tournamentPool.id)
-      const ranked = rankEntries(entries as never[], golferScoresMap, completedHoles)
+      const ranked = rankEntries(entries as never[], golferScoresMap, completedRounds)
 
       await supabase.channel('pool_updates').send({
         type: 'broadcast',
         event: 'scores',
-        payload: { poolId: tournamentPool.id, ranked, completedHoles, updatedAt: refreshedAt },
+        payload: { poolId: tournamentPool.id, ranked, completedRounds, updatedAt: refreshedAt },
       })
 
       await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
@@ -192,7 +195,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
-      data: { completedHoles, refreshedAt },
+        data: { completedRounds, refreshedAt },
       error: null,
     })
   } catch (error) {
@@ -210,8 +213,4 @@ export async function POST(request: Request) {
   } finally {
     isUpdating = false
   }
-}
-
-function countBirdies(holeScores: (number | null)[]): number {
-  return holeScores.filter(s => s !== null && s < 0).length
 }

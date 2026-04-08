@@ -1,15 +1,14 @@
 import type { GolferStatus, TournamentScore } from './supabase/types'
-import { getHoleScore } from './scoring'
 
 export interface ScoreDiff {
   changed: boolean
-  holes: Record<string, { old: number | null; new: number | null }>
+  fields: Record<string, { old: unknown; new: unknown }>
   statusChange?: { old: GolferStatus; new: GolferStatus }
   birdiesChange?: { old: number; new: number }
 }
 
 export interface RefreshAuditDetails {
-  completedHoles: number
+  completedRounds: number
   golferCount: number
   changedGolfers: string[]
   newGolfers: string[]
@@ -21,38 +20,60 @@ export function computeScoreDiff(
   oldScore: TournamentScore,
   newScore: TournamentScore
 ): ScoreDiff {
-  const holes: Record<string, { old: number | null; new: number | null }> = {}
-  let changed = false
+  const diff: ScoreDiff = { changed: false, fields: {} }
 
-  for (let i = 1; i <= 18; i++) {
-    const oldHole = getHoleScore(oldScore, i)
-    const newHole = getHoleScore(newScore, i)
-    if (oldHole !== newHole) {
-      holes[`hole_${i}`] = { old: oldHole, new: newHole }
-      changed = true
-    }
+  if (oldScore.round_id !== newScore.round_id) {
+    diff.fields.round_id = { old: oldScore.round_id ?? null, new: newScore.round_id ?? null }
+    diff.changed = true
   }
 
-  const diff: ScoreDiff = { changed, holes }
+  if (oldScore.round_score !== newScore.round_score) {
+    diff.fields.round_score = { old: oldScore.round_score ?? null, new: newScore.round_score ?? null }
+    diff.changed = true
+  }
+
+  if (oldScore.total_score !== newScore.total_score) {
+    diff.fields.total_score = { old: oldScore.total_score ?? null, new: newScore.total_score ?? null }
+    diff.changed = true
+  }
+
+  if (oldScore.position !== newScore.position) {
+    diff.fields.position = { old: oldScore.position ?? null, new: newScore.position ?? null }
+    diff.changed = true
+  }
+
+  if (oldScore.round_status !== newScore.round_status) {
+    diff.fields.round_status = { old: oldScore.round_status ?? null, new: newScore.round_status ?? null }
+    diff.changed = true
+  }
+
+  if (oldScore.current_hole !== newScore.current_hole) {
+    diff.fields.current_hole = { old: oldScore.current_hole ?? null, new: newScore.current_hole ?? null }
+    diff.changed = true
+  }
+
+  if (oldScore.tee_time !== newScore.tee_time) {
+    diff.fields.tee_time = { old: oldScore.tee_time ?? null, new: newScore.tee_time ?? null }
+    diff.changed = true
+  }
 
   if (oldScore.status !== newScore.status) {
     diff.statusChange = { old: oldScore.status, new: newScore.status }
-    changed = true
+    diff.changed = true
   }
 
   if (oldScore.total_birdies !== newScore.total_birdies) {
     diff.birdiesChange = { old: oldScore.total_birdies, new: newScore.total_birdies }
-    changed = true
+    diff.changed = true
   }
 
-  diff.changed = changed
   return diff
 }
 
 export function buildRefreshAuditDetails(
   oldScores: Map<string, TournamentScore>,
   newScores: TournamentScore[],
-  completedHoles: number,
+  completedRounds: number,
   golferCount: number
 ): RefreshAuditDetails {
   const changedGolferIds = new Set<string>()
@@ -84,7 +105,7 @@ export function buildRefreshAuditDetails(
   })
 
   return {
-    completedHoles,
+    completedRounds,
     golferCount,
     changedGolfers: Array.from(changedGolferIds),
     newGolfers: Array.from(newGolferIds),
