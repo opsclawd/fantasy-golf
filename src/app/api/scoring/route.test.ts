@@ -117,7 +117,7 @@ describe('POST /api/scoring', () => {
       .mockResolvedValueOnce(existingScores as never)
       .mockResolvedValueOnce(refreshedScores as never)
     vi.mocked(getTournamentScores).mockResolvedValue([
-      { golfer_id: 'g1', round_id: 1, round_score: -1, total_score: -2, total_birdies: 1, status: 'active' },
+      { golfer_id: 'g1', round_id: 1, round_score: -1, total_score: -2, total_birdies: 1, status: 'active', current_round: 1 },
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
