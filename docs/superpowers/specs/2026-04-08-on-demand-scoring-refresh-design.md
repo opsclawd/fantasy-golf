@@ -6,6 +6,12 @@
 
 **Architecture:** When the leaderboard API route detects stale data, it triggers a background refresh server-side and returns `isRefreshing: true` to the client. The client shows "Refreshing..." inline with the timestamp. Once the refresh completes, Supabase Realtime broadcasts the update to all connected clients. The existing 30-second poll also catches updates. Cron continues firing every 4 hours for baseline reliability.
 
+**Data model:** Tournament data uses a two-table architecture:
+- `tournament_scores` — current-state only (slim: `golfer_id`, `tournament_id`, `round_id`, `total_score`, `position`, `total_birdies`, `status`). Used for leaderboard ranking.
+- `tournament_score_rounds` — append-only per-round archive with full round data (strokes, score_to_par, course info, tee times, etc.). Used for detailed views and auditing.
+
+The `upsertTournamentScore()` function writes to both tables atomically — it takes the slim current-state fields plus the full `GolferScore` from the API (which contains the `rounds` array).
+
 ---
 
 ## Scope
@@ -141,12 +147,18 @@ Extracted from `src/app/api/scoring/route.ts` into `src/lib/scoring-refresh.ts`:
 
 ```ts
 export async function refreshScoresForPool(
-  supabase: AdminSupabaseClient,
-  pool: Pool
-): Promise<RefreshResult>
+  supabase: SupabaseClient,
+  pool: RefreshablePool
+): Promise<{ data: RefreshResult | null; error: RefreshError | null }>
 ```
 
-This function handles: fetch from external API, upsert scores, update refresh metadata, compute rankings, broadcast via Realtime, write audit events. Both the cron route and the refresh endpoint call this function.
+This function handles:
+1. Fetch `GolferScore[]` from external API via `getTournamentScores()`
+2. For each golfer, call `upsertTournamentScore(supabase, currentState, golferScore)` — this writes both the slim `tournament_scores` row and the per-round `tournament_score_rounds` archive rows
+3. Derive `completedRounds` from `score.current_round ?? score.rounds?.length ?? 0`
+4. Update refresh metadata, compute rankings, broadcast via Realtime, write audit events
+
+Both the cron route and the refresh endpoint call this function. The upsert call passes the slim current-state fields (`golfer_id`, `tournament_id`, `total_score: score.total`, `position`, `total_birdies`, `status`) as the second arg, and the full `GolferScore` (which contains the `rounds` array) as the third arg.
 
 ### Staleness Detection (existing `classifyFreshness`)
 

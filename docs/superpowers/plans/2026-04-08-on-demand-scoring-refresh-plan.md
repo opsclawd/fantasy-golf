@@ -13,6 +13,12 @@
 
 **Key constraint:** The refresh endpoint uses `CRON_SECRET` for auth. The client never calls it directly — only the leaderboard route (which runs server-side) triggers it.
 
+**Data model context:** Tournament data uses two tables:
+- `tournament_scores` — current-state only: `golfer_id`, `tournament_id`, `round_id`, `total_score`, `position`, `total_birdies`, `status`, `updated_at`. Used for leaderboard ranking.
+- `tournament_score_rounds` — per-round archive with full round data (strokes, score_to_par, course info, tee times, etc.). Written via the `rounds` array on `GolferScore`.
+
+The `upsertTournamentScore(supabase, currentState, golferScore)` function writes to both tables. The second arg is the slim current-state fields, the third is the full `GolferScore` from the Slash Golf API.
+
 **Tech Stack:** Next.js route handlers, Supabase, React, vitest
 
 ---
@@ -101,11 +107,18 @@ Read `src/app/api/scoring/route.ts` lines 56–195. This is the core scoring log
 1. Find all live pools for the tournament (lines 57-58)
 2. Get existing scores for diff tracking (lines 60-64)
 3. Fetch scores from external API (lines 67-89)
-4. Upsert scores into DB (lines 92-144)
+4. Upsert scores into DB — calls `upsertTournamentScore(supabase, currentState, golferScore)` which writes to both `tournament_scores` (current state) and `tournament_score_rounds` (per-round archive) (lines 92-144)
 5. Update refresh metadata (lines 147-150)
 6. Compute rankings and broadcast to all live pools (lines 153-195)
 
 All of this will move into the shared function. The cron route will keep its own responsibilities: auth check, auto-lock logic (lines 38-49), and finding the active pool (lines 51-55).
+
+**Important:** The `upsertTournamentScore` function now takes 3 arguments:
+- `supabase` — the admin Supabase client
+- A slim current-state object: `{ golfer_id, tournament_id, total_score, position, updated_at, total_birdies, status }`
+- The full `GolferScore` from the API (contains the `rounds` array, which gets written to `tournament_score_rounds`)
+
+Also note: `completedRounds` is derived from `score.current_round ?? score.rounds?.length ?? 0` (not `score.round_id` — that field no longer exists on `GolferScore`).
 
 - [ ] **Step 2: Create `src/lib/scoring-refresh.ts`**
 
@@ -192,23 +205,23 @@ export async function refreshScoresForPool(
   }
 
   // Step 2: Upsert scores into DB
+  // upsertTournamentScore writes to both tournament_scores (current state)
+  // and tournament_score_rounds (per-round archive) via the golferScore.rounds array
   const refreshedAt = new Date().toISOString()
   const upsertFailures: Array<{ golfer_id: string; error: string }> = []
   for (const score of slashScores) {
-    const upsertResult = await upsertTournamentScore(supabase, {
-      golfer_id: score.golfer_id,
-      tournament_id: pool.tournament_id,
-      round_id: score.round_id ?? null,
-      round_score: score.round_score ?? null,
-      total_score: score.total_score ?? null,
-      position: score.position ?? null,
-      round_status: score.round_status ?? null,
-      current_hole: score.current_hole ?? null,
-      tee_time: score.tee_time ?? null,
-      updated_at: score.updated_at ?? refreshedAt,
-      total_birdies: score.total_birdies ?? 0,
-      status: score.status ?? 'active',
-    } as any)
+    const upsertResult = await upsertTournamentScore(supabase,
+      {
+        golfer_id: score.golfer_id,
+        tournament_id: pool.tournament_id,
+        total_score: score.total ?? null,
+        position: score.position ?? null,
+        updated_at: score.updated_at ?? refreshedAt,
+        total_birdies: score.total_birdies ?? 0,
+        status: score.status ?? 'active',
+      },
+      score  // full GolferScore — rounds array gets written to tournament_score_rounds
+    )
 
     if (upsertResult.error) {
       upsertFailures.push({ golfer_id: score.golfer_id, error: upsertResult.error })
@@ -255,7 +268,7 @@ export async function refreshScoresForPool(
   }
 
   const completedRounds = slashScores.length > 0
-    ? Math.max(...slashScores.map((s) => s.round_id ?? 0))
+    ? Math.max(...slashScores.map((s) => s.current_round ?? s.rounds?.length ?? 0))
     : 0
 
   const refreshDetails = buildRefreshAuditDetails(
@@ -335,7 +348,9 @@ git commit -m "refactor: extract shared scoring refresh logic into scoring-refre
 
 Open `src/app/api/scoring/route.ts`. Note that it has two responsibilities:
 1. **Auto-lock** open pools past deadline (lines 38–49) — this stays in the cron route
-2. **Score refresh** (lines 51–195) — this is now in `refreshScoresForPool()`
+2. **Score refresh** (lines 51–196) — this is now in `refreshScoresForPool()`
+
+The cron route currently calls `upsertTournamentScore(supabase, currentState, score)` with the new 3-arg signature — the shared function must match this exactly.
 
 - [ ] **Step 2: Refactor the route**
 
@@ -428,6 +443,8 @@ npm test -- src/app/api/scoring/route.test.ts
 ```
 
 The tests mock the same dependencies (`getTournamentScores`, `upsertTournamentScore`, etc.) that are now called inside `refreshScoresForPool`. Since vitest hoists `vi.mock()` calls, the mocks still apply — they intercept the imports inside `scoring-refresh.ts` too.
+
+**Note on `upsertTournamentScore` mock:** The function now takes 3 args `(supabase, currentState, golferScore)`. The existing test mocks `vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })` should still work since extra args are ignored, but verify the mock assertions match the new call signature.
 
 If tests fail, check that all imports in the test file still match the dependencies. You may need to add a mock for `refreshScoresForPool` itself if you want to test the cron route in isolation, OR keep the existing mocks of the underlying dependencies (which test the integration).
 
