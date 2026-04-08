@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     // Step 3: Fetch scores from external API
     let slashScores
     try {
-      slashScores = await getTournamentScores(pool.tournament_id)
+      slashScores = await getTournamentScores(pool.tournament_id, pool.year)
     } catch (fetchError) {
       const errorMessage = fetchError instanceof Error ? fetchError.message : 'Unknown fetch error'
 

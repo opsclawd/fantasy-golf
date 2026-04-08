@@ -163,7 +163,7 @@ describe('canTransitionStatus', () => {
 describe('pool update RLS policy', () => {
   it('includes a commissioner-only update policy for pools', () => {
     const migration = readFileSync(
-      join(process.cwd(), 'supabase/migrations/20260401100000_enable_rls_on_public_tables.sql'),
+      join(process.cwd(), 'supabase/migrations/20260401101000_enable_rls_on_public_tables.sql'),
       'utf8'
     )
 

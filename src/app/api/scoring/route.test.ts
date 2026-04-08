@@ -106,6 +106,7 @@ describe('POST /api/scoring', () => {
     vi.mocked(getActivePool).mockResolvedValue({
       id: 'pool-1',
       tournament_id: 't-1',
+      year: 2026,
       status: 'live',
     } as never)
     vi.mocked(getPoolsByTournament).mockResolvedValue([
@@ -146,6 +147,7 @@ describe('POST /api/scoring', () => {
       2,
       refreshedScores.length
     )
+    expect(getTournamentScores).toHaveBeenCalledWith('t-1', 2026)
     expect(insertAuditEvent).toHaveBeenCalledWith(expect.anything(), {
       pool_id: 'pool-1',
       user_id: null,
@@ -179,6 +181,7 @@ describe('POST /api/scoring', () => {
     vi.mocked(getActivePool).mockResolvedValue({
       id: 'pool-1',
       tournament_id: 't-1',
+      year: 2026,
       status: 'live',
     } as never)
     vi.mocked(getPoolsByTournament).mockResolvedValue([
@@ -214,6 +217,7 @@ describe('POST /api/scoring', () => {
 
     await POST(request)
 
+    expect(getTournamentScores).toHaveBeenCalledWith('t-1', 2026)
     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-1')
     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-2')
     expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anything(), 'pool-1', {
