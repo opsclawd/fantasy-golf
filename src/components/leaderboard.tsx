@@ -24,6 +24,7 @@ interface LeaderboardData {
   golferNames: Record<string, string>
   golferCountries: Record<string, string>
   golferScores: Record<string, TournamentScore>
+  isRefreshing?: boolean
 }
 
 interface LeaderboardProps {
@@ -165,6 +166,7 @@ export function Leaderboard({
             freshness={freshness}
             refreshedAt={refreshedAt}
             lastRefreshError={lastRefreshError}
+            isRefreshing={data.isRefreshing}
           />
         </div>
       )}
