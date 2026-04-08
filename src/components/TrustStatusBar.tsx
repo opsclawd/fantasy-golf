@@ -9,6 +9,7 @@ interface GetTrustStatusBarStateInput {
   freshness: FreshnessStatus
   refreshedAt: string | null
   lastRefreshError: string | null
+  isRefreshing?: boolean
 }
 
 type TrustTone = 'info' | 'warning' | 'error'
@@ -17,7 +18,7 @@ interface TrustStatusBarState {
   heading: string
   lockLabel: 'Open' | 'Locked'
   lockMessage: string
-  freshnessLabel: 'Current' | 'Stale' | 'No data' | 'Refresh failed'
+  freshnessLabel: 'Current' | 'Stale' | 'No data' | 'Refresh failed' | 'Refreshing'
   freshnessMessage: string
   showFreshness: boolean
   tone: TrustTone
@@ -49,7 +50,18 @@ function getFreshnessMessage(
   freshness: FreshnessStatus,
   refreshedAt: string | null,
   lastRefreshError: string | null,
+  isRefreshing?: boolean,
 ): Pick<TrustStatusBarState, 'freshnessMessage' | 'tone' | 'role' | 'ariaLive'> {
+  if (isRefreshing) {
+    const suffix = refreshedAt ? ` Last updated at ${refreshedAt}.` : ''
+    return {
+      freshnessMessage: `Refreshing scores...${suffix}`,
+      tone: 'info',
+      role: 'status',
+      ariaLive: 'polite',
+    }
+  }
+
   if (lastRefreshError) {
     return {
       freshnessMessage: `Last refresh error: ${lastRefreshError}.`,
@@ -101,7 +113,12 @@ function toneClasses(tone: TrustTone): string {
 function getFreshnessLabel(
   freshness: FreshnessStatus,
   lastRefreshError: string | null,
+  isRefreshing?: boolean,
 ): TrustStatusBarState['freshnessLabel'] {
+  if (isRefreshing) {
+    return 'Refreshing'
+  }
+
   if (lastRefreshError) {
     return 'Refresh failed'
   }
@@ -128,13 +145,14 @@ export function getTrustStatusBarState(
     input.freshness,
     input.refreshedAt,
     input.lastRefreshError,
+    input.isRefreshing,
   )
 
   return {
     heading,
     lockLabel,
     lockMessage,
-    freshnessLabel: getFreshnessLabel(input.freshness, input.lastRefreshError),
+    freshnessLabel: getFreshnessLabel(input.freshness, input.lastRefreshError, input.isRefreshing),
     freshnessMessage: freshnessState.freshnessMessage,
     showFreshness,
     tone: freshnessState.tone,
