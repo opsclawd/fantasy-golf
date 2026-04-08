@@ -1,7 +1,7 @@
 import type { FreshnessStatus } from './supabase/types'
 
-/** Default stale threshold: 10 minutes */
-export const DEFAULT_STALE_THRESHOLD_MS = 10 * 60 * 1000
+/** Default stale threshold: 15 minutes */
+export const DEFAULT_STALE_THRESHOLD_MS = 15 * 60 * 1000
 
 /**
  * Classifies data freshness based on when it was last refreshed.
