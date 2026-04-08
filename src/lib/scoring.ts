@@ -1,42 +1,7 @@
 import { TournamentScore, Entry } from './supabase/types'
 
-function isRoundBasedScore(score: TournamentScore): boolean {
-  return typeof score.total_score === 'number' || typeof score.round_score === 'number'
-}
-
 function getRoundScore(score: TournamentScore): number | null {
   if (typeof score.total_score === 'number') return score.total_score
-  if (typeof score.round_score === 'number') return score.round_score
-  return null
-}
-
-export function getEntryRoundScore(
-  golferScores: Map<string, TournamentScore>,
-  golferIds: string[]
-): number | null {
-  const roundBasedScores: number[] = []
-
-  for (const id of golferIds) {
-    const golferScore = golferScores.get(id)
-
-    // Golfer not in scores map at all — no data received yet
-    if (!golferScore) {
-      continue
-    }
-
-    // Skip withdrawn/cut golfers entirely — they don't contribute to best-ball
-    if (golferScore.status === 'withdrawn' || golferScore.status === 'cut') continue
-
-    if (isRoundBasedScore(golferScore)) {
-      const roundScore = getRoundScore(golferScore)
-      if (roundScore === null) continue
-      roundBasedScores.push(roundScore)
-    }
-  }
-
-  if (roundBasedScores.length > 0) return Math.min(...roundBasedScores)
-
-  // No scores at all — either all withdrawn or no data
   return null
 }
 
@@ -45,13 +10,31 @@ export function calculateEntryTotalScore(
   golferIds: string[],
   _completedRounds: number
 ): number {
-  const roundScores = golferIds
+  const scores = golferIds
     .map((id) => golferScores.get(id))
     .filter((score): score is TournamentScore => Boolean(score))
     .map(getRoundScore)
     .filter((score): score is number => score !== null)
 
-  return roundScores.length > 0 ? Math.min(...roundScores) : 0
+  return scores.length > 0 ? Math.min(...scores) : 0
+}
+
+export function getEntryRoundScore(
+  golferScores: Map<string, TournamentScore>,
+  golferIds: string[]
+): number | null {
+  const scores: number[] = []
+
+  for (const id of golferIds) {
+    const golferScore = golferScores.get(id)
+    if (!golferScore) continue
+    if (golferScore.status === 'withdrawn' || golferScore.status === 'cut') continue
+    const roundScore = getRoundScore(golferScore)
+    if (roundScore === null) continue
+    scores.push(roundScore)
+  }
+
+  return scores.length > 0 ? Math.min(...scores) : null
 }
 
 export function calculateEntryBirdies(
@@ -71,14 +54,9 @@ export function calculateEntryBirdies(
 }
 
 export function deriveCompletedRounds(allScores: TournamentScore[]): number {
-  if (allScores.some(isRoundBasedScore)) {
-    const completedRounds = allScores
-      .map((score) => score.round_id)
-      .filter((roundId): roundId is number => typeof roundId === 'number' && Number.isFinite(roundId))
-    return completedRounds.length > 0 ? Math.max(...completedRounds) : 0
-  }
-
-  const rounds = allScores.map((score) => score.round_id ?? 0).filter((roundId) => roundId > 0)
+  const rounds = allScores
+    .map((score) => score.round_id)
+    .filter((roundId): roundId is number => typeof roundId === 'number' && Number.isFinite(roundId))
   return rounds.length > 0 ? Math.max(...rounds) : 0
 }
 

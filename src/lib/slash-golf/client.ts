@@ -1,4 +1,4 @@
-import type { Tournament, GolferScore } from './types'
+import type { Tournament, GolferScore, GolferScoreRound } from './types'
 
 const BASE_URL = 'https://live-golf-data.p.rapidapi.com'
 
@@ -70,41 +70,49 @@ function normalizeTournamentScores(raw: unknown): GolferScore[] | null {
 
     // Round-based leaderboard shape.
     if ('leaderboardRows' in (raw as Record<string, unknown>) || 'rounds' in scoreRecord || 'currentRoundScore' in scoreRecord) {
-      const roundScore = parseScoreValue(scoreRecord.currentRoundScore)
+      const rounds = Array.isArray(scoreRecord.rounds) ? scoreRecord.rounds : []
+
+      const parsedRounds: GolferScoreRound[] = rounds.map((r: Record<string, unknown>) => ({
+        round_id: typeof r.roundId === 'number' ? r.roundId : 0,
+        strokes: parseScoreValue(r.strokes),
+        score_to_par: parseScoreValue(r.scoreToPar),
+        course_id: typeof r.courseId === 'string' ? r.courseId : null,
+        course_name: typeof r.courseName === 'string' ? r.courseName : null,
+      })).filter((r) => r.round_id > 0)
+
       const totalScore = parseScoreValue(scoreRecord.total)
 
-      if (roundScore === null && totalScore === null) return []
+      if (parsedRounds.length === 0 && totalScore === null) return []
 
       return [{
         golfer_id: golferId,
         tournament_id: typeof scoreRecord.tournId === 'string' ? scoreRecord.tournId : '',
-        round_id: typeof scoreRecord.currentRound === 'number' ? scoreRecord.currentRound : null,
-        round_score: roundScore,
+        strokes: parseScoreValue(scoreRecord.strokes),
+        score_to_par: parseScoreValue(scoreRecord.scoreToPar),
+        course_id: typeof scoreRecord.courseId === 'string' ? scoreRecord.courseId : null,
+        course_name: typeof scoreRecord.courseName === 'string' ? scoreRecord.courseName : null,
         total_score: totalScore,
+        total_strokes_from_completed_rounds: parseScoreValue(scoreRecord.totalStrokesFromCompletedRounds),
         position: typeof scoreRecord.position === 'string' ? scoreRecord.position : null,
-        round_status: typeof scoreRecord.roundStatus === 'string' ? scoreRecord.roundStatus : null,
         current_hole: parseHoleValue(scoreRecord.currentHole),
+        thru: parseThruValue(scoreRecord.thru),
+        starting_hole: typeof scoreRecord.startingHole === 'number' ? scoreRecord.startingHole : null,
+        current_round: typeof scoreRecord.currentRound === 'number' ? scoreRecord.currentRound : null,
+        current_round_score: parseScoreValue(scoreRecord.currentRoundScore),
         tee_time: typeof scoreRecord.teeTime === 'string' ? scoreRecord.teeTime : null,
+        tee_time_timestamp: typeof scoreRecord.teeTimeTimestamp === 'string' ? scoreRecord.teeTimeTimestamp : null,
+        is_amateur: typeof scoreRecord.isAmateur === 'boolean' ? scoreRecord.isAmateur : null,
         updated_at: typeof scoreRecord.timestamp === 'string' ? scoreRecord.timestamp : null,
+        rounds: parsedRounds,
+        total: totalScore,
         total_birdies: 0,
         status: normalizeGolferStatus(scoreRecord.status),
       }]
     }
 
-    // Legacy hole-based fallback.
-    const holeScores = Array.isArray(scoreRecord.hole_scores)
-      ? scoreRecord.hole_scores
-      : Array.isArray(scoreRecord.scorecard)
-        ? scoreRecord.scorecard
-        : null
-
-    if (!holeScores) return []
-
     return [{
       golfer_id: golferId,
       tournament_id: typeof scoreRecord.tournament_id === 'string' ? scoreRecord.tournament_id : '',
-      hole_scores: holeScores.map((score) => (typeof score === 'number' ? score : null)),
-      thru: parseThruValue(scoreRecord.thru),
       total: parseScoreValue(scoreRecord.total) ?? 0,
       total_birdies: typeof scoreRecord.total_birdies === 'number' ? scoreRecord.total_birdies : 0,
       status: normalizeGolferStatus(scoreRecord.status),

@@ -24,17 +24,7 @@ export function getGolferScorecard(score: TournamentScore): GolferScorecard {
     status: score.status,
     totalBirdies: score.total_birdies,
     completedRounds: score.round_id ?? 0,
-    totalScore: score.total_score ?? score.round_score ?? 0,
-    rounds: [
-      {
-        round: score.round_id ?? 1,
-        score: score.round_score ?? null,
-        total: score.total_score ?? null,
-        position: score.position ?? null,
-        roundStatus: score.round_status ?? null,
-        teeTime: score.tee_time ?? null,
-      },
-    ],
+    totalScore: score.total_score ?? 0,
   }
 }
 
@@ -63,20 +53,20 @@ export function getGolferContribution(
   const rounds: RoundContribution[] = []
   let totalContributingRounds = 0
 
-  const golferRoundScore = golferScore?.round_score ?? golferScore?.total_score ?? null
+  const golferTotalScore = golferScore?.total_score ?? null
   const bestBallScore = entryGolferIds
     .map((id) => golferScores.get(id))
-    .map((score) => score?.round_score ?? score?.total_score ?? null)
+    .map((score) => score?.total_score ?? null)
     .filter((score): score is number => score !== null)
     .sort((a, b) => a - b)[0] ?? null
 
-  const isContributing = !isWithdrawn && golferRoundScore !== null && bestBallScore !== null && golferRoundScore === bestBallScore
+  const isContributing = !isWithdrawn && golferTotalScore !== null && bestBallScore !== null && golferTotalScore === bestBallScore
 
   if (isContributing) totalContributingRounds = 1
 
   rounds.push({
     round: golferScore?.round_id ?? 1,
-    golferScore: golferRoundScore,
+    golferScore: golferTotalScore,
     bestBallScore,
     isContributing,
   })

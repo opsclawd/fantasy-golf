@@ -71,15 +71,36 @@ export interface TournamentScore {
   golfer_id: string
   tournament_id: string
   round_id?: number | null
-  round_score?: number | null
   total_score?: number | null
   position?: string | null
-  round_status?: string | null
-  current_hole?: number | null
-  tee_time?: string | null
-  updated_at?: string | null
   total_birdies: number
   status: GolferStatus
+  updated_at?: string | null
+}
+
+export interface TournamentScoreRound {
+  golfer_id: string
+  tournament_id: string
+  round_id: number
+  strokes?: number | null
+  score_to_par?: number | null
+  course_id?: string | null
+  course_name?: string | null
+  round_status?: string | null
+  position?: string | null
+  total_score?: number | null
+  total_strokes_from_completed_rounds?: number | null
+  current_hole?: number | null
+  thru?: number | null
+  starting_hole?: number | null
+  current_round?: number | null
+  current_round_score?: number | null
+  tee_time?: string | null
+  tee_time_timestamp?: string | null
+  is_amateur?: boolean | null
+  status: GolferStatus
+  total_birdies: number
+  updated_at?: string | null
 }
 
 export interface AuditEvent {

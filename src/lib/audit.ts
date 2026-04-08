@@ -27,11 +27,6 @@ export function computeScoreDiff(
     diff.changed = true
   }
 
-  if (oldScore.round_score !== newScore.round_score) {
-    diff.fields.round_score = { old: oldScore.round_score ?? null, new: newScore.round_score ?? null }
-    diff.changed = true
-  }
-
   if (oldScore.total_score !== newScore.total_score) {
     diff.fields.total_score = { old: oldScore.total_score ?? null, new: newScore.total_score ?? null }
     diff.changed = true
@@ -39,21 +34,6 @@ export function computeScoreDiff(
 
   if (oldScore.position !== newScore.position) {
     diff.fields.position = { old: oldScore.position ?? null, new: newScore.position ?? null }
-    diff.changed = true
-  }
-
-  if (oldScore.round_status !== newScore.round_status) {
-    diff.fields.round_status = { old: oldScore.round_status ?? null, new: newScore.round_status ?? null }
-    diff.changed = true
-  }
-
-  if (oldScore.current_hole !== newScore.current_hole) {
-    diff.fields.current_hole = { old: oldScore.current_hole ?? null, new: newScore.current_hole ?? null }
-    diff.changed = true
-  }
-
-  if (oldScore.tee_time !== newScore.tee_time) {
-    diff.fields.tee_time = { old: oldScore.tee_time ?? null, new: newScore.tee_time ?? null }
     diff.changed = true
   }
 

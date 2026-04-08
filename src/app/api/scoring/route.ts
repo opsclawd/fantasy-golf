@@ -92,20 +92,18 @@ export async function POST(request: Request) {
     const refreshedAt = new Date().toISOString()
     const upsertFailures: Array<{ golfer_id: string; error: string }> = []
     for (const score of slashScores) {
-      const upsertResult = await upsertTournamentScore(supabase, {
-        golfer_id: score.golfer_id,
-        tournament_id: pool.tournament_id,
-        round_id: score.round_id ?? null,
-        round_score: score.round_score ?? null,
-        total_score: score.total_score ?? null,
-        position: score.position ?? null,
-        round_status: score.round_status ?? null,
-        current_hole: score.current_hole ?? null,
-        tee_time: score.tee_time ?? null,
-        updated_at: score.updated_at ?? refreshedAt,
-        total_birdies: score.total_birdies ?? 0,
-        status: score.status ?? 'active',
-      } as any)
+      const upsertResult = await upsertTournamentScore(supabase,
+        {
+          golfer_id: score.golfer_id,
+          tournament_id: pool.tournament_id,
+          total_score: score.total ?? null,
+          position: score.position ?? null,
+          updated_at: score.updated_at ?? refreshedAt,
+          total_birdies: score.total_birdies ?? 0,
+          status: score.status ?? 'active',
+        },
+        score
+      )
 
       if (upsertResult.error) {
         upsertFailures.push({ golfer_id: score.golfer_id, error: upsertResult.error })
@@ -158,7 +156,7 @@ export async function POST(request: Request) {
     }
 
     const completedRounds = slashScores.length > 0
-      ? Math.max(...slashScores.map((s) => s.round_id ?? 0))
+      ? Math.max(...slashScores.map((s) => s.current_round ?? s.rounds?.length ?? 0))
       : 0
 
     const refreshDetails = buildRefreshAuditDetails(

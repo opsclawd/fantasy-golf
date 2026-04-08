@@ -35,8 +35,8 @@ function buildRoundTrace(
       }
     }
 
-    const roundScore = golferScore.round_score ?? golferScore.total_score ?? null
-    const totalScore = golferScore.total_score ?? golferScore.round_score ?? null
+    const roundScore = golferScore.total_score ?? null
+    const totalScore = golferScore.total_score ?? null
     const inactive = golferScore.status === 'withdrawn' || golferScore.status === 'cut'
 
     return {
