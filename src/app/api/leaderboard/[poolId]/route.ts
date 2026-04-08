@@ -19,6 +19,7 @@ function triggerBackgroundRefresh(poolId: string): void {
       Authorization: `Bearer ${process.env.CRON_SECRET}`,
     },
     body: JSON.stringify({ poolId }),
+    signal: AbortSignal.timeout(5000),
   }).catch(() => {
     // Silently swallow — user sees stale data with honest timestamp
   })

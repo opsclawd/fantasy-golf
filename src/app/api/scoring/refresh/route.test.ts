@@ -53,6 +53,22 @@ describe('POST /api/scoring/refresh', () => {
     expect(response.status).toBe(400)
   })
 
+  it('returns 400 for invalid JSON body', async () => {
+    const request = new Request('http://localhost/api/scoring/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer secret',
+      },
+      body: 'not valid json',
+    })
+
+    const response = await POST(request)
+    expect(response.status).toBe(400)
+    const body = await response.json()
+    expect(body.error.code).toBe('BAD_REQUEST')
+  })
+
   it('returns 404 when pool does not exist', async () => {
     vi.mocked(createAdminClient).mockReturnValue({} as never)
     vi.mocked(getPoolById).mockResolvedValue(null)

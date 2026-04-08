@@ -17,7 +17,10 @@ export async function POST(request: Request) {
   }
 
   if (isUpdating) {
-    return NextResponse.json({ message: 'Update in progress' }, { status: 409 })
+    return NextResponse.json(
+      { data: null, error: { code: 'UPDATE_IN_PROGRESS', message: 'Refresh already running' } },
+      { status: 409 }
+    )
   }
   isUpdating = true
 

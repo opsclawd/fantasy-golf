@@ -18,15 +18,26 @@ export async function POST(request: Request) {
     )
   }
 
-  const { poolId } = await request.json()
+  isUpdating = true
+  let poolId: string | undefined
+  try {
+    const body = await request.json()
+    poolId = body.poolId
+  } catch {
+    isUpdating = false
+    return NextResponse.json(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
+      { status: 400 }
+    )
+  }
+
   if (!poolId) {
+    isUpdating = false
     return NextResponse.json(
       { data: null, error: { code: 'BAD_REQUEST', message: 'poolId required' } },
       { status: 400 }
     )
   }
-
-  isUpdating = true
 
   try {
     const supabase = createAdminClient()
