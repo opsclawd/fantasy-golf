@@ -42,10 +42,6 @@ vi.mock('./PoolActions', () => ({
   ClosePoolButton: () => null,
 }))
 
-vi.mock('./ReusePoolButton', () => ({
-  ReusePoolButton: () => null,
-}))
-
 vi.mock('./InviteLinkSection', () => ({
   default: () => null,
 }))

@@ -20,8 +20,6 @@ import {
   canTransitionStatus,
   validateCreatePoolInput,
   validatePoolFormat,
-  buildClonePoolInput,
-  generateInviteCode,
   canReopenPool,
 } from '@/lib/pool'
 import { isCommissionerPoolLocked } from '@/lib/picks'
@@ -30,8 +28,6 @@ import {
   updatePoolStatus,
   updatePoolConfig as updatePoolConfigQuery,
   insertAuditEvent,
-  insertPool,
-  insertPoolMember,
   recordPoolDeletion,
   deletePoolById,
 } from '@/lib/pool-queries'
@@ -216,87 +212,6 @@ export async function deletePool(
   if (deletion.error) return { error: 'Failed to delete pool.' }
 
   redirect('/commissioner')
-}
-
-export async function reusePool(
-  _prevState: PoolActionState,
-  formData: FormData
-): Promise<PoolActionState> {
-  const poolId = formData.get('poolId') as string
-  const supabase = await createClient()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
-
-  const sourcePool = await getPoolById(supabase, poolId)
-  if (!sourcePool) return { error: 'Pool not found.' }
-  if (sourcePool.commissioner_id !== user.id) {
-    return { error: 'Only the commissioner can reuse this pool.' }
-  }
-  if (sourcePool.status !== 'complete') {
-    return { error: 'Only completed pools can be reused.' }
-  }
-
-  const cloneInput = buildClonePoolInput(sourcePool)
-  let clonedPool: Awaited<ReturnType<typeof getPoolById>> | null = null
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const inviteCode = generateInviteCode()
-    const { data, error: cloneError } = await insertPool(supabase, {
-      commissioner_id: user.id,
-      name: cloneInput.name,
-      tournament_id: '',
-      tournament_name: '',
-      year: new Date().getFullYear(),
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      timezone: sourcePool.timezone,
-      format: cloneInput.format,
-      picks_per_entry: cloneInput.picks_per_entry,
-      invite_code: inviteCode,
-      status: 'open',
-      refreshed_at: null,
-      last_refresh_error: null,
-    })
-
-    if (!cloneError && data) {
-      clonedPool = data
-      break
-    }
-
-    const isUniqueViolation =
-      cloneError?.includes('23505')
-      || cloneError?.toLowerCase().includes('unique')
-      || cloneError?.toLowerCase().includes('duplicate')
-
-    if (!isUniqueViolation) {
-      return { error: 'Failed to clone pool.' }
-    }
-  }
-
-  if (!clonedPool) {
-    return { error: 'Failed to clone pool.' }
-  }
-
-  const { error: memberError } = await insertPoolMember(supabase, {
-    pool_id: clonedPool.id,
-    user_id: user.id,
-    role: 'commissioner',
-  })
-  if (memberError) {
-    return { error: 'Failed to initialize commissioner membership for cloned pool.' }
-  }
-
-  const { error: auditError } = await insertAuditEvent(supabase, {
-    pool_id: clonedPool.id,
-    user_id: user.id,
-    action: 'poolCloned',
-    details: { source_pool_id: sourcePool.id },
-  })
-  if (auditError) {
-    return { error: 'Pool was cloned, but audit logging failed.' }
-  }
-
-  redirect(`/commissioner/pools/${clonedPool.id}`)
 }
 
 // --- Config update action ---

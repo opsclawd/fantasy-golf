@@ -10,12 +10,6 @@ export interface CreatePoolInput {
   timezone: string
 }
 
-export interface ClonePoolInput {
-  name: string
-  format: PoolFormat
-  picks_per_entry: number
-}
-
 export type ValidationResult =
   | { ok: true }
   | { ok: false; error: string }
@@ -101,10 +95,4 @@ export function canReopenPool(
   return lockAt !== null && lockAt.getTime() > now.getTime()
 }
 
-export function buildClonePoolInput(source: Pool): ClonePoolInput {
-  return {
-    name: source.name,
-    format: source.format,
-    picks_per_entry: source.picks_per_entry,
-  }
-}
+
