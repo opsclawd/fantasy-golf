@@ -17,8 +17,18 @@ export function PoolStatusSection({
   isLocked,
   pendingCount,
 }: PoolStatusSectionProps) {
-  const lockInstant = getTournamentLockInstant(pool.deadline)
-  const formattedDeadline = lockInstant ? lockInstant.toLocaleString() : 'Deadline unavailable'
+  const lockInstant = getTournamentLockInstant(pool.deadline, pool.timezone)
+  const formattedDeadline = lockInstant
+    ? lockInstant.toLocaleString(undefined, {
+        timeZone: pool.timezone,
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short',
+      })
+    : 'Deadline unavailable'
 
   return (
     <section className="grid gap-4 md:grid-cols-4" aria-label="Pool overview">

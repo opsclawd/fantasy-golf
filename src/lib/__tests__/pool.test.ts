@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   generateInviteCode,
   validateCreatePoolInput,
@@ -112,6 +112,26 @@ describe('validateCreatePoolInput', () => {
       timezone: 'Not/A_Timezone',
     })
     expect(result).toEqual({ ok: false, error: 'Timezone must be a valid IANA timezone.' })
+  })
+
+  it('checks deadline validity in the pool timezone', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-09T03:00:00Z'))
+
+    try {
+      const result = validateCreatePoolInput({
+        name: 'Masters Pool',
+        tournamentId: 't1',
+        tournamentName: 'The Masters',
+        year: 2026,
+        deadline: '2026-04-09T00:00:00+00:00',
+        timezone: 'America/New_York',
+      })
+
+      expect(result).toEqual({ ok: true })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

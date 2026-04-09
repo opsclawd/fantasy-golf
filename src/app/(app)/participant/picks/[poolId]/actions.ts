@@ -64,7 +64,7 @@ export async function submitPicks(
       return { error: 'You must join this pool before submitting picks.' }
     }
 
-    const locked = isPoolLocked(pool.status, pool.deadline)
+    const locked = isPoolLocked(pool.status, pool.deadline, pool.timezone)
     const validation = validatePickSubmission({
       golferIds: selectedGolferIds,
       picksPerEntry: pool.picks_per_entry,
@@ -92,7 +92,7 @@ export async function submitPicks(
       return { error: 'Pool not found.' }
     }
 
-    if (isPoolLocked(latestPool.status, latestPool.deadline)) {
+    if (isPoolLocked(latestPool.status, latestPool.deadline, latestPool.timezone)) {
       return { error: lockErrorMessage }
     }
 

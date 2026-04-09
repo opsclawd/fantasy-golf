@@ -5,6 +5,7 @@ interface LockBannerProps {
   isLocked: boolean
   deadline: string
   poolStatus: string
+  timezone: string
 }
 
 function getLockedMessage(poolStatus: string): string {
@@ -18,14 +19,15 @@ function getLockedMessage(poolStatus: string): string {
   }
 }
 
-function formatDeadline(deadline: string): string {
+function formatDeadline(deadline: string, timeZone: string): string {
   const fallback = 'Deadline not available'
-  const deadlineInstant = getTournamentLockInstant(deadline)
+  const deadlineInstant = getTournamentLockInstant(deadline, timeZone)
   if (!deadlineInstant) {
     return fallback
   }
 
   return deadlineInstant.toLocaleString(undefined, {
+    timeZone,
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -35,7 +37,7 @@ function formatDeadline(deadline: string): string {
   })
 }
 
-export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) {
+export function LockBanner({ isLocked, deadline, poolStatus, timezone }: LockBannerProps) {
   const lockedMessage = getLockedMessage(poolStatus)
 
   if (isLocked) {
@@ -60,7 +62,7 @@ export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) 
     )
   }
 
-  const formattedDeadline = formatDeadline(deadline)
+  const formattedDeadline = formatDeadline(deadline, timezone)
 
   return (
     <div

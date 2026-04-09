@@ -65,7 +65,7 @@ describe('getAuditEventsForPool', () => {
 })
 
 describe('getOpenPoolsPastDeadline', () => {
-  function createSupabaseForPools(pools: Array<{ deadline: string; status: string }>) {
+  function createSupabaseForPools(pools: Array<{ deadline: string; status: string; timezone: string }>) {
     const builder: any = {
       select: vi.fn(() => builder),
       eq: vi.fn(() => builder),
@@ -80,17 +80,14 @@ describe('getOpenPoolsPastDeadline', () => {
     return { supabase }
   }
 
-  it('treats the API date as local midnight when filtering open pools to lock', async () => {
+  it('keeps pools open until midnight in their configured timezone', async () => {
     const { supabase } = createSupabaseForPools([
-      { status: 'open', deadline: '2026-04-02T00:00:00' },
-      { status: 'open', deadline: '2026-04-03T00:00:00' },
-      { status: 'live', deadline: '2026-04-01T00:00:00' },
+      { status: 'open', deadline: '2026-04-09T00:00:00+00:00', timezone: 'America/New_York' },
+      { status: 'live', deadline: '2026-04-01T00:00:00+00:00', timezone: 'America/New_York' },
     ])
 
     await expect(
-      getOpenPoolsPastDeadline(supabase as any, new Date(2026, 3, 2, 0, 0, 0))
-    ).resolves.toEqual([
-      { status: 'open', deadline: '2026-04-02T00:00:00' },
-    ])
+      getOpenPoolsPastDeadline(supabase as any, new Date('2026-04-09T03:00:00Z'))
+    ).resolves.toEqual([])
   })
 })

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 import { createPool, type CreatePoolState } from './actions'
+import { getTournamentLockInstant } from '@/lib/picks'
 
 interface TournamentOption {
   id: string
@@ -22,6 +23,23 @@ const TIMEZONE_OPTIONS: TimezoneOption[] = [
   { value: 'America/Denver', label: 'Mountain Time' },
   { value: 'America/Los_Angeles', label: 'Pacific Time' },
 ]
+
+function formatDeadline(deadline: string, timeZone: string) {
+  const deadlineInstant = getTournamentLockInstant(deadline, timeZone)
+  if (!deadlineInstant) {
+    return 'Deadline not available'
+  }
+
+  return deadlineInstant.toLocaleString(undefined, {
+    timeZone,
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+}
 
 function getCachedTournaments(year: string): TournamentOption[] | null {
   if (typeof window === 'undefined') return null
@@ -205,7 +223,7 @@ export function CreatePoolForm() {
           <div>
             <label className="block text-sm font-medium mb-1">Picks Deadline</label>
             <div className="p-2 border rounded bg-gray-50 text-gray-700">
-              {new Date(deadline).toLocaleString()}
+              {formatDeadline(deadline, timezone)}
             </div>
             <input type="hidden" name="deadline" value={deadline} />
           </div>
