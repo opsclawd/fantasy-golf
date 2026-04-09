@@ -237,7 +237,7 @@ export async function getOpenPoolsPastDeadline(
       return false
     }
 
-    const lockAt = getTournamentLockInstant(pool.deadline)
+    const lockAt = getTournamentLockInstant(pool.deadline, pool.timezone)
     return lockAt !== null && lockAt.getTime() <= now.getTime()
   })
 }

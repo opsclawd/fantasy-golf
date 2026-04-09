@@ -62,7 +62,7 @@ function SaveButton({ disabled }: { disabled: boolean }) {
   )
 }
 
-export function PoolConfigForm({ pool }: { pool: Pool }) {
+export function PoolConfigForm({ pool, isLocked }: { pool: Pool; isLocked: boolean }) {
   const [state, formAction] = useFormState<UpdatePoolConfigState, FormData>(updatePoolConfigAction, null)
   const [isEditing, setIsEditing] = useState(false)
   const [tournaments, setTournaments] = useState<TournamentOption[]>([])
@@ -74,8 +74,12 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
   const [selectedTimezone, setSelectedTimezone] = useState(pool.timezone)
   const [picksPerEntry, setPicksPerEntry] = useState(String(pool.picks_per_entry))
 
-  const isEditable = pool.status === 'open'
+  const isEditable = pool.status === 'open' && !isLocked
   const year = String(pool.year)
+  const configLockMessage =
+    pool.status !== 'open'
+      ? 'Configuration is locked because this pool is not open.'
+      : 'Configuration is locked because the deadline has passed.'
 
   const loadTournaments = useCallback(async () => {
     const cached = getCachedTournaments(year)
@@ -163,7 +167,7 @@ export function PoolConfigForm({ pool }: { pool: Pool }) {
 
       {!isEditable && (
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-100/80 px-4 py-3 text-sm text-slate-700">
-          Configuration is locked because this pool is not open.
+          {configLockMessage}
         </p>
       )}
 

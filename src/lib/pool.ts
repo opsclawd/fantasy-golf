@@ -1,4 +1,5 @@
 import type { PoolStatus, PoolFormat, Pool } from './supabase/types'
+import { getTournamentLockInstant } from './picks'
 
 export interface CreatePoolInput {
   name: string
@@ -59,7 +60,9 @@ export function validateCreatePoolInput(input: CreatePoolInput): ValidationResul
   } catch {
     return { ok: false, error: 'Timezone must be a valid IANA timezone.' }
   }
-  if (new Date(input.deadline) <= new Date()) {
+
+  const lockAt = getTournamentLockInstant(input.deadline, trimmedTimezone)
+  if (!lockAt || lockAt <= new Date()) {
     return { ok: false, error: 'Picks deadline must be in the future.' }
   }
   return { ok: true }

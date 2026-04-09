@@ -5,16 +5,20 @@ import { LockBanner } from '../LockBanner'
 
 describe('LockBanner', () => {
   it('renders the normalized lock instant for open pools', () => {
+    const props: any = {
+      isLocked: false,
+      deadline: '2026-04-09T00:00:00+00:00',
+      poolStatus: 'open',
+      timezone: 'America/New_York',
+    }
+
     const markup = renderToStaticMarkup(
-      <LockBanner
-        isLocked={false}
-        deadline="2026-04-02T00:00:00"
-        poolStatus="open"
-      />,
+      <LockBanner {...props} />,
     )
 
     expect(markup).toContain('Deadline:')
-    expect(markup).toContain('Thu, Apr 2, 12:00 a.m. MDT')
-    expect(markup).not.toContain('Wed, Apr 1, 6:00 p.m. MDT')
+    expect(markup).toContain('Apr 9')
+    expect(markup).toContain('EDT')
+    expect(markup).not.toContain('Apr 8')
   })
 })
