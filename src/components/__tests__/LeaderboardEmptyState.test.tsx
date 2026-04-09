@@ -37,4 +37,34 @@ describe('LeaderboardEmptyState', () => {
       screen.getByText('This pool has no entries. Standings cannot be calculated without participants.'),
     ).toBeInTheDocument()
   })
+
+  it('describes an archived pool with entries as read-only frozen', () => {
+    render(
+      <LeaderboardEmptyState
+        poolStatus="archived"
+        hasEntries={true}
+        lastRefreshError={null}
+      />,
+    )
+
+    expect(screen.getByText('Archived pool')).toBeInTheDocument()
+    expect(
+      screen.getByText('This pool is archived and read-only. The leaderboard is frozen.'),
+    ).toBeInTheDocument()
+  })
+
+  it('describes an archived pool with no entries', () => {
+    render(
+      <LeaderboardEmptyState
+        poolStatus="archived"
+        hasEntries={false}
+        lastRefreshError={null}
+      />,
+    )
+
+    expect(screen.getByText('Archived pool')).toBeInTheDocument()
+    expect(
+      screen.getByText('This pool is archived and read-only. There are no entries to show yet.'),
+    ).toBeInTheDocument()
+  })
 })

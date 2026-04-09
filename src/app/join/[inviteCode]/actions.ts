@@ -39,6 +39,10 @@ export async function joinPool(
     return { error: 'This invite link is invalid or expired.' }
   }
 
+  if (pool.status === 'archived') {
+    return { error: 'This pool is archived and can no longer accept new members.' }
+  }
+
   const { data: existingMembership, error: membershipLookupError } = await supabase
     .from('pool_members')
     .select('id, role')

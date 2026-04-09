@@ -104,6 +104,7 @@ export async function getPoolsForMember(
       : member.pools
 
     if (!poolValue) return []
+    if (poolValue.status === 'archived') return []
 
     return {
       pool_id: member.pool_id,
