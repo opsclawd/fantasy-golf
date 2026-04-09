@@ -95,7 +95,7 @@ export function canReopenPool(
   timezone: string,
   now: Date = new Date()
 ): boolean {
-  if (status !== 'complete') return false
+  if (status !== 'complete' && status !== 'live') return false
 
   const lockAt = getTournamentLockInstant(deadline, timezone)
   return lockAt !== null && lockAt.getTime() > now.getTime()

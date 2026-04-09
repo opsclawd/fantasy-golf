@@ -8,16 +8,17 @@ import { buildManualAddQuery, decideCatalogRun } from '@/lib/golfer-catalog/serv
 import { getMonthlyApiUsage, insertGolferSyncRun } from '@/lib/golfer-catalog/queries'
 import { getGolfers } from '@/lib/slash-golf/client'
 import { getPoolById, insertAuditEvent, updatePoolConfig, updatePoolStatus } from '@/lib/pool-queries'
+import { canReopenPool } from '@/lib/pool'
 import { buildTournamentRosterInsert } from '@/lib/tournament-roster/queries'
 
-import { startPool, updatePoolConfigAction } from '../actions'
+import { startPool, updatePoolConfigAction, reopenPool, archivePool } from '../actions'
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
 }))
 
 vi.mock('next/navigation', () => ({
-  redirect: vi.fn(),
+  redirect: vi.fn(() => { throw new Error('redirect') }),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -52,12 +53,20 @@ vi.mock('@/lib/slash-golf/client', () => ({
 
 vi.mock('@/lib/pool-queries', () => ({
   getPoolById: vi.fn(),
-  updatePoolStatus: vi.fn(),
+  updatePoolStatus: vi.fn().mockResolvedValue({ error: null }),
   updatePoolConfig: vi.fn(),
-  insertAuditEvent: vi.fn(),
+  insertAuditEvent: vi.fn().mockResolvedValue({ error: null }),
   insertPool: vi.fn(),
   insertPoolMember: vi.fn(),
 }))
+
+vi.mock('@/lib/pool', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/pool')>('@/lib/pool')
+  return {
+    ...actual,
+    canReopenPool: vi.fn(),
+  }
+})
 
 vi.mock('@/lib/tournament-roster/queries', async () => {
   const actual = await vi.importActual<typeof import('@/lib/tournament-roster/queries')>('@/lib/tournament-roster/queries')
@@ -84,6 +93,11 @@ const lockedPool = {
   created_at: '2026-04-01T00:00:00Z',
   refreshed_at: null,
   last_refresh_error: null,
+}
+
+const completedPool = {
+  ...lockedPool,
+  status: 'complete',
 }
 
 function mockAuthenticatedClient() {
@@ -158,5 +172,85 @@ describe('commissioner pool lock actions', () => {
     expect(insertAuditEvent).not.toHaveBeenCalled()
     expect(redirect).not.toHaveBeenCalled()
     expect(revalidatePath).not.toHaveBeenCalled()
+  })
+})
+
+describe('reopenPool', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-08T05:00:00Z'))
+    mockAuthenticatedClient()
+    vi.mocked(getPoolById).mockResolvedValue(completedPool as never)
+    vi.mocked(canReopenPool).mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('reopens a completed pool before the deadline', async () => {
+    const formData = new FormData()
+    formData.set('poolId', 'pool-1')
+
+    await expect(reopenPool(null, formData)).rejects.toThrow('redirect')
+
+    expect(updatePoolStatus).toHaveBeenCalledWith(expect.anything(), 'pool-1', 'open', 'complete')
+    expect(insertAuditEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'poolReopened',
+        details: { previousStatus: 'complete' },
+      })
+    )
+  })
+
+  it('archives a completed pool', async () => {
+    const formData = new FormData()
+    formData.set('poolId', 'pool-1')
+
+    await expect(archivePool(null, formData)).rejects.toThrow('redirect')
+
+    expect(updatePoolStatus).toHaveBeenCalledWith(expect.anything(), 'pool-1', 'archived', 'complete')
+    expect(insertAuditEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'poolArchived',
+        details: { previousStatus: 'complete' },
+      })
+    )
+  })
+
+  it('rejects reopening after the deadline has passed', async () => {
+    vi.setSystemTime(new Date('2026-04-10T05:00:00Z'))
+    vi.mocked(canReopenPool).mockReturnValue(false)
+
+    const formData = new FormData()
+    formData.set('poolId', 'pool-1')
+
+    await expect(reopenPool(null, formData)).resolves.toEqual({
+      error: 'This pool can no longer be reopened because the deadline has passed.',
+    })
+
+    expect(updatePoolStatus).not.toHaveBeenCalled()
+  })
+
+  it('reopens a live pool before the deadline', async () => {
+    vi.setSystemTime(new Date('2026-04-08T05:00:00Z'))
+    vi.mocked(getPoolById).mockResolvedValue({ ...completedPool, status: 'live' } as never)
+
+    const formData = new FormData()
+    formData.set('poolId', 'pool-1')
+
+    await expect(reopenPool(null, formData)).rejects.toThrow('redirect')
+
+    expect(updatePoolStatus).toHaveBeenCalledWith(expect.anything(), 'pool-1', 'open', 'live')
+    expect(insertAuditEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: 'poolReopened',
+        details: { previousStatus: 'live' },
+      })
+    )
   })
 })

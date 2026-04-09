@@ -21,6 +21,7 @@ import {
   validatePoolFormat,
   buildClonePoolInput,
   generateInviteCode,
+  canReopenPool,
 } from '@/lib/pool'
 import { isCommissionerPoolLocked } from '@/lib/picks'
 import {
@@ -99,6 +100,65 @@ export async function closePool(
     pool_id: poolId,
     user_id: user.id,
     action: 'poolClosed',
+    details: { previousStatus: pool.status },
+  })
+
+  redirect(`/commissioner/pools/${poolId}`)
+}
+
+export async function reopenPool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
+  const poolId = formData.get('poolId') as string
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can reopen this pool.' }
+  if (pool.status !== 'complete' && pool.status !== 'live') return { error: 'Only live or completed pools can be reopened.' }
+  if (!canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone)) {
+    return { error: 'This pool can no longer be reopened because the deadline has passed.' }
+  }
+
+  const { error } = await updatePoolStatus(supabase, poolId, 'open', pool.status)
+  if (error) return { error: 'Failed to reopen pool.' }
+
+  await insertAuditEvent(supabase, {
+    pool_id: poolId,
+    user_id: user.id,
+    action: 'poolReopened',
+    details: { previousStatus: pool.status },
+  })
+
+  redirect(`/commissioner/pools/${poolId}`)
+}
+
+export async function archivePool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
+  const poolId = formData.get('poolId') as string
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can archive this pool.' }
+  if (pool.status !== 'complete') return { error: 'Only completed pools can be archived.' }
+
+  const { error } = await updatePoolStatus(supabase, poolId, 'archived', 'complete')
+  if (error) return { error: 'Failed to archive pool.' }
+
+  await insertAuditEvent(supabase, {
+    pool_id: poolId,
+    user_id: user.id,
+    action: 'poolArchived',
     details: { previousStatus: pool.status },
   })
 
