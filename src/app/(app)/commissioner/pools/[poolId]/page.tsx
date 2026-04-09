@@ -9,14 +9,17 @@ import { GolferCatalogPanel } from '@/components/GolferCatalogPanel'
 import { classifyFreshness } from '@/lib/freshness'
 import { isCommissionerPoolLocked } from '@/lib/picks'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
+import { canReopenPool } from '@/lib/pool'
 import { StartPoolButton, ClosePoolButton } from './PoolActions'
-import { ReusePoolButton } from './ReusePoolButton'
+import { ReopenPoolButton } from './ReopenPoolButton'
+import { ArchivePoolButton } from './ArchivePoolButton'
+import { DeletePoolButton } from './DeletePoolButton'
 import InviteLinkSection from './InviteLinkSection'
 import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
 import { loadGolferCatalogPanelState } from './golferCatalogPanelState'
 import Link from 'next/link'
-import type { TournamentScore, Golfer, Entry } from '@/lib/supabase/types'
+import type { TournamentScore, Golfer, Entry, PoolStatus } from '@/lib/supabase/types'
 import { panelClasses, scrollRegionFocusClasses, sectionHeadingClasses } from '@/components/uiStyles'
 import type { TournamentRosterGolfer } from '@/lib/tournament-roster/queries'
 
@@ -117,7 +120,9 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
             <StatusChip status={pool.status} />
             {pool.status === 'open' && !isLocked && <StartPoolButton poolId={pool.id} />}
             {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
-            {pool.status === 'complete' && <ReusePoolButton poolId={pool.id} />}
+            {pool.status === 'complete' && canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone) && <ReopenPoolButton poolId={pool.id} />}
+            {pool.status === 'complete' && <ArchivePoolButton poolId={pool.id} />}
+            {pool.status === 'archived' && <DeletePoolButton poolId={pool.id} />}
           </div>
         </div>
       </section>

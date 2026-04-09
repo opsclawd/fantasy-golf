@@ -192,6 +192,20 @@ describe('getTrustStatusBarState', () => {
     expect(result.tone).toBe('info')
   })
 
+  it('returns archived lock messaging', () => {
+    const result = getTrustStatusBarState({
+      isLocked: true,
+      poolStatus: 'archived',
+      freshness: 'current',
+      refreshedAt: '2026-03-29T12:00:00.000Z',
+      lastRefreshError: null,
+    })
+
+    expect(result.lockLabel).toBe('Archived')
+    expect(result.lockMessage).toBe('This pool is archived. No changes allowed.')
+    expect(result.showFreshness).toBe(true)
+  })
+
   it('prioritizes isRefreshing over refresh error', () => {
     const result = getTrustStatusBarState({
       isLocked: true,
