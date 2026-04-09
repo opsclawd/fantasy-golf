@@ -170,6 +170,10 @@ export async function getGolfers(tournamentId: string, year?: number): Promise<A
       : null
 
   if (!players) {
+    if (isTournamentMetadataOnlyResponse(raw)) {
+      throw new Error('Tournament field has not been published yet.')
+    }
+
     throw new Error('Tournament golfers response was invalid')
   }
 
@@ -195,4 +199,22 @@ export async function getGolfers(tournamentId: string, year?: number): Promise<A
 
     return [{ id, name, country }]
   })
+}
+
+function isTournamentMetadataOnlyResponse(raw: unknown): boolean {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return false
+  }
+
+  const record = raw as Record<string, unknown>
+  return (
+    'orgId' in record
+    || 'tournId' in record
+    || 'date' in record
+    || 'courses' in record
+    || 'status' in record
+    || 'currentRound' in record
+    || 'timeZone' in record
+    || 'format' in record
+  )
 }
