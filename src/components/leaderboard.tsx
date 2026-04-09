@@ -130,9 +130,13 @@ export function Leaderboard({
 
   if (!data) return null
 
-  const { entries, completedRounds, refreshedAt, freshness, poolStatus, lastRefreshError, golferStatuses } = data
+  const { entries, completedRounds, refreshedAt, freshness, poolStatus, lastRefreshError, golferStatuses, golferScores } = data
   const hasEntries = entries.length > 0
-  const hasScores = completedRounds > 0
+  // Show leaderboard if we have completed rounds OR any actual score data (even mid-round).
+  // Slash Golf may report scores before a round officially closes, so don't gate on completedRounds alone.
+  const hasScores =
+    completedRounds > 0 ||
+    Object.values(golferScores).some((s) => s.total_score !== null)
   const showTrustStatusHeader = shouldRenderLeaderboardTrustStatus(poolStatus, hideTrustStatusHeader)
 
   // Detect which golfer IDs in entries are withdrawn
