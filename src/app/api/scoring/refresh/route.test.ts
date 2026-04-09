@@ -111,4 +111,30 @@ describe('POST /api/scoring/refresh', () => {
     expect(body.data.completedRounds).toBe(2)
     expect(refreshScoresForPool).toHaveBeenCalledWith(expect.anything(), pool)
   })
+
+  it('returns 409 when a refresh is already in progress', async () => {
+    const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
+    vi.mocked(createAdminClient).mockReturnValue({} as never)
+    vi.mocked(getPoolById).mockResolvedValue(pool as never)
+
+    vi.mocked(refreshScoresForPool).mockReturnValue(new Promise(() => {}))
+
+    const makeRequest = () =>
+      new Request('http://localhost/api/scoring/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer secret',
+        },
+        body: JSON.stringify({ poolId: 'pool-1' }),
+      })
+
+    const first = POST(makeRequest())
+
+    const second = await POST(makeRequest())
+
+    expect(second.status).toBe(409)
+    const body = await second.json()
+    expect(body.error.code).toBe('UPDATE_IN_PROGRESS')
+  })
 })
