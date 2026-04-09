@@ -135,7 +135,7 @@ The `upsertTournamentScore()` function writes to both tables atomically — it t
 }
 ```
 
-`isRefreshing` is `true` when the server detected staleness and triggered a background refresh. It is `false` when data is current.
+`isRefreshing` is `true` when the server detected staleness and triggered a background refresh. It is `false` when data is current, or when a prior refresh failure is being surfaced instead of a live refresh-in-flight state.
 
 ---
 

@@ -10,9 +10,16 @@ import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
  * Runs server-side using CRON_SECRET — the client never sees this call.
  * Errors are silently swallowed (stale data is shown with honest timestamp).
  */
-function triggerBackgroundRefresh(poolId: string): void {
+// Preserve any deployment path prefix while normalizing trailing slashes.
+function buildInternalApiUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  fetch(`${baseUrl}/api/scoring/refresh`, {
+  const normalizedBaseUrl = `${baseUrl.replace(/\/+$/, '')}/`
+
+  return new URL(path.replace(/^\//, ''), normalizedBaseUrl).toString()
+}
+
+function triggerBackgroundRefresh(poolId: string): void {
+  fetch(buildInternalApiUrl('/api/scoring/refresh'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +56,10 @@ export async function GET(
     const freshness = classifyFreshness(pool.refreshed_at)
 
     const isStale = freshness === 'stale' || freshness === 'unknown'
-    if (isStale && pool.status === 'live') {
+    const shouldTriggerRefresh = isStale && pool.status === 'live'
+    const isRefreshing = shouldTriggerRefresh && !pool.last_refresh_error
+
+    if (shouldTriggerRefresh) {
       triggerBackgroundRefresh(poolId)
     }
 
@@ -65,7 +75,7 @@ export async function GET(
           completedRounds: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
-          isRefreshing: isStale && pool.status === 'live',
+          isRefreshing,
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
           golferStatuses: {},
@@ -91,7 +101,7 @@ export async function GET(
           completedRounds: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
-          isRefreshing: isStale && pool.status === 'live',
+          isRefreshing,
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
           golferStatuses: {},
@@ -140,7 +150,7 @@ export async function GET(
         completedRounds,
         refreshedAt: pool.refreshed_at,
         freshness,
-        isRefreshing: isStale && pool.status === 'live',
+        isRefreshing,
         poolStatus: pool.status,
         lastRefreshError: pool.last_refresh_error,
         golferStatuses,
