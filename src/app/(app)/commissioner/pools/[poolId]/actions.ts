@@ -372,22 +372,32 @@ export async function refreshGolferCatalogAction(
     if (syncRunError) {
       return { error: syncRunError }
     }
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to refresh golfer catalog.'
+
     const syncRunError = await recordGolferSyncRunOrError(supabase, {
-        runType,
-        requestedBy: user.id,
-        tournamentId: pool.tournament_id,
-        apiCallsUsed: 1,
-        status: 'failed',
-        summary: { golfers_upserted: 0 },
-        errorMessage: 'Failed to refresh golfer catalog.',
-      })
+      runType,
+      requestedBy: user.id,
+      tournamentId: pool.tournament_id,
+      apiCallsUsed: 1,
+      status: message === 'Tournament field has not been published yet.' ? 'blocked' : 'failed',
+      summary: {
+        golfers_upserted: 0,
+        reason: message,
+      },
+      errorMessage: message,
+    })
 
     if (syncRunError) {
       return { error: syncRunError }
     }
 
-    return { error: 'Failed to refresh golfer catalog.' }
+    return {
+      error:
+        message === 'Tournament field has not been published yet.'
+          ? message
+          : 'Failed to refresh golfer catalog.',
+    }
   }
 
   revalidatePath(`/commissioner/pools/${poolId}`)

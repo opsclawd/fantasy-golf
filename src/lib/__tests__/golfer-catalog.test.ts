@@ -368,6 +368,25 @@ describe('rapidapi boundary', () => {
     await expect(getGolfers('t1', 2026)).rejects.toThrow('Tournament golfers response was invalid')
   })
 
+  it('treats metadata-only tournament responses as unpublished fields', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        orgId: '1',
+        year: '2026',
+        tournId: '012',
+        name: 'RBC Heritage',
+        status: 'Not Started',
+        currentRound: -1,
+        courses: [],
+      }),
+    })
+
+    vi.stubGlobal('fetch', fetchSpy)
+
+    await expect(getGolfers('012', 2026)).rejects.toThrow('Tournament field has not been published yet.')
+  })
+
   it('parses tournament golfers from a players array payload', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,

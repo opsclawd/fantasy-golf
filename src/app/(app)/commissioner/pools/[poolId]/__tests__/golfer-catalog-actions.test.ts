@@ -195,6 +195,31 @@ describe('golfer catalog commissioner actions', () => {
     expect(revalidatePath).not.toHaveBeenCalled()
   })
 
+  it('returns a clear message when the tournament field is not published yet', async () => {
+    vi.mocked(getMonthlyApiUsage).mockResolvedValue(199)
+    vi.mocked(decideCatalogRun).mockReturnValue({ allowed: true })
+    vi.mocked(getGolfers).mockRejectedValue(new Error('Tournament field has not been published yet.'))
+
+    const formData = new FormData()
+    formData.set('poolId', 'pool-1')
+    formData.set('runType', 'pre_tournament')
+
+    await expect(refreshGolferCatalogAction(null, formData)).resolves.toEqual({
+      error: 'Tournament field has not been published yet.',
+    })
+
+    expect(insertGolferSyncRun).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        run_type: 'pre_tournament',
+        api_calls_used: 1,
+        status: 'blocked',
+        error_message: 'Tournament field has not been published yet.',
+      }),
+    )
+    expect(revalidatePath).not.toHaveBeenCalled()
+  })
+
   it('logs and returns the blocked quota message for refresh attempts', async () => {
     vi.mocked(getMonthlyApiUsage).mockResolvedValue(235)
     vi.mocked(decideCatalogRun).mockReturnValue({
