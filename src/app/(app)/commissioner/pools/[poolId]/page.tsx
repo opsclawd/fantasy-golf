@@ -115,7 +115,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
           </div>
           <div className="flex flex-wrap gap-3 max-sm:w-full">
             <StatusChip status={pool.status} />
-            {pool.status === 'open' && <StartPoolButton poolId={pool.id} />}
+            {pool.status === 'open' && !isLocked && <StartPoolButton poolId={pool.id} />}
             {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
             {pool.status === 'complete' && <ReusePoolButton poolId={pool.id} />}
           </div>
@@ -152,7 +152,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
       </section>
 
       <InviteLinkSection inviteCode={pool.invite_code} />
-      <PoolConfigForm pool={pool} />
+      <PoolConfigForm pool={pool} isLocked={isLocked} />
       <GolferCatalogPanel poolId={poolId} usage={usage} latestRun={latestRun} rosterCount={rosterCount} />
 
       <section className={`${panelClasses()} overflow-hidden`}>

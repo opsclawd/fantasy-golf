@@ -22,6 +22,7 @@ import {
   buildClonePoolInput,
   generateInviteCode,
 } from '@/lib/pool'
+import { isCommissionerPoolLocked } from '@/lib/picks'
 import {
   getPoolById,
   updatePoolStatus,
@@ -52,6 +53,9 @@ export async function startPool(
   const pool = await getPoolById(supabase, poolId)
   if (!pool) return { error: 'Pool not found.' }
   if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can start this pool.' }
+  if (pool.status === 'open' && isCommissionerPoolLocked(pool.status, pool.deadline, pool.timezone)) {
+    return { error: 'This pool is locked. It can no longer be started.' }
+  }
 
   if (!canTransitionStatus(pool.status as PoolStatus, 'live')) {
     return { error: 'Pool cannot be started from its current state.' }
@@ -202,6 +206,9 @@ export async function updatePoolConfigAction(
   if (!pool) return { error: 'Pool not found.' }
   if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can update this pool.' }
   if (pool.status !== 'open') return { error: 'Pool configuration can only be changed while the pool is open.' }
+  if (isCommissionerPoolLocked(pool.status, pool.deadline, pool.timezone)) {
+    return { error: 'This pool is locked. Configuration can no longer be changed.' }
+  }
 
   const tournamentId = (formData.get('tournamentId') as string) ?? pool.tournament_id
   const tournamentName = (formData.get('tournamentName') as string) ?? pool.tournament_name
