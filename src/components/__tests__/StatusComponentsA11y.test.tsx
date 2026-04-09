@@ -27,6 +27,14 @@ describe('status component accessibility attributes', () => {
     expect(markup).toContain('aria-label="Pool status: Live"')
   })
 
+  it('renders StatusChip with archived pool copy', () => {
+    const markup = renderToStaticMarkup(
+      createElement(StatusChip, { status: 'archived' }),
+    )
+
+    expect(markup).toContain('aria-label="Pool status: Archived"')
+  })
+
   it('renders an unmistakable confirmation heading and picks list', () => {
     const markup = renderToStaticMarkup(
       createElement(SubmissionConfirmation, {

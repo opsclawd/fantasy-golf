@@ -77,9 +77,11 @@ export function PoolConfigForm({ pool, isLocked }: { pool: Pool; isLocked: boole
   const isEditable = pool.status === 'open' && !isLocked
   const year = String(pool.year)
   const configLockMessage =
-    pool.status !== 'open'
-      ? 'Configuration is locked because this pool is not open.'
-      : 'Configuration is locked because the deadline has passed.'
+    pool.status === 'archived'
+      ? 'Configuration is locked because this pool is archived.'
+      : pool.status === 'complete'
+        ? 'Configuration is locked because this pool is closed.'
+        : 'Configuration is locked because the deadline has passed.'
 
   const loadTournaments = useCallback(async () => {
     const cached = getCachedTournaments(year)

@@ -14,6 +14,8 @@ function getLockedMessage(poolStatus: string): string {
       return 'The tournament is live. No changes allowed.'
     case 'complete':
       return 'This tournament is complete.'
+    case 'archived':
+      return 'This pool is archived. Picks are read-only.'
     default:
       return 'The picks deadline has passed.'
   }

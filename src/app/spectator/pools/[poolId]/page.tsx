@@ -41,7 +41,7 @@ export default async function SpectatorPage({
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
-        {(pool.status === 'live' || pool.status === 'complete') && (
+        {(pool.status === 'live' || pool.status === 'complete' || pool.status === 'archived') && (
           <TrustStatusBar
             className="border"
             isLocked={true}

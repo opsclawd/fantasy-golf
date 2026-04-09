@@ -14,7 +14,7 @@ export default async function JoinByInvitePage({ params }: JoinPageProps) {
 
   const { data: pool } = await supabase
     .from('pools')
-    .select('id, name, tournament_name, invite_code')
+    .select('id, name, tournament_name, invite_code, status')
     .eq('invite_code', normalizedInviteCode)
     .single()
 
@@ -28,6 +28,22 @@ export default async function JoinByInvitePage({ params }: JoinPageProps) {
           </p>
           <Link href="/participant/pools" className="inline-block text-blue-600 hover:text-blue-800 text-sm">
             Go to My Pools
+          </Link>
+        </div>
+      </main>
+    )
+  }
+
+  if (pool.status === 'archived') {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow p-6 space-y-4">
+          <h1 className="text-xl font-semibold">Archived pool</h1>
+          <p className="text-sm text-gray-600">
+            This pool is archived and read-only. You can still view the leaderboard.
+          </p>
+          <Link href={`/spectator/pools/${pool.id}`} className="inline-block text-blue-600 hover:text-blue-800 text-sm">
+            View leaderboard
           </Link>
         </div>
       </main>

@@ -16,7 +16,7 @@ type TrustTone = 'info' | 'warning' | 'error'
 
 interface TrustStatusBarState {
   heading: string
-  lockLabel: 'Open' | 'Locked'
+  lockLabel: 'Open' | 'Locked' | 'Archived'
   lockMessage: string
   freshnessLabel: 'Current' | 'Stale' | 'No data' | 'Refresh failed' | 'Refreshing'
   freshnessMessage: string
@@ -41,6 +41,8 @@ function getLockMessage(isLocked: boolean, poolStatus: PoolStatus): string {
       return 'The tournament is live. No changes allowed.'
     case 'complete':
       return 'This tournament is complete.'
+    case 'archived':
+      return 'This pool is archived. No changes allowed.'
     default:
       return 'The picks deadline has passed.'
   }
@@ -138,7 +140,7 @@ export function getTrustStatusBarState(
   input: GetTrustStatusBarStateInput,
 ): TrustStatusBarState {
   const heading = 'Tournament status'
-  const lockLabel = input.isLocked ? 'Locked' : 'Open'
+  const lockLabel = input.poolStatus === 'archived' ? 'Archived' : input.isLocked ? 'Locked' : 'Open'
   const lockMessage = getLockMessage(input.isLocked, input.poolStatus)
   const showFreshness = input.poolStatus !== 'open'
   const freshnessState = getFreshnessMessage(

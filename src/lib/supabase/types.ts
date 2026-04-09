@@ -1,4 +1,4 @@
-export type PoolStatus = 'open' | 'live' | 'complete'
+export type PoolStatus = 'open' | 'live' | 'complete' | 'archived'
 
 export type PoolFormat = 'best_ball'
 
@@ -31,6 +31,16 @@ export interface PoolMember {
   user_id: string
   role: MemberRole
   joined_at: string
+}
+
+export interface PoolDeletion {
+  id: string
+  pool_id: string
+  commissioner_id: string | null
+  deleted_by: string | null
+  status_at_delete: PoolStatus
+  snapshot: Record<string, unknown>
+  deleted_at: string
 }
 
 export interface Entry {

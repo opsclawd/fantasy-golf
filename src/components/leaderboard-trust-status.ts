@@ -8,5 +8,5 @@ export function shouldRenderLeaderboardTrustStatus(
     return false
   }
 
-  return poolStatus === 'live' || poolStatus === 'complete'
+  return poolStatus === 'live' || poolStatus === 'complete' || poolStatus === 'archived'
 }

@@ -24,6 +24,13 @@ export function LeaderboardEmptyState({
       ? 'Entries have been submitted. Standings will appear once the tournament goes live and scoring begins.'
       : 'No entries submitted yet. Share the invite link so players can join and make their picks.'
     eyebrow = 'Pre-tournament'
+  } else if (poolStatus === 'archived') {
+    title = 'Archived pool'
+    description = hasEntries
+      ? 'This pool is archived and read-only. The leaderboard is frozen.'
+      : 'This pool is archived and read-only. There are no entries to show yet.'
+    eyebrow = 'Archived'
+    accentClasses = 'border-slate-200 bg-slate-100 text-slate-700'
   } else if (!hasEntries) {
     title = 'No entries in this pool'
     description = 'This pool has no entries. Standings cannot be calculated without participants.'

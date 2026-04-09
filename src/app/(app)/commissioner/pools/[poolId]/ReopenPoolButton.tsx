@@ -1,9 +1,9 @@
 'use client'
 
 import { useFormState, useFormStatus } from 'react-dom'
-import { reusePool, type PoolActionState } from './actions'
+import { reopenPool, type PoolActionState } from './actions'
 
-function ReuseSubmitButton() {
+function ReopenSubmitButton() {
   const { pending } = useFormStatus()
 
   return (
@@ -12,13 +12,13 @@ function ReuseSubmitButton() {
       disabled={pending}
       className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50"
     >
-      {pending ? 'Reusing...' : 'Reuse Pool'}
+      {pending ? 'Reopening...' : 'Reopen Pool'}
     </button>
   )
 }
 
-export function ReusePoolButton({ poolId }: { poolId: string }) {
-  const [state, formAction] = useFormState<PoolActionState, FormData>(reusePool, null)
+export function ReopenPoolButton({ poolId }: { poolId: string }) {
+  const [state, formAction] = useFormState<PoolActionState, FormData>(reopenPool, null)
 
   return (
     <div>
@@ -28,13 +28,13 @@ export function ReusePoolButton({ poolId }: { poolId: string }) {
       <form
         action={formAction}
         onSubmit={(event) => {
-          if (!confirm('Reuse this pool for the next tournament?')) {
+          if (!confirm('Reopen this pool? Picks will become editable again until the deadline.')) {
             event.preventDefault()
           }
         }}
       >
         <input type="hidden" name="poolId" value={poolId} />
-        <ReuseSubmitButton />
+        <ReopenSubmitButton />
       </form>
     </div>
   )

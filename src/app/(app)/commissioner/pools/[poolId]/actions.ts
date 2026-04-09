@@ -15,12 +15,12 @@ import {
 } from '@/lib/golfer-catalog/queries'
 import { getGolfers } from '@/lib/slash-golf/client'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   canTransitionStatus,
   validateCreatePoolInput,
   validatePoolFormat,
-  buildClonePoolInput,
-  generateInviteCode,
+  canReopenPool,
 } from '@/lib/pool'
 import { isCommissionerPoolLocked } from '@/lib/picks'
 import {
@@ -28,8 +28,8 @@ import {
   updatePoolStatus,
   updatePoolConfig as updatePoolConfigQuery,
   insertAuditEvent,
-  insertPool,
-  insertPoolMember,
+  recordPoolDeletion,
+  deletePoolById,
 } from '@/lib/pool-queries'
 import { buildTournamentRosterInsert } from '@/lib/tournament-roster/queries'
 import type { PoolFormat, PoolStatus } from '@/lib/supabase/types'
@@ -105,7 +105,7 @@ export async function closePool(
   redirect(`/commissioner/pools/${poolId}`)
 }
 
-export async function reusePool(
+export async function reopenPool(
   _prevState: PoolActionState,
   formData: FormData
 ): Promise<PoolActionState> {
@@ -115,75 +115,103 @@ export async function reusePool(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
 
-  const sourcePool = await getPoolById(supabase, poolId)
-  if (!sourcePool) return { error: 'Pool not found.' }
-  if (sourcePool.commissioner_id !== user.id) {
-    return { error: 'Only the commissioner can reuse this pool.' }
-  }
-  if (sourcePool.status !== 'complete') {
-    return { error: 'Only completed pools can be reused.' }
-  }
-
-  const cloneInput = buildClonePoolInput(sourcePool)
-  let clonedPool: Awaited<ReturnType<typeof getPoolById>> | null = null
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const inviteCode = generateInviteCode()
-    const { data, error: cloneError } = await insertPool(supabase, {
-      commissioner_id: user.id,
-      name: cloneInput.name,
-      tournament_id: '',
-      tournament_name: '',
-      year: new Date().getFullYear(),
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      timezone: sourcePool.timezone,
-      format: cloneInput.format,
-      picks_per_entry: cloneInput.picks_per_entry,
-      invite_code: inviteCode,
-      status: 'open',
-      refreshed_at: null,
-      last_refresh_error: null,
-    })
-
-    if (!cloneError && data) {
-      clonedPool = data
-      break
-    }
-
-    const isUniqueViolation =
-      cloneError?.includes('23505')
-      || cloneError?.toLowerCase().includes('unique')
-      || cloneError?.toLowerCase().includes('duplicate')
-
-    if (!isUniqueViolation) {
-      return { error: 'Failed to clone pool.' }
-    }
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can reopen this pool.' }
+  if (pool.status !== 'complete' && pool.status !== 'live') return { error: 'Only live or completed pools can be reopened.' }
+  if (!canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone)) {
+    return { error: 'This pool can no longer be reopened because the deadline has passed.' }
   }
 
-  if (!clonedPool) {
-    return { error: 'Failed to clone pool.' }
-  }
+  const { error } = await updatePoolStatus(supabase, poolId, 'open', pool.status)
+  if (error) return { error: 'Failed to reopen pool.' }
 
-  const { error: memberError } = await insertPoolMember(supabase, {
-    pool_id: clonedPool.id,
+  await insertAuditEvent(supabase, {
+    pool_id: poolId,
     user_id: user.id,
-    role: 'commissioner',
+    action: 'poolReopened',
+    details: { previousStatus: pool.status },
   })
-  if (memberError) {
-    return { error: 'Failed to initialize commissioner membership for cloned pool.' }
-  }
 
-  const { error: auditError } = await insertAuditEvent(supabase, {
-    pool_id: clonedPool.id,
+  redirect(`/commissioner/pools/${poolId}`)
+}
+
+export async function archivePool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
+  const poolId = formData.get('poolId') as string
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can archive this pool.' }
+  if (pool.status !== 'complete') return { error: 'Only completed pools can be archived.' }
+
+  const { error } = await updatePoolStatus(supabase, poolId, 'archived', 'complete')
+  if (error) return { error: 'Failed to archive pool.' }
+
+  await insertAuditEvent(supabase, {
+    pool_id: poolId,
     user_id: user.id,
-    action: 'poolCloned',
-    details: { source_pool_id: sourcePool.id },
+    action: 'poolArchived',
+    details: { previousStatus: pool.status },
   })
-  if (auditError) {
-    return { error: 'Pool was cloned, but audit logging failed.' }
+
+  redirect(`/commissioner/pools/${poolId}`)
+}
+
+export async function deletePool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
+  const poolId = formData.get('poolId') as string
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can delete this pool.' }
+  if (pool.status !== 'archived') return { error: 'Only archived pools can be deleted.' }
+
+  const admin = createAdminClient()
+
+  const snapshot = {
+    id: pool.id,
+    commissioner_id: pool.commissioner_id,
+    name: pool.name,
+    tournament_id: pool.tournament_id,
+    tournament_name: pool.tournament_name,
+    year: pool.year,
+    deadline: pool.deadline,
+    timezone: pool.timezone,
+    format: pool.format,
+    picks_per_entry: pool.picks_per_entry,
+    invite_code: pool.invite_code,
+    status: pool.status,
+    created_at: pool.created_at,
+    refreshed_at: pool.refreshed_at,
+    last_refresh_error: pool.last_refresh_error,
   }
 
-  redirect(`/commissioner/pools/${clonedPool.id}`)
+  const tombstone = await recordPoolDeletion(admin, {
+    pool_id: pool.id,
+    commissioner_id: pool.commissioner_id,
+    deleted_by: user.id,
+    status_at_delete: pool.status as PoolStatus,
+    snapshot,
+  })
+  if (tombstone.error) return { error: 'Failed to record pool deletion.' }
+
+  const deletion = await deletePoolById(admin, pool.id)
+  if (deletion.error) return { error: 'Failed to delete pool.' }
+
+  redirect('/commissioner')
 }
 
 // --- Config update action ---

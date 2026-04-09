@@ -28,7 +28,16 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   if (!pool) redirect('/participant/pools')
 
   const member = await isPoolMember(supabase, poolId, user.id)
-  if (!member) redirect('/participant/pools')
+  if (!member) {
+    if (pool.status === 'archived') {
+      return (
+        <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
+          <p className="text-gray-600">This pool is archived and read-only.</p>
+        </div>
+      )
+    }
+    redirect('/participant/pools')
+  }
 
   const existingEntry = await getEntryByPoolAndUser(supabase, poolId, user.id)
   const isLocked = isPoolLocked(pool.status, pool.deadline, pool.timezone)
@@ -107,6 +116,12 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
           </div>
         )}
         </>
+      ) : isLocked && pool.status === 'archived' && !hasEntry ? (
+        <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
+          <p className="text-gray-600">
+            This pool is archived and read-only.
+          </p>
+        </div>
       ) : isLocked && !hasEntry ? (
         <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
           <p className="text-gray-600">

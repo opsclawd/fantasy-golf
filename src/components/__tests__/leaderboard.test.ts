@@ -19,4 +19,8 @@ describe('shouldRenderLeaderboardTrustStatus', () => {
   it('does not render trust status in leaderboard header for open pools', () => {
     expect(shouldRenderLeaderboardTrustStatus('open', false)).toBe(false)
   })
+
+  it('renders trust status in leaderboard header for archived pools by default', () => {
+    expect(shouldRenderLeaderboardTrustStatus('archived', false)).toBe(true)
+  })
 })

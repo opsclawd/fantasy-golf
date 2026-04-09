@@ -18,6 +18,11 @@ const STATUS_CONFIG: Record<PoolStatus, { label: string; icon: string; classes: 
     icon: '\u2713', // checkmark
     classes: 'border-slate-200 bg-slate-100 text-slate-900',
   },
+  archived: {
+    label: 'Archived',
+    icon: '\u25A3', // filled square
+    classes: 'border-slate-200 bg-slate-100 text-slate-700',
+  },
 }
 
 export function StatusChip({ status }: { status: PoolStatus }) {

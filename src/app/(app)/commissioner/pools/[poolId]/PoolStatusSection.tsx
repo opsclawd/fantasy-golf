@@ -49,7 +49,9 @@ export function PoolStatusSection({
 
       <article className={metricCardClasses()}>
         <p className={sectionHeadingClasses()}>Lock state</p>
-        <p className="mt-3 text-lg font-semibold text-slate-950">{isLocked ? 'Locked' : 'Open'}</p>
+        <p className="mt-3 text-lg font-semibold text-slate-950">
+          {pool.status === 'archived' ? 'Archived' : isLocked ? 'Locked' : 'Open'}
+        </p>
         <p className="mt-2 text-sm text-slate-500">
           {formattedDeadline}
         </p>

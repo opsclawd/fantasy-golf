@@ -10,12 +10,6 @@ export interface CreatePoolInput {
   timezone: string
 }
 
-export interface ClonePoolInput {
-  name: string
-  format: PoolFormat
-  picks_per_entry: number
-}
-
 export type ValidationResult =
   | { ok: true }
   | { ok: false; error: string }
@@ -25,7 +19,8 @@ const VALID_FORMATS: PoolFormat[] = ['best_ball']
 const STATUS_TRANSITIONS: Record<PoolStatus, PoolStatus[]> = {
   open: ['live'],
   live: ['complete'],
-  complete: [],
+  complete: ['open', 'archived'],
+  archived: [],
 }
 
 export function generateInviteCode(): string {
@@ -88,10 +83,16 @@ export function canTransitionStatus(
   return STATUS_TRANSITIONS[current].includes(target)
 }
 
-export function buildClonePoolInput(source: Pool): ClonePoolInput {
-  return {
-    name: source.name,
-    format: source.format,
-    picks_per_entry: source.picks_per_entry,
-  }
+export function canReopenPool(
+  status: PoolStatus,
+  deadline: string,
+  timezone: string,
+  now: Date = new Date()
+): boolean {
+  if (status !== 'complete' && status !== 'live') return false
+
+  const lockAt = getTournamentLockInstant(deadline, timezone)
+  return lockAt !== null && lockAt.getTime() > now.getTime()
 }
+
+
