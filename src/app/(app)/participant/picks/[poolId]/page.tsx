@@ -31,7 +31,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   if (!member) redirect('/participant/pools')
 
   const existingEntry = await getEntryByPoolAndUser(supabase, poolId, user.id)
-  const isLocked = isPoolLocked(pool.status, pool.deadline)
+  const isLocked = isPoolLocked(pool.status, pool.deadline, pool.timezone)
   const hasEntry = existingEntry !== null && existingEntry.golfer_ids.length > 0
   const existingGolferIds = existingEntry?.golfer_ids ?? []
 
@@ -71,7 +71,7 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
         <p className="mt-1 text-sm text-slate-600">{pool.tournament_name}</p>
       </section>
 
-      <LockBanner isLocked={isLocked} deadline={pool.deadline} poolStatus={pool.status} />
+      <LockBanner isLocked={isLocked} deadline={pool.deadline} timezone={pool.timezone} poolStatus={pool.status} />
 
       {(pool.status === 'live' || pool.status === 'complete') && (
         <TrustStatusBar

@@ -19,7 +19,7 @@ export default async function ParticipantPools() {
       ) : (
         <div className="grid gap-4">
           {memberships.map(({ pool_id, pool, entry }) => {
-            const isLocked = isPoolLocked(pool.status as PoolStatus, pool.deadline)
+            const isLocked = isPoolLocked(pool.status as PoolStatus, pool.deadline, pool.timezone)
             const selectedCount = entry?.golfer_ids?.length ?? 0
             const remainingPicks = calculateRemainingPicks(selectedCount, pool.picks_per_entry)
 

@@ -7,7 +7,7 @@ describe('PoolStatusSection', () => {
   it('renders metrics as command-center cards with clear labels', () => {
     const markup = renderToStaticMarkup(
       <PoolStatusSection
-        pool={{ deadline: '2026-04-02T00:00:00' } as never}
+        pool={{ deadline: '2026-04-02T00:00:00', timezone: 'America/Denver' } as never}
         memberCount={10}
         entryCount={8}
         isLocked={false}

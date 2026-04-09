@@ -100,7 +100,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
   const playerMembers = members.filter(m => m.role === 'player')
   const membersWithoutEntries = playerMembers.filter(m => !playersWithEntries.has(m.user_id))
 
-  const isLocked = isCommissionerPoolLocked(pool.status, pool.deadline)
+  const isLocked = isCommissionerPoolLocked(pool.status, pool.deadline, pool.timezone)
   const { latestRun, usage } = await loadGolferCatalogPanelState(supabase)
   const rosterCount = rosterGolfers.length
 

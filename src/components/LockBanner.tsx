@@ -4,6 +4,7 @@ import { getTournamentLockInstant } from '@/lib/picks'
 interface LockBannerProps {
   isLocked: boolean
   deadline: string
+  timezone: string
   poolStatus: string
 }
 
@@ -18,9 +19,9 @@ function getLockedMessage(poolStatus: string): string {
   }
 }
 
-function formatDeadline(deadline: string): string {
+function formatDeadline(deadline: string, timezone: string): string {
   const fallback = 'Deadline not available'
-  const deadlineInstant = getTournamentLockInstant(deadline)
+  const deadlineInstant = getTournamentLockInstant(deadline, timezone)
   if (!deadlineInstant) {
     return fallback
   }
@@ -35,7 +36,7 @@ function formatDeadline(deadline: string): string {
   })
 }
 
-export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) {
+export function LockBanner({ isLocked, deadline, timezone, poolStatus }: LockBannerProps) {
   const lockedMessage = getLockedMessage(poolStatus)
 
   if (isLocked) {
@@ -60,7 +61,7 @@ export function LockBanner({ isLocked, deadline, poolStatus }: LockBannerProps) 
     )
   }
 
-  const formattedDeadline = formatDeadline(deadline)
+  const formattedDeadline = formatDeadline(deadline, timezone)
 
   return (
     <div

@@ -10,17 +10,33 @@ export type PickValidationResult =
   | { ok: true }
   | { ok: false; error: string }
 
-export function getTournamentLockInstant(deadline: string): Date | null {
-  const deadlineDate = new Date(deadline)
-  if (Number.isNaN(deadlineDate.getTime())) {
+export function getTournamentLockInstant(
+  deadline: string,
+  timezone: string
+): Date | null {
+  const dateOnly = deadline.split('T')[0].split(' ')[0]
+  const parsedDate = new Date(dateOnly + 'T12:00:00')
+  if (Number.isNaN(parsedDate.getTime())) {
     return null
   }
 
-  return new Date(
-    deadlineDate.getUTCFullYear(),
-    deadlineDate.getUTCMonth(),
-    deadlineDate.getUTCDate()
-  )
+  const df = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+
+  const parts = df.formatToParts(parsedDate)
+  const year = parts.find((p) => p.type === 'year')?.value ?? ''
+  const month = parts.find((p) => p.type === 'month')?.value ?? ''
+  const day = parts.find((p) => p.type === 'day')?.value ?? ''
+
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return new Date(`${year}-${month}-${day}T00:00:00`)
 }
 
 export function validatePickSubmission(
@@ -60,9 +76,10 @@ export function validatePickSubmission(
 export function isPoolLocked(
   status: PoolStatus,
   deadline: string,
+  timezone: string,
   now: Date = new Date()
 ): boolean {
-  const lockAt = getTournamentLockInstant(deadline)
+  const lockAt = getTournamentLockInstant(deadline, timezone)
   if (!lockAt) {
     return true
   }
@@ -73,9 +90,10 @@ export function isPoolLocked(
 export function isCommissionerPoolLocked(
   status: PoolStatus,
   deadline: string,
+  timezone: string,
   now: Date = new Date()
 ): boolean {
-  const lockAt = getTournamentLockInstant(deadline)
+  const lockAt = getTournamentLockInstant(deadline, timezone)
   if (!lockAt) {
     return true
   }
@@ -97,11 +115,12 @@ export function calculateRemainingPicks(
 export function shouldAutoLock(
   status: PoolStatus,
   deadline: string,
+  timezone: string,
   now: Date = new Date()
 ): boolean {
   if (status !== 'open') return false
 
-  const lockAt = getTournamentLockInstant(deadline)
+  const lockAt = getTournamentLockInstant(deadline, timezone)
   if (!lockAt) return false
 
   return now.getTime() >= lockAt.getTime()

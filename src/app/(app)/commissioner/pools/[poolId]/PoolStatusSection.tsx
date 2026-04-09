@@ -17,7 +17,7 @@ export function PoolStatusSection({
   isLocked,
   pendingCount,
 }: PoolStatusSectionProps) {
-  const lockInstant = getTournamentLockInstant(pool.deadline)
+  const lockInstant = getTournamentLockInstant(pool.deadline, pool.timezone)
   const formattedDeadline = lockInstant ? lockInstant.toLocaleString() : 'Deadline unavailable'
 
   return (

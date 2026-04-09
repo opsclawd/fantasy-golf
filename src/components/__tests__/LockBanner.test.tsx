@@ -9,6 +9,7 @@ describe('LockBanner', () => {
       <LockBanner
         isLocked={false}
         deadline="2026-04-02T00:00:00"
+        timezone="America/Denver"
         poolStatus="open"
       />,
     )

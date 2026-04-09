@@ -3,7 +3,7 @@ import type { Entry, MemberRole, Pool } from './supabase/types'
 
 type MemberPool = Pick<
   Pool,
-  'id' | 'name' | 'tournament_name' | 'status' | 'deadline' | 'picks_per_entry'
+  'id' | 'name' | 'tournament_name' | 'status' | 'deadline' | 'picks_per_entry' | 'timezone'
 >
 
 type EntrySummary = {
@@ -68,7 +68,7 @@ export async function getPoolsForMember(
 > {
   const { data: memberRows, error: membersError } = await supabase
     .from('pool_members')
-    .select('pool_id, role, pools(id, name, tournament_name, status, deadline, picks_per_entry)')
+    .select('pool_id, role, pools(id, name, tournament_name, status, deadline, picks_per_entry, timezone)')
     .eq('user_id', userId)
     .order('joined_at', { ascending: false })
 

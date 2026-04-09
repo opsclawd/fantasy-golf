@@ -163,10 +163,14 @@ describe('canTransitionStatus', () => {
 describe('pool update RLS policy', () => {
   it('includes a commissioner-only update policy for pools', () => {
     const migration = readFileSync(
-      join(process.cwd(), 'supabase/migrations/20260401101000_enable_rls_on_public_tables.sql'),
+      join(process.cwd(), 'supabase/migrations/20260408100000_add_pool_write_access.sql'),
       'utf8'
     )
 
+    expect(migration).toContain('grant insert, update on table public.pools to authenticated')
+    expect(migration).toContain('Pool commissioners can create pools')
+    expect(migration).toContain('for insert')
+    expect(migration).toContain('commissioner_id = auth.uid()')
     expect(migration).toContain('Pool commissioners can update pools')
     expect(migration).toContain('for update')
     expect(migration).toContain('commissioner_id = auth.uid()')
