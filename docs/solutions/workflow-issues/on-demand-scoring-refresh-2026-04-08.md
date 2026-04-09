@@ -1,12 +1,13 @@
 ---
 title: On-demand scoring refresh
 date: 2026-04-08
+last_updated: 2026-04-08
 category: docs/solutions/workflow-issues/
 module: scoring
 problem_type: workflow_issue
 component: api
 severity: medium
-tags: [scoring, leaderboard, freshness, background-refresh, cron-alternative]
+tags: [scoring, leaderboard, freshness, background-refresh, cron-alternative, last-refresh-error, url-normalization]
 ---
 
 # On-demand scoring refresh
@@ -23,14 +24,21 @@ The solution introduces a **server-triggered on-demand refresh** that fires when
 
 **Key architectural elements:**
 
-1. **Staleness check at read time** — The leaderboard endpoint (`GET /api/leaderboard/[poolId]`) checks `pool.refreshed_at` before returning. If data is older than 15 minutes, it flags `isRefreshing: true` and triggers a background refresh.
+1. **Staleness check at read time** — The leaderboard endpoint (`GET /api/leaderboard/[poolId]`) checks `pool.refreshed_at` before returning. If data is older than 15 minutes, it triggers a background refresh and marks `isRefreshing: true` only while the response represents an in-flight refresh rather than a prior failure.
 
 2. **Fire-and-forget refresh trigger** — The background refresh is initiated server-side via an internal fetch to `POST /api/scoring/refresh`. This keeps the `CRON_SECRET` bearer token never exposed to the client:
 
 ```ts
-function triggerBackgroundRefresh(poolId: string): void {
+// Preserve any deployment path prefix while normalizing trailing slashes.
+function buildInternalApiUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  fetch(`${baseUrl}/api/scoring/refresh`, {
+  const normalizedBaseUrl = `${baseUrl.replace(/\/+$/, '')}/`
+
+  return new URL(path.replace(/^\//, ''), normalizedBaseUrl).toString()
+}
+
+function triggerBackgroundRefresh(poolId: string): void {
+  fetch(buildInternalApiUrl('/api/scoring/refresh'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -52,7 +60,7 @@ function triggerBackgroundRefresh(poolId: string): void {
 
 4. **Mutex to prevent stampede** — An `isUpdating` flag prevents concurrent refresh attempts for the same pool. If a refresh is already in progress, subsequent triggers receive a 409 and are silently ignored.
 
-5. **Client-side honest display** — `TrustStatusBar` shows "Refreshing scores..." when `isRefreshing: true`, and otherwise displays the actual `refreshed_at` timestamp with no deception about data freshness.
+5. **Client-side honest display** — `TrustStatusBar` shows "Refreshing scores..." when `isRefreshing: true`. If a refresh has already failed and `last_refresh_error` is present, it surfaces that failure instead of leaving the pool stuck in a perpetual refreshing state.
 
 ### Key file changes
 
@@ -70,7 +78,7 @@ function triggerBackgroundRefresh(poolId: string): void {
 - **User trust** — Users always know whether scores are current or being refreshed. No silent staleness.
 - **Decoupled architecture** — Cron jobs and on-demand requests share the same code path, reducing divergence between scheduled and ad-hoc refreshes.
 - **Server-to-server auth** — `CRON_SECRET` is never exposed to the browser, preventing token leakage through client code.
-- **Resilient UX** — If the background refresh fails, the client shows stale data with an honest timestamp rather than an error banner or false "up to date" state.
+- **Resilient UX** — If the background refresh fails, the client shows stale data with an honest timestamp and error state rather than a perpetual refreshing indicator or false "up to date" state.
 
 ## When to Apply
 
@@ -88,15 +96,17 @@ function triggerBackgroundRefresh(poolId: string): void {
 const pool = await getPool(poolId)
 const freshness = classifyFreshness(pool.refreshed_at)
 const isStale = freshness === 'stale' || freshness === 'unknown'
+const shouldTriggerRefresh = isStale && pool.status === 'live'
+const isRefreshing = shouldTriggerRefresh && !pool.last_refresh_error
 
-if (isStale && pool.status === 'live') {
+if (shouldTriggerRefresh) {
   triggerBackgroundRefresh(poolId) // fire-and-forget
 }
 
 return NextResponse.json({
   data: {
     ...leaderboardData,
-    isRefreshing: isStale && pool.status === 'live',
+    isRefreshing,
     refreshedAt: pool.refreshed_at,
     freshness,
   }
@@ -162,5 +172,6 @@ This is documented as a known limitation rather than a bug fix because concurren
 ## Related
 
 - `docs/solutions/database-issues/tournament-scores-overwriting-per-round-data.md` — related scoring schema issue
+- `docs/solutions/workflow-issues/on-demand-scoring-refresh-epic-review-2026-04-08.md` — captures the review gap that led to the failure-state fix
 - `docs/superpowers/plans/2026-04-08-on-demand-scoring-refresh-plan.md` — implementation plan
 - `docs/superpowers/specs/2026-04-08-on-demand-scoring-refresh-design.md` — design spec
