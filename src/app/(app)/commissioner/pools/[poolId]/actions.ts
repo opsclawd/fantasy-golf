@@ -15,6 +15,7 @@ import {
 } from '@/lib/golfer-catalog/queries'
 import { getGolfers } from '@/lib/slash-golf/client'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import {
   canTransitionStatus,
   validateCreatePoolInput,
@@ -31,6 +32,8 @@ import {
   insertAuditEvent,
   insertPool,
   insertPoolMember,
+  recordPoolDeletion,
+  deletePoolById,
 } from '@/lib/pool-queries'
 import { buildTournamentRosterInsert } from '@/lib/tournament-roster/queries'
 import type { PoolFormat, PoolStatus } from '@/lib/supabase/types'
@@ -163,6 +166,56 @@ export async function archivePool(
   })
 
   redirect(`/commissioner/pools/${poolId}`)
+}
+
+export async function deletePool(
+  _prevState: PoolActionState,
+  formData: FormData
+): Promise<PoolActionState> {
+  const poolId = formData.get('poolId') as string
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/sign-in')
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can delete this pool.' }
+  if (pool.status !== 'archived') return { error: 'Only archived pools can be deleted.' }
+
+  const admin = createAdminClient()
+
+  const snapshot = {
+    id: pool.id,
+    commissioner_id: pool.commissioner_id,
+    name: pool.name,
+    tournament_id: pool.tournament_id,
+    tournament_name: pool.tournament_name,
+    year: pool.year,
+    deadline: pool.deadline,
+    timezone: pool.timezone,
+    format: pool.format,
+    picks_per_entry: pool.picks_per_entry,
+    invite_code: pool.invite_code,
+    status: pool.status,
+    created_at: pool.created_at,
+    refreshed_at: pool.refreshed_at,
+    last_refresh_error: pool.last_refresh_error,
+  }
+
+  const tombstone = await recordPoolDeletion(admin, {
+    pool_id: pool.id,
+    commissioner_id: pool.commissioner_id,
+    deleted_by: user.id,
+    status_at_delete: pool.status as PoolStatus,
+    snapshot,
+  })
+  if (tombstone.error) return { error: 'Failed to record pool deletion.' }
+
+  const deletion = await deletePoolById(admin, pool.id)
+  if (deletion.error) return { error: 'Failed to delete pool.' }
+
+  redirect('/commissioner')
 }
 
 export async function reusePool(

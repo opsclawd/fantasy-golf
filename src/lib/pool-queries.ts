@@ -241,3 +241,24 @@ export async function getOpenPoolsPastDeadline(
     return lockAt !== null && lockAt.getTime() <= now.getTime()
   })
 }
+
+export async function recordPoolDeletion(
+  supabase: SupabaseClient,
+  record: Omit<import('./supabase/types').PoolDeletion, 'id' | 'deleted_at'>
+): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('pool_deletions')
+    .upsert(record, { onConflict: 'pool_id' })
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+export async function deletePoolById(
+  supabase: SupabaseClient,
+  poolId: string
+): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('pools').delete().eq('id', poolId)
+  if (error) return { error: error.message }
+  return { error: null }
+}

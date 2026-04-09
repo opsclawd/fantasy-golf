@@ -64,6 +64,37 @@ describe('getAuditEventsForPool', () => {
   })
 })
 
+function createSupabaseForDeletion(result: { error: { message: string } | null }) {
+  const builder: any = {
+    upsert: vi.fn(() => builder),
+    then: (onFulfilled: (value: { error: { message: string } | null }) => unknown, onRejected?: (reason: unknown) => unknown) =>
+      Promise.resolve(result).then(onFulfilled, onRejected),
+  }
+
+  const supabase = {
+    from: vi.fn(() => builder),
+  }
+
+  return { supabase }
+}
+
+describe('recordPoolDeletion', () => {
+  it('writes a tombstone row', async () => {
+    const { recordPoolDeletion } = await import('../pool-queries')
+    const { supabase } = createSupabaseForDeletion({ error: null })
+
+    await expect(
+      recordPoolDeletion(supabase as any, {
+        pool_id: 'pool-1',
+        commissioner_id: 'user-1',
+        deleted_by: 'user-1',
+        status_at_delete: 'archived',
+        snapshot: { id: 'pool-1', name: 'Masters Pool' },
+      })
+    ).resolves.toEqual({ error: null })
+  })
+})
+
 describe('getOpenPoolsPastDeadline', () => {
   function createSupabaseForPools(pools: Array<{ deadline: string; status: string; timezone: string }>) {
     const builder: any = {
