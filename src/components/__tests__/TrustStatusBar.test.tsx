@@ -176,4 +176,33 @@ describe('getTrustStatusBarState', () => {
 
     expect(result.lockMessage).toBe('The picks deadline has passed.')
   })
+
+  it('shows refreshing state when isRefreshing is true', () => {
+    const result = getTrustStatusBarState({
+      isLocked: true,
+      poolStatus: 'live',
+      freshness: 'stale',
+      refreshedAt: '2026-04-08T11:45:00.000Z',
+      lastRefreshError: null,
+      isRefreshing: true,
+    })
+
+    expect(result.freshnessLabel).toBe('Refreshing')
+    expect(result.freshnessMessage).toContain('Refreshing scores...')
+    expect(result.tone).toBe('info')
+  })
+
+  it('prioritizes isRefreshing over refresh error', () => {
+    const result = getTrustStatusBarState({
+      isLocked: true,
+      poolStatus: 'live',
+      freshness: 'stale',
+      refreshedAt: '2026-04-08T11:45:00.000Z',
+      lastRefreshError: 'PGATour API timed out',
+      isRefreshing: true,
+    })
+
+    expect(result.freshnessLabel).toBe('Refreshing')
+    expect(result.freshnessMessage).toContain('Refreshing scores...')
+  })
 })

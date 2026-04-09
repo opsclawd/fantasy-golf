@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import {
-  getActivePool,
-  getOpenPoolsPastDeadline,
-  updatePoolStatus,
-  insertAuditEvent,
-} from '@/lib/pool-queries'
+import { getPoolById } from '@/lib/pool-queries'
 import { refreshScoresForPool } from '@/lib/scoring-refresh'
 
 let isUpdating = false
@@ -22,29 +17,37 @@ export async function POST(request: Request) {
       { status: 409 }
     )
   }
+
   isUpdating = true
+  let poolId: string | undefined
+  try {
+    const body = await request.json()
+    poolId = body.poolId
+  } catch {
+    isUpdating = false
+    return NextResponse.json(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
+      { status: 400 }
+    )
+  }
+
+  if (!poolId) {
+    isUpdating = false
+    return NextResponse.json(
+      { data: null, error: { code: 'BAD_REQUEST', message: 'poolId required' } },
+      { status: 400 }
+    )
+  }
 
   try {
     const supabase = createAdminClient()
 
-    // Step 1: Auto-lock any open pools past their deadline
-    const poolsToLock = await getOpenPoolsPastDeadline(supabase)
-    for (const pool of poolsToLock) {
-      const { error } = await updatePoolStatus(supabase, pool.id, 'live', 'open')
-      if (!error) {
-        await insertAuditEvent(supabase, {
-          pool_id: pool.id,
-          user_id: null,
-          action: 'entryLocked',
-          details: { reason: 'deadline_passed', deadline: pool.deadline },
-        })
-      }
-    }
-
-    // Step 2: Find the active (live) pool and refresh scores
-    const pool = await getActivePool(supabase)
+    const pool = await getPoolById(supabase, poolId)
     if (!pool) {
-      return NextResponse.json({ data: { message: 'No live pool' }, error: null })
+      return NextResponse.json(
+        { data: null, error: { code: 'NOT_FOUND', message: 'Pool not found' } },
+        { status: 404 }
+      )
     }
 
     const result = await refreshScoresForPool(supabase, pool)
@@ -63,7 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: result.data, error: null })
   } catch (error) {
-    console.error('Scoring update failed:', error)
+    console.error('Refresh failed:', error)
     return NextResponse.json(
       {
         data: null,

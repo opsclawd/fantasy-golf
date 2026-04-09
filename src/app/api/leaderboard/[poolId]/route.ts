@@ -5,6 +5,33 @@ import { classifyFreshness } from '@/lib/freshness'
 import type { TournamentScore } from '@/lib/supabase/types'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 
+/**
+ * Fire-and-forget: trigger a background scoring refresh for this pool.
+ * Runs server-side using CRON_SECRET — the client never sees this call.
+ * Errors are silently swallowed (stale data is shown with honest timestamp).
+ */
+// Preserve any deployment path prefix while normalizing trailing slashes.
+function buildInternalApiUrl(path: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const normalizedBaseUrl = `${baseUrl.replace(/\/+$/, '')}/`
+
+  return new URL(path.replace(/^\//, ''), normalizedBaseUrl).toString()
+}
+
+function triggerBackgroundRefresh(poolId: string): void {
+  fetch(buildInternalApiUrl('/api/scoring/refresh'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${process.env.CRON_SECRET}`,
+    },
+    body: JSON.stringify({ poolId }),
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => {
+    // Silently swallow — user sees stale data with honest timestamp
+  })
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ poolId: string }> }
@@ -28,6 +55,14 @@ export async function GET(
 
     const freshness = classifyFreshness(pool.refreshed_at)
 
+    const isStale = freshness === 'stale' || freshness === 'unknown'
+    const shouldTriggerRefresh = isStale && pool.status === 'live'
+    const isRefreshing = shouldTriggerRefresh && !pool.last_refresh_error
+
+    if (shouldTriggerRefresh) {
+      triggerBackgroundRefresh(poolId)
+    }
+
     const { data: entries } = await supabase
       .from('entries')
       .select('*')
@@ -40,6 +75,7 @@ export async function GET(
           completedRounds: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
+          isRefreshing,
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
           golferStatuses: {},
@@ -65,6 +101,7 @@ export async function GET(
           completedRounds: 0,
           refreshedAt: pool.refreshed_at,
           freshness,
+          isRefreshing,
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
           golferStatuses: {},
@@ -113,6 +150,7 @@ export async function GET(
         completedRounds,
         refreshedAt: pool.refreshed_at,
         freshness,
+        isRefreshing,
         poolStatus: pool.status,
         lastRefreshError: pool.last_refresh_error,
         golferStatuses,

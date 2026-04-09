@@ -6,7 +6,6 @@ import { getGolferScorecard, getGolferContribution, getEntryGolferSummaries, get
 function createScore(
   golferId: string,
   roundId: number,
-  roundScore: number | null,
   totalScore: number | null,
   status: GolferStatus = 'active',
   birdies: number = 0
@@ -15,7 +14,6 @@ function createScore(
     golfer_id: golferId,
     tournament_id: 't1',
     round_id: roundId,
-    round_score: roundScore,
     total_score: totalScore,
     total_birdies: birdies,
     status,
@@ -25,7 +23,7 @@ function createScore(
 describe('golfer-detail', () => {
   describe('getGolferScorecard', () => {
     it('returns round-level data for an active golfer', () => {
-      const score = createScore('g1', 3, -2, -4, 'active', 2)
+      const score = createScore('g1', 3, -4, 'active', 2)
       const card = getGolferScorecard(score)
 
       expect(card.golferId).toBe('g1')
@@ -33,29 +31,19 @@ describe('golfer-detail', () => {
       expect(card.totalBirdies).toBe(2)
       expect(card.completedRounds).toBe(3)
       expect(card.totalScore).toBe(-4)
-      expect(card.rounds).toEqual([
-        {
-          round: 3,
-          score: -2,
-          total: -4,
-          position: null,
-          roundStatus: null,
-          teeTime: null,
-        },
-      ])
     })
 
     it('returns zero total for a golfer with no round data', () => {
-      const score = createScore('g1', 0, null, null, 'active')
+      const score = createScore('g1', 0, null, 'active')
       const card = getGolferScorecard(score)
 
       expect(card.completedRounds).toBe(0)
       expect(card.totalScore).toBe(0)
-      expect(card.rounds?.[0].score).toBeNull()
+      expect(card.rounds).toBeUndefined()
     })
 
     it('includes status for withdrawn golfers', () => {
-      const score = createScore('g1', 2, -1, -1, 'withdrawn', 1)
+      const score = createScore('g1', 2, -1, 'withdrawn', 1)
       const card = getGolferScorecard(score)
 
       expect(card.status).toBe('withdrawn')
@@ -67,8 +55,8 @@ describe('golfer-detail', () => {
   describe('getEntryGolferSummaries', () => {
     it('returns a summary for each golfer in the entry', () => {
       const golferScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', 3, -2, -4, 'active', 2)],
-        ['g2', createScore('g2', 3, -1, -1, 'active', 1)],
+        ['g1', createScore('g1', 3, -4, 'active', 2)],
+        ['g2', createScore('g2', 3, -1, 'active', 1)],
       ])
 
       const golfers: GolferLike[] = [
@@ -109,7 +97,7 @@ describe('golfer-detail', () => {
 
     it('handles golfer not in golfers list', () => {
       const golferScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', 1, -1, -1, 'active', 1)],
+        ['g1', createScore('g1', 1, -1, 'active', 1)],
       ])
 
       const summaries = getEntryGolferSummaries(['g1'], golferScores, [])
@@ -121,8 +109,8 @@ describe('golfer-detail', () => {
   describe('getGolferContribution', () => {
     it('marks the golfer when their round matches the best ball', () => {
       const golferScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', 1, -1, -1, 'active', 1)],
-        ['g2', createScore('g2', 1, 0, 0, 'active', 1)],
+        ['g1', createScore('g1', 1, -1, 'active', 1)],
+        ['g2', createScore('g2', 1, 0, 'active', 1)],
       ])
 
       const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
@@ -138,8 +126,8 @@ describe('golfer-detail', () => {
 
     it('marks as contributing when golfer ties for best ball', () => {
       const golferScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', 1, -1, -1, 'active')],
-        ['g2', createScore('g2', 1, -1, -1, 'active')],
+        ['g1', createScore('g1', 1, -1, 'active')],
+        ['g2', createScore('g2', 1, -1, 'active')],
       ])
 
       const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
@@ -149,8 +137,8 @@ describe('golfer-detail', () => {
 
     it('returns non-contributing when golfer is withdrawn', () => {
       const golferScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', 1, -1, -1, 'withdrawn', 1)],
-        ['g2', createScore('g2', 1, 0, 0, 'active', 1)],
+        ['g1', createScore('g1', 1, -1, 'withdrawn', 1)],
+        ['g2', createScore('g2', 1, 0, 'active', 1)],
       ])
 
       const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)
@@ -169,8 +157,8 @@ describe('golfer-detail', () => {
 
     it('counts total contributing rounds', () => {
       const golferScores = new Map<string, TournamentScore>([
-        ['g1', createScore('g1', 1, -1, -3, 'active', 3)],
-        ['g2', createScore('g2', 1, 0, 0, 'active', 2)],
+        ['g1', createScore('g1', 1, -3, 'active', 3)],
+        ['g2', createScore('g2', 1, 0, 'active', 2)],
       ])
 
       const contribution = getGolferContribution('g1', ['g1', 'g2'], golferScores)

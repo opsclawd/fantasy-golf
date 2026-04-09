@@ -22,7 +22,7 @@ describe('classifyFreshness', () => {
 
   it('uses custom threshold when provided', () => {
     const threeMinutesAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString()
-    // Default threshold (10 min) → current; custom 2 min → stale
+    // Default threshold (15 min) → current; custom 2 min → stale
     expect(classifyFreshness(threeMinutesAgo)).toBe('current')
     expect(classifyFreshness(threeMinutesAgo, 2 * 60 * 1000)).toBe('stale')
   })
