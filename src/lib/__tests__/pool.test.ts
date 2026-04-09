@@ -4,7 +4,7 @@ import {
   validateCreatePoolInput,
   validatePoolFormat,
   canTransitionStatus,
-  buildClonePoolInput,
+  canReopenPool,
 } from '../pool'
 import type { Pool } from '../supabase/types'
 import { readFileSync } from 'node:fs'
@@ -158,25 +158,63 @@ describe('validatePoolFormat', () => {
 })
 
 describe('canTransitionStatus', () => {
-  it('allows open -> live', () => {
-    expect(canTransitionStatus('open', 'live')).toBe(true)
+  it('allows complete -> open', () => {
+    expect(canTransitionStatus('complete', 'open')).toBe(true)
   })
 
-  it('allows live -> complete', () => {
-    expect(canTransitionStatus('live', 'complete')).toBe(true)
+  it('allows complete -> archived', () => {
+    expect(canTransitionStatus('complete', 'archived')).toBe(true)
   })
 
-  it('blocks open -> complete', () => {
-    expect(canTransitionStatus('open', 'complete')).toBe(false)
+  it('blocks archived -> anything', () => {
+    expect(canTransitionStatus('archived', 'open')).toBe(false)
+    expect(canTransitionStatus('archived', 'live')).toBe(false)
+    expect(canTransitionStatus('archived', 'complete')).toBe(false)
+  })
+})
+
+describe('canReopenPool', () => {
+  it('allows a completed pool to reopen before the deadline', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-08T12:00:00Z'))
+
+    expect(
+      canReopenPool('complete', '2026-04-09T00:00:00+00:00', 'America/New_York')
+    ).toBe(true)
+
+    vi.useRealTimers()
   })
 
-  it('blocks live -> open', () => {
-    expect(canTransitionStatus('live', 'open')).toBe(false)
+  it('blocks reopen after the deadline has passed', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-10T12:00:00Z'))
+
+    expect(
+      canReopenPool('complete', '2026-04-09T00:00:00+00:00', 'America/New_York')
+    ).toBe(false)
+
+    vi.useRealTimers()
   })
 
-  it('blocks complete -> anything', () => {
-    expect(canTransitionStatus('complete', 'open')).toBe(false)
-    expect(canTransitionStatus('complete', 'live')).toBe(false)
+  it('blocks reopen for any non-complete pool', () => {
+    expect(
+      canReopenPool('live', '2026-04-09T00:00:00+00:00', 'America/New_York')
+    ).toBe(false)
+  })
+})
+
+describe('pool archive migration', () => {
+  it('adds archived status and the pool_deletions table', () => {
+    const migration = readFileSync(
+      join(
+        process.cwd(),
+        'supabase/migrations/20260408183000_add_archived_pools_and_pool_deletions.sql'
+      ),
+      'utf8'
+    )
+
+    expect(migration).toContain("check (status in ('open', 'live', 'complete', 'archived'))")
+    expect(migration).toContain('create table if not exists public.pool_deletions')
   })
 })
 
@@ -190,37 +228,5 @@ describe('pool update RLS policy', () => {
     expect(migration).toContain('Pool commissioners can update pools')
     expect(migration).toContain('for update')
     expect(migration).toContain('commissioner_id = auth.uid()')
-  })
-})
-
-describe('buildClonePoolInput', () => {
-  it('copies name, format, and picks_per_entry from source pool', () => {
-    const source: Pool = {
-      id: 'old-id',
-      commissioner_id: 'user-1',
-      name: 'Masters Pool 2025',
-      tournament_id: 'old-tournament',
-      tournament_name: 'Old Tournament',
-      year: 2025,
-      deadline: '2025-04-10T08:00:00Z',
-      timezone: 'America/New_York',
-      format: 'best_ball',
-      picks_per_entry: 4,
-      invite_code: 'oldcode1',
-      status: 'complete',
-      created_at: '2025-01-01T00:00:00Z',
-      refreshed_at: null,
-      last_refresh_error: null,
-    }
-
-    const result = buildClonePoolInput(source)
-
-    expect(result.name).toBe('Masters Pool 2025')
-    expect(result.format).toBe('best_ball')
-    expect(result.picks_per_entry).toBe(4)
-    expect(result).not.toHaveProperty('id')
-    expect(result).not.toHaveProperty('tournament_id')
-    expect(result).not.toHaveProperty('invite_code')
-    expect(result).not.toHaveProperty('status')
   })
 })

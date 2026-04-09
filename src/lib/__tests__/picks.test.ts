@@ -5,6 +5,7 @@ import {
   calculateRemainingPicks,
   shouldAutoLock,
   getTournamentLockInstant,
+  isCommissionerPoolLocked,
 } from '../picks'
 
 describe('validatePickSubmission', () => {
@@ -303,4 +304,26 @@ describe('getTournamentLockInstant', () => {
 
     expect(lockAt?.toISOString()).toBe('2026-04-09T04:00:00.000Z')
   })
+})
+
+it('returns true for archived pools', () => {
+  expect(
+    isPoolLocked(
+      'archived',
+      '2099-04-10T08:00:00Z',
+      'America/New_York',
+      new Date('2099-04-09T08:00:00Z')
+    )
+  ).toBe(true)
+})
+
+it('treats archived pools as commissioner-locked too', () => {
+  expect(
+    isCommissionerPoolLocked(
+      'archived',
+      '2099-04-10T08:00:00Z',
+      'America/New_York',
+      new Date('2099-04-09T08:00:00Z')
+    )
+  ).toBe(true)
 })
