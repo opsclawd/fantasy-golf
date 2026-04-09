@@ -379,7 +379,6 @@ describe('rapidapi boundary', () => {
         status: 'Not Started',
         currentRound: -1,
         courses: [],
-        players: [],
       }),
     })
 
