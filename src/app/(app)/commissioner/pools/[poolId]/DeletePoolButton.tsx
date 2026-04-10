@@ -12,7 +12,7 @@ function DeleteSubmitButton() {
       disabled={pending}
       className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:outline-none disabled:opacity-50"
     >
-      {pending ? 'Deleting...' : 'Delete Permanently'}
+      {pending ? 'Deleting...' : 'Delete Pool'}
     </button>
   )
 }
@@ -28,7 +28,7 @@ export function DeletePoolButton({ poolId }: { poolId: string }) {
       <form
         action={formAction}
         onSubmit={(event) => {
-          if (!confirm('Permanently delete this archived pool? This cannot be undone.')) {
+          if (!confirm('Delete this pool? This cannot be undone.')) {
             event.preventDefault()
           }
         }}
