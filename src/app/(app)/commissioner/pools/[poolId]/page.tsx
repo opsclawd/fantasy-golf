@@ -119,6 +119,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
           <div className="flex flex-wrap gap-3 max-sm:w-full">
             <StatusChip status={pool.status} />
             {pool.status === 'open' && !isLocked && <StartPoolButton poolId={pool.id} />}
+            {pool.status === 'open' && !isLocked && <DeletePoolButton poolId={pool.id} />}
             {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
             {pool.status === 'complete' && canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone) && <ReopenPoolButton poolId={pool.id} />}
             {pool.status === 'complete' && <ArchivePoolButton poolId={pool.id} />}

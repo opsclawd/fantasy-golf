@@ -177,7 +177,7 @@ export async function deletePool(
   const pool = await getPoolById(supabase, poolId)
   if (!pool) return { error: 'Pool not found.' }
   if (pool.commissioner_id !== user.id) return { error: 'Only the commissioner can delete this pool.' }
-  if (pool.status !== 'archived') return { error: 'Only archived pools can be deleted.' }
+  if (pool.status !== 'open' && pool.status !== 'archived') return { error: 'Only open or archived pools can be deleted.' }
 
   const admin = createAdminClient()
 
