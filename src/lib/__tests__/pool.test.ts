@@ -31,15 +31,22 @@ describe('generateInviteCode', () => {
 
 describe('validateCreatePoolInput', () => {
   it('returns ok for valid input', () => {
-    const result = validateCreatePoolInput({
-      name: 'Masters Pool 2026',
-      tournamentId: 't1',
-      tournamentName: 'The Masters',
-      year: 2026,
-      deadline: '2026-04-10T08:00:00Z',
-      timezone: 'America/New_York',
-    })
-    expect(result).toEqual({ ok: true })
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-04-09T12:00:00Z'))
+
+    try {
+      const result = validateCreatePoolInput({
+        name: 'Masters Pool 2026',
+        tournamentId: 't1',
+        tournamentName: 'The Masters',
+        year: 2026,
+        deadline: '2026-04-11T08:00:00Z',
+        timezone: 'America/New_York',
+      })
+      expect(result).toEqual({ ok: true })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('rejects empty pool name', () => {

@@ -67,13 +67,13 @@ function normalizeTournamentScores(raw: unknown): GolferScore[] | null {
       null
 
     if (!golferId) return []
-
+    
     // Round-based leaderboard shape.
     if ('leaderboardRows' in (raw as Record<string, unknown>) || 'rounds' in scoreRecord || 'currentRoundScore' in scoreRecord) {
       const rounds = Array.isArray(scoreRecord.rounds) ? scoreRecord.rounds : []
 
       const parsedRounds: GolferScoreRound[] = rounds.map((r: Record<string, unknown>) => ({
-        round_id: typeof r.roundId === 'number' ? r.roundId : 0,
+        round_id: parseMongoNumber(r.roundId) ?? 0,
         strokes: parseScoreValue(r.strokes),
         score_to_par: parseScoreValue(r.scoreToPar),
         course_id: typeof r.courseId === 'string' ? r.courseId : null,
@@ -96,8 +96,8 @@ function normalizeTournamentScores(raw: unknown): GolferScore[] | null {
         position: typeof scoreRecord.position === 'string' ? scoreRecord.position : null,
         current_hole: parseHoleValue(scoreRecord.currentHole),
         thru: parseThruValue(scoreRecord.thru),
-        starting_hole: typeof scoreRecord.startingHole === 'number' ? scoreRecord.startingHole : null,
-        current_round: typeof scoreRecord.currentRound === 'number' ? scoreRecord.currentRound : null,
+        starting_hole: parseMongoNumber(scoreRecord.startingHole),
+        current_round: parseMongoNumber(scoreRecord.currentRound),
         current_round_score: parseScoreValue(scoreRecord.currentRoundScore),
         tee_time: typeof scoreRecord.teeTime === 'string' ? scoreRecord.teeTime : null,
         tee_time_timestamp: typeof scoreRecord.teeTimeTimestamp === 'string' ? scoreRecord.teeTimeTimestamp : null,
@@ -122,21 +122,47 @@ function normalizeTournamentScores(raw: unknown): GolferScore[] | null {
 
 function parseScoreValue(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value
-  if (typeof value !== 'string') return null
+  if (typeof value === 'string') {
+    const normalized = value.trim()
+    if (!normalized || normalized === '-') return null
+    const parsed = Number(normalized.replace(/\*$/, ''))
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  if (typeof value === 'object' && value !== null && '$numberInt' in value) {
+    const parsed = parseInt((value as { '$numberInt': string })['$numberInt'], 10)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  if (typeof value === 'object' && value !== null && '$numberDouble' in value) {
+    const parsed = parseFloat((value as { '$numberDouble': string })['$numberDouble'])
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
 
-  const normalized = value.trim()
-  if (!normalized || normalized === '-') return null
-
-  const parsed = Number(normalized.replace(/\*$/, ''))
-  return Number.isFinite(parsed) ? parsed : null
+function parseMongoNumber(value: unknown): number | null {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  if (typeof value === 'object' && value !== null && '$numberInt' in value) {
+    const parsed = parseInt((value as { '$numberInt': string })['$numberInt'], 10)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  if (typeof value === 'object' && value !== null && '$numberDouble' in value) {
+    const parsed = parseFloat((value as { '$numberDouble': string })['$numberDouble'])
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
 }
 
 function parseHoleValue(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value
-  if (typeof value !== 'string') return null
-
-  const parsed = Number(value.replace(/\*$/, ''))
-  return Number.isFinite(parsed) ? parsed : null
+  if (typeof value === 'string') {
+    const parsed = Number(value.replace(/\*$/, ''))
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return parseMongoNumber(value)
 }
 
 function normalizeGolferStatus(value: unknown): 'active' | 'withdrawn' | 'cut' {

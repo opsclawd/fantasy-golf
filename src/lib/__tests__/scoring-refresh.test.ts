@@ -47,20 +47,36 @@ vi.mock('@/lib/scoring-queries', () => ({
 const originalEnv = { ...process.env }
 
 describe('refreshScoresForPool', () => {
+  function createMockSupabase() {
+    return {
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'tournament_score_rounds') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ count: 0, error: null }),
+            }),
+          }
+        }
+
+        throw new Error(`Unexpected table: ${table}`)
+      }),
+      channel: vi.fn().mockReturnValue({ send: vi.fn().mockResolvedValue(undefined) }),
+    } as unknown as never
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.spyOn(console, 'info').mockImplementation(() => undefined)
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     process.env = originalEnv
   })
 
   it('happy path: fetches scores, upserts, broadcasts, returns { data, error: null }', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
-    const send = vi.fn().mockResolvedValue(undefined)
-    const mockSupabase = {
-      channel: vi.fn().mockReturnValue({ send }),
-    } as unknown as never
+    const mockSupabase = createMockSupabase()
 
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
@@ -101,7 +117,7 @@ describe('refreshScoresForPool', () => {
 
   it('external API failure: returns { data: null, error: { code: "FETCH_FAILED" } }', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
-    const mockSupabase = {} as never
+    const mockSupabase = createMockSupabase()
 
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
@@ -121,7 +137,7 @@ describe('refreshScoresForPool', () => {
 
   it('upsert failure: returns { data: null, error: { code: "UPSERT_FAILED" } }', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
-    const mockSupabase = {} as never
+    const mockSupabase = createMockSupabase()
 
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
@@ -145,9 +161,7 @@ describe('refreshScoresForPool', () => {
 
   it('broadcasts to all live pools on the same tournament', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
-    const mockSupabase = {
-      channel: vi.fn().mockReturnValue({ send: vi.fn().mockResolvedValue(undefined) }),
-    } as never
+    const mockSupabase = createMockSupabase()
 
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
