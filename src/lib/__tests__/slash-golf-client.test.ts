@@ -44,4 +44,71 @@ describe('getTournamentScores', () => {
       },
     ])
   })
+
+  it('normalizes live leaderboard rows with round snapshots', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        orgId: '1',
+        year: '2026',
+        tournId: '014',
+        status: 'In Progress',
+        roundId: 2,
+        roundStatus: 'In Progress',
+        timestamp: '2026-04-10T15:23:33.217000',
+        leaderboardRows: [
+          {
+            lastName: 'Rose',
+            firstName: 'Justin',
+            isAmateur: false,
+            playerId: '22405',
+            teeTime: '9:55am',
+            teeTimeTimestamp: '2026-04-10T13:55:00',
+            courseId: '014',
+            status: 'active',
+            currentRound: 2,
+            total: '-1',
+            currentRoundScore: '+1',
+            position: 'T11',
+            totalStrokesFromCompletedRounds: '70',
+            roundComplete: false,
+            rounds: [
+              {
+                scoreToPar: '-2',
+                roundId: 1,
+                courseId: '014',
+                courseName: 'Augusta National Golf Club',
+                strokes: 70,
+              },
+            ],
+            thru: '4',
+            startingHole: 1,
+            currentHole: 5,
+          },
+        ],
+      }),
+    }))
+
+    const scores = await getTournamentScores('014', 2026)
+
+    expect(scores).toHaveLength(1)
+    expect(scores[0]).toMatchObject({
+      golfer_id: '22405',
+      current_round: 2,
+      current_round_score: 1,
+      total_score: -1,
+      position: 'T11',
+      current_hole: 5,
+      thru: 4,
+      rounds: [
+        {
+          round_id: 1,
+          strokes: 70,
+          score_to_par: -2,
+          course_id: '014',
+          course_name: 'Augusta National Golf Club',
+        },
+      ],
+    })
+  })
 })
