@@ -129,10 +129,12 @@ function parseScoreValue(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null
   }
   if (typeof value === 'object' && value !== null && '$numberInt' in value) {
-    return parseInt((value as { '$numberInt': string })['$numberInt'], 10) || null
+    const parsed = parseInt((value as { '$numberInt': string })['$numberInt'], 10)
+    return Number.isFinite(parsed) ? parsed : null
   }
   if (typeof value === 'object' && value !== null && '$numberDouble' in value) {
-    return parseFloat((value as { '$numberDouble': string })['$numberDouble']) || null
+    const parsed = parseFloat((value as { '$numberDouble': string })['$numberDouble'])
+    return Number.isFinite(parsed) ? parsed : null
   }
   return null
 }
@@ -144,10 +146,12 @@ function parseMongoNumber(value: unknown): number | null {
     return Number.isFinite(parsed) ? parsed : null
   }
   if (typeof value === 'object' && value !== null && '$numberInt' in value) {
-    return parseInt((value as { '$numberInt': string })['$numberInt'], 10) || null
+    const parsed = parseInt((value as { '$numberInt': string })['$numberInt'], 10)
+    return Number.isFinite(parsed) ? parsed : null
   }
   if (typeof value === 'object' && value !== null && '$numberDouble' in value) {
-    return parseFloat((value as { '$numberDouble': string })['$numberDouble']) || null
+    const parsed = parseFloat((value as { '$numberDouble': string })['$numberDouble'])
+    return Number.isFinite(parsed) ? parsed : null
   }
   return null
 }

@@ -111,4 +111,58 @@ describe('getTournamentScores', () => {
       ],
     })
   })
+
+  it('preserves zero values from Mongo numeric wrappers', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        orgId: '1',
+        year: '2026',
+        tournId: '014',
+        status: 'In Progress',
+        roundId: 2,
+        roundStatus: 'In Progress',
+        timestamp: '2026-04-10T15:23:33.217000',
+        leaderboardRows: [
+          {
+            lastName: 'Player',
+            firstName: 'Even',
+            isAmateur: false,
+            playerId: '99999',
+            courseId: '014',
+            status: 'active',
+            currentRound: 2,
+            total: { $numberInt: '0' },
+            currentRoundScore: { $numberInt: '0' },
+            position: 'T1',
+            totalStrokesFromCompletedRounds: '72',
+            roundComplete: false,
+            rounds: [
+              {
+                scoreToPar: { $numberInt: '0' },
+                roundId: 1,
+                courseId: '014',
+                courseName: 'Augusta National Golf Club',
+                strokes: { $numberInt: '72' },
+              },
+            ],
+            thru: '9',
+            startingHole: 1,
+            currentHole: 10,
+          },
+        ],
+      }),
+    }))
+
+    const scores = await getTournamentScores('014', 2026)
+
+    expect(scores).toHaveLength(1)
+    const golfer = scores[0]!
+    expect(golfer.total_score).toBe(0)
+    expect(golfer.current_round_score).toBe(0)
+    expect(golfer.rounds!).toHaveLength(1)
+    const round = golfer.rounds![0]!
+    expect(round.score_to_par).toBe(0)
+    expect(round.strokes).toBe(72)
+  })
 })
