@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { deriveCompletedRounds, rankEntries } from '@/lib/scoring'
 import { classifyFreshness } from '@/lib/freshness'
 import type { TournamentScore } from '@/lib/supabase/types'
@@ -39,7 +38,6 @@ export async function GET(
 ) {
   const { poolId } = await params
   const supabase = await createClient()
-  const admin = createAdminClient()
 
   try {
     const { data: pool, error: poolError } = await supabase
@@ -65,7 +63,7 @@ export async function GET(
       triggerBackgroundRefresh(poolId)
     }
 
-    const { data: entries } = await admin
+    const { data: entries } = await supabase
       .from('entries')
       .select('*')
       .eq('pool_id', poolId)
