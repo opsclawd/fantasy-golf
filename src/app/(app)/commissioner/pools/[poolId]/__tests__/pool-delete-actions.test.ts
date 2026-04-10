@@ -110,7 +110,7 @@ describe('deletePool', () => {
     formData.set('poolId', 'pool-1')
 
     await expect(deletePool(null, formData)).resolves.toEqual({
-      error: 'Only archived pools can be deleted.',
+      error: 'Only open or archived pools can be deleted.',
     })
 
     expect(deletePoolById).not.toHaveBeenCalled()

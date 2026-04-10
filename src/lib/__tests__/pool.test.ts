@@ -36,7 +36,7 @@ describe('validateCreatePoolInput', () => {
       tournamentId: 't1',
       tournamentName: 'The Masters',
       year: 2026,
-      deadline: '2026-04-10T08:00:00Z',
+      deadline: '2026-04-11T08:00:00Z',
       timezone: 'America/New_York',
     })
     expect(result).toEqual({ ok: true })
