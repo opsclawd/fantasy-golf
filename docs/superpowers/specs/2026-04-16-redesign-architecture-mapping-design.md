@@ -10,40 +10,53 @@
 
 ## 1. Problem Statement
 
-Fantasy Golf needs a visual redesign toward a sharper, more premium motorsport-inspired look using dark green and sand. The current codebase has a partial design system (`uiStyles.ts` + config-driven components like `StatusChip`, `FreshnessChip`, `DataAlert`) but also has significant inconsistencies: ad-hoc button colors, mixed `gray`/`slate` usage, pages using `bg-gray-50` while others use `pageShellClasses()` gradient, and no shared button or input primitives.
+Fantasy Golf needs a visual redesign toward a sharper, more premium motorsport-inspired look using deepened green and sand. The current codebase has a partial design system (`uiStyles.ts` + config-driven components like `StatusChip`, `FreshnessChip`, `DataAlert`) but also has significant inconsistencies: ad-hoc button colors, mixed `gray`/`slate` usage, pages using `bg-gray-50` while others use `pageShellClasses()` gradient, and no shared button or input primitives.
 
-This spec defines the technical bridge: how the approved visual direction maps to the current codebase's architecture, what tokens, primitives, and shell patterns we need, and exactly which files to touch.
+This spec defines the technical bridge: how the approved visual direction maps to the current codebase's architecture, what tokens, functions, and patterns we need, and exactly which files to touch — per page priority order confirmed by Product Planner.
 
 ---
 
-## 2. Current State Assessment
+## 2. Confirmed Decisions (from OPS-15)
 
-### 2.1 What Works Well (Preserve These)
+The Product Planner has resolved all clarification questions:
+
+| Question | Answer | Impact on Spec |
+|---|---|---|
+| Visual direction | **Option A: Refine Existing** — deepen emerald/sand palette, not dark mode. Specific tokens: `green-900` (#14532d), `green-700` (#15803d), `green-100` (#dcfce7), `sand-100` (#fef3c7), `sand-50` (#fffbeb), `stone-900` (#1c1917), `stone-600` (#57534e), `red-600` (#dc2626) | Token plan uses `green-*`, `sand-*`, `stone-*`, `red-600` directly |
+| Page priority | Phase 1 (Critical): Participant Picks (OPS-21). Phase 2 (High): Spectator (OPS-23), Pools list (OPS-24), Join pool (OPS-25). Phase 3 (Medium): Commissioner (OPS-26), Pool detail (OPS-27), Global styles (OPS-29). Phase 4 (Low): Auth (OPS-28) | Rollout order starts with Picks, not Spectator |
+| Component strategy | **Option C: Hybrid** — keep `uiStyles.ts` function pattern, back with new token values. Extend `panelClasses()` for green left-border accent. StatusChip: keep icon + color pattern. LockBanner: `green-100` for open, `red-600` for locked | No `src/components/ui/` component library. Extend `uiStyles.ts` instead |
+| Breakpoints | Keep existing `sm:`, `md:`, `lg:` Tailwind defaults | No breakpoint changes |
+
+---
+
+## 3. Current State Assessment
+
+### 3.1 What Works Well (Preserve These)
 
 | Pattern | File | Usage |
 |---|---|---|
-| `panelClasses()` | `uiStyles.ts` | ~20+ consumers — frosted-glass card aesthetic with `rounded-3xl border border-white/60 bg-white/90 backdrop-blur` |
+| `panelClasses()` | `uiStyles.ts` | ~20+ consumers — frosted-glass card aesthetic |
 | `metricCardClasses()` | `uiStyles.ts` | 4-col metric grid — `panelClasses() + min-h-[8rem] p-5` |
 | `pageShellClasses()` | `uiStyles.ts` | Spectator page gradient background |
-| `sectionHeadingClasses()` | `uiStyles.ts` | Eyebrow label pattern — `text-[0.7rem] font-semibold uppercase tracking-[0.18em]` |
+| `sectionHeadingClasses()` | `uiStyles.ts` | Eyebrow label pattern |
 | `scrollRegionFocusClasses()` | `uiStyles.ts` | Accessible scrollable focus rings |
-| Config-driven chip system | `StatusChip.tsx`, `FreshnessChip.tsx` | `STATUS_CONFIG`/`FRESHNESS_CONFIG` pattern — maps state to token classes |
+| Config-driven chip system | `StatusChip.tsx`, `FreshnessChip.tsx` | `STATUS_CONFIG`/`FRESHNESS_CONFIG` — maps state to token classes |
 | Tone-based alert system | `TrustStatusBar.tsx`, `DataAlert.tsx` | `toneClasses()`/`VARIANT_CONFIG` — semantic tone routing |
 | Accessibility patterns | All status components | `role="status"`, `aria-live`, `sr-only`, 44px touch targets |
 
-### 2.2 What Needs Fixing (Inconsistencies)
+### 3.2 What Needs Fixing (Inconsistencies)
 
 | Problem | Detail | Files Affected |
 |---|---|---|
-| **No shared button component** | Buttons range from `bg-blue-600` (auth), `bg-green-600` (start pool), `bg-red-600` (close/delete), `bg-slate-600` (archive), `bg-slate-950` (newer actions), `bg-emerald-600` (catalog sync) | 8+ action files |
-| **No shared input component** | Inputs range from `rounded-2xl border border-slate-200 px-4 py-3` (picks) to `rounded-xl border border-slate-200 px-3 py-2.5` (search) to `p-2 border rounded` (auth) | 5+ form files |
-| **Mixed color namespaces** | `gray` used in `GolferContribution`, `GolferScorecard`, `ScoreDisplay`, app layout (`bg-gray-50`) while rest of codebase uses `slate` | 6+ files |
-| **App layout lacks pageShellClasses** | `(app)/layout.tsx` uses `bg-gray-50` (flat, cold) while spectator uses the warm gradient. Visual disconnect between authenticated and public pages. | `src/app/(app)/layout.tsx` |
-| **Auth/Join pages use completely different styling** | `bg-white rounded-lg shadow` card pattern, `bg-blue-600` buttons — no design system tokens at all | `src/app/(auth)/`, `src/app/join/` |
-| **PoolCard doesn't use panelClasses** | `PoolCard.tsx` uses `bg-white rounded-lg shadow` — inconsistent with every other card | `PoolCard.tsx` |
-| **ScoreDisplay uses different color names** | `text-green-600`/`text-red-600`/`text-gray-600` instead of emerald/rose/slate | `score-display.tsx` |
+| **No shared button pattern** | Buttons range from `bg-blue-600` (auth), `bg-green-600` (start pool), `bg-red-600` (close/delete), `bg-slate-600` (archive), `bg-slate-950` (newer actions), `bg-emerald-600` (catalog sync) | 8+ action files |
+| **Mixed color namespaces** | `gray` used in `GolferContribution`, `GolferScorecard`, `ScoreDisplay`, app layout (`bg-gray-50`) while rest uses `slate`. Both need migration to `stone` per confirmed direction. | 6+ files |
+| **App layout lacks `pageShellClasses`** | `(app)/layout.tsx` uses `bg-gray-50` (flat, cold) while spectator uses warm gradient. Visual disconnect. | `src/app/(app)/layout.tsx` |
+| **Auth/Join pages use completely different styling** | `bg-white rounded-lg shadow` card pattern, `bg-blue-600` buttons — no design system tokens | `src/app/(auth)/`, `src/app/join/` |
+| **PoolCard doesn't use `panelClasses`** | Uses `bg-white rounded-lg shadow` — inconsistent with every other card | `PoolCard.tsx` |
+| **ScoreDisplay uses different color names** | `text-green-600`/`text-red-600`/`text-gray-600` instead of consistent palette | `score-display.tsx` |
+| **No accent panel variant** | `panelClasses()` has no green left-border accent for open/pool-open states | `uiStyles.ts` |
 
-### 2.3 Current Token Inventory
+### 3.3 Current Token Inventory
 
 **Color tokens currently used (Tailwind utility classes):**
 
@@ -54,152 +67,157 @@ This spec defines the technical bridge: how the approved visual direction maps t
 | Neutral / Surface | `slate-50` through `slate-950` | Text, backgrounds, borders |
 | Warning / Stale | `amber-50` through `amber-950` | Pending, stale data |
 | Error / Danger | `red-50` through `red-950`, `rose-50` through `rose-200` | Errors, destructive actions |
-| Legacy / Inconsistent | `gray-50` through `gray-900`, `blue-600`, `green-600` | Ad-hoc, should migrate |
-
-**Typography tokens:**
-
-| Use | Classes | Notes |
-|---|---|---|
-| Eyebrow label | `text-[0.7rem] font-semibold uppercase tracking-[0.18em]` | `sectionHeadingClasses()` |
-| Page title | `text-3xl font-semibold tracking-tight sm:text-4xl` | Inline, not tokenized |
-| Card heading | `text-lg font-semibold`, `text-xl font-semibold` | Inline, 2 sizes |
-| Body text | `text-sm text-slate-600`, `text-base font-semibold` | Inline |
-| Table header | `text-xs font-semibold uppercase tracking-[0.16em] text-slate-500` | Inline, similar to eyebrow |
-| Score value | `font-mono text-sm font-semibold` | Inline |
-| Chip label | `text-xs font-semibold uppercase tracking-[0.16em]` | Inline |
-
-**Spacing tokens:**
-
-| Use | Classes | Notes |
-|---|---|---|
-| Section gap | `space-y-4`, `space-y-5`, `space-y-6` | Not tokenized |
-| Panel inner | `p-4`, `p-5`, `p-6` | Inconsistent |
-| Header padding | `px-4 py-4 sm:px-5` to `px-5 py-5 sm:px-7 sm:py-6` | 4 variants |
-| Container | `max-w-3xl`, `max-w-5xl`, `max-w-7xl` | 3 widths, not in design sys |
+| Legacy / Inconsistent | `gray-50` through `gray-900`, `blue-600`, `green-600` | Ad-hoc, must migrate |
 
 ---
 
-## 3. Design Direction
+## 4. Design Direction
 
-### 3.1 Visual Direction Assumptions
+### 4.1 Visual Direction: Refine and Deepen (Option A)
 
-Based on the parent issue (OPS-14) and existing codebase analysis, the redesign direction is:
+Per Product Planner confirmation, we refine the existing light base with deepened green and sand tones — not a dark mode shift.
 
-- **Preserve the light base** with warm sand-to-green gradient, but deepen it for more premium feel
-- **Strengthen emerald as the primary brand color** — the current `emerald` usage is correct but under-utilized in buttons and interactive elements
-- **Introduce darker contrast elements** — darker navigation, buttons, and key UI anchors that create a motorsport premium feel
-- **Unify `gray` → `slate`** across the entire codebase
-- **Replace ad-hoc `blue-600`/`green-600` buttons** with a consistent button system using brand tokens
-- **Keep frosted-glass panel aesthetic** — `panelClasses()` is the right pattern, it just needs deeper refinements
+**Confirmed palette anchors:**
 
-If Product Planner's design brief (OPS-15) diverges from these assumptions, this spec will need revision at the DESIGN_REVIEW gate.
+| Role | Token | Value | Usage |
+|---|---|---|---|
+| Active / Open | `green-900` | `#14532d` | Deep green for headings, accent elements |
+| Active / Open (medium) | `green-700` | `#15803d` | Active buttons, links, interactive green |
+| Active / Open (light) | `green-100` | `#dcfce7` | Open state backgrounds, accent panels (open LockBanner) |
+| Success / Warm light | `sand-100` | `#fef3c7` | Success backgrounds, warm highlights |
+| Success / Warm lightest | `sand-50` | `#fffbeb` | Page shell gradient warm component |
+| Text primary | `stone-900` | `#1c1917` | Body text, headings |
+| Text secondary | `stone-600` | `#57534e` | Muted text, labels |
+| Locked / Error | `red-600` | `#dc2626` | Locked states, destructive actions, errors |
 
-### 3.2 Approach Selection
+**Full palette extension in Tailwind config:**
+
+We add `sand` as a custom color (not a standard Tailwind scale) and map existing `emerald`/`slate`/`sky`/`amber`/`red` to semantic aliases. The key principle: **use Tailwind's built-in green/stone/sky/amber/red scales directly** where they match the confirmed palette, and add `sand` as the only custom color scale.
+
+### 4.2 Approach Selection
 
 I considered three approaches:
 
-#### Approach A: In-place Token Migration (Minimal Disruption)
+#### Approach A: Token-Only Migration (Minimal Change)
 
-Add CSS custom properties to `globals.css` and `tailwind.config.js`, then gradually migrate existing utility classes to reference these tokens. Keep `uiStyles.ts` function pattern.
+Add CSS custom properties and Tailwind theme aliases, then gradually migrate utility classes. Keep `uiStyles.ts` as-is.
 
-**Pros:** Lowest risk, incremental, no component rewrites.
-**Cons:** Still stuck with function-based token system, hard to theme later, doesn't solve the button/input component gap.
+**Pros:** Lowest risk, no new files.
+**Cons:** Doesn't solve the button inconsistency problem. No accent panel variant. Still stuck with ad-hoc `bg-blue-600`, `bg-slate-950`, `bg-green-600` buttons.
 
-#### Approach B: Design Token Layer + Component Library (Recommended)
+#### Approach B: Design Token Layer + Component Library (Previous Spec)
 
-1. Define a Tailwind theme extension with semantic color tokens in `tailwind.config.js`
-2. Add CSS custom properties in `globals.css` for values that need runtime access
-3. Create shared UI primitives (`Button`, `Input`, `Card`) in `src/components/ui/`
-4. Refactor `uiStyles.ts` to reference theme tokens instead of hardcoded classes
-5. Migrate pages one-by-one to use new primitives
+Create `src/components/ui/` with Button, Card, Input, Chip, etc. Eventually remove `uiStyles.ts`.
 
-**Pros:** Solves the root problem (no buttons/inputs), establishes scalable pattern, allows incremental rollout, all future work uses primitives.
-**Cons:** More upfront work than Approach A, touches more files.
+**Pros:** Clean component model.
+**Cons:** Product Planner explicitly confirmed Option C (Hybrid: keep `uiStyles.ts` function pattern). This approach contradicts the confirmed direction.
 
-#### Approach C: Full CSS-in-JS Migration
+#### Approach C: Hybrid — Extend uiStyles.ts + Add Button Primitive (Recommended, Confirmed)
 
-Replace Tailwind with a CSS-in-JS system (e.g., styled-components, vanilla-extract).
+1. Add `sand` color to `tailwind.config.js` theme extension
+2. Add semantic color aliases to `tailwind.config.js` (`brand`, `surface`, `danger`, `warn`, `info`)
+3. Extend `uiStyles.ts` with new functions: `accentPanelClasses()`, `buttonClasses()`, `inputClasses()` — backed by new token values
+4. Add `Button` as the ONLY new component primitive (the button inconsistency is severe enough to warrant a component)
+5. Keep `StatusChip`/`FreshnessChip` config-driven pattern, update token values
+6. Keep `LockBanner` pattern, update to `green-100` for open / `red-600` for locked
+7. Migrate `gray` → `stone`, `emerald` → `green` (where representing active/open meaning), `sky` → stays as `sky` or maps to `info` semantic alias
+8. No `src/components/ui/` directory for Card/Input/Chip — these stay as `uiStyles.ts` function calls
 
-**Pros:** Maximum flexibility.
-**Cons:** Massive rewrite, violates existing conventions, high risk, YAGNI.
+**Pros:** Matches confirmed Product Planner direction. Solves the worst inconsistency (buttons). Extends existing proven pattern (`uiStyles.ts`). Incremental and testable.
+**Cons:** Buttons get a component while panels/inputs get functions — slight inconsistency. Acceptable tradeoff.
 
-**Selected: Approach B.** It addresses the core inconsistency problems (buttons, inputs, color namespace) while respecting the existing Tailwind + utility-class convention the team uses. It's incremental and testable.
+**Selected: Approach C.** This is the confirmed direction from Product Planner.
 
 ---
 
-## 4. Token Plan
+## 5. Token Plan
 
-### 4.1 Color Tokens
+### 5.1 Color Tokens
 
-Add semantic color tokens to `tailwind.config.js` under `theme.extend.colors`:
+Add to `tailwind.config.js` theme extension:
 
 ```js
 // tailwind.config.js — theme.extend.colors
 colors: {
-  brand: {
-    50:  '#ecfdf5',  // emerald-50
-    100: '#d1fae5',  // emerald-100
-    200: '#a7f3d0',  // emerald-200
-    300: '#6ee7b7',  // emerald-300
-    400: '#34d399',  // emerald-400
-    500: '#10b981',  // emerald-500
-    600: '#059669',  // emerald-600
-    700: '#047857',  // emerald-700
-    800: '#065f46',  // emerald-800
-    900: '#064e3b',  // emerald-900
-    950: '#022c22',  // emerald-950
-  },
   sand: {
-    50:  '#fdf8ef',  // custom warm off-white
-    100: '#f6f1e7',  // from current gradient
-    200: '#ede5d0',  // warm sand light
-    300: '#ddd0b0',  // warm sand mid
-    400: '#c4ad82',  // warm sand
-    500: '#a8904e',  // warm sand accent
-    600: '#8b7535',  // warm sand dark
-    700: '#6e5a28',  // warm sand deep
-    800: '#57471f',  // warm sand darkest
-    900: '#3f320f',  // near-black sand
-    950: '#2a1f08',  // black sand
+    50:  '#fffbeb',   // warm lightest
+    100: '#fef3c7',   // warm light
+    200: '#fde68a',   // warm medium
+    300: '#fcd34d',   // warm accent
+    400: '#fbbf24',   // warm bold
+    500: '#f59e0b',   // warm strong
+    600: '#d97706',   // warm dark
+    700: '#b45309',   // warm deep
+    800: '#92400e',   // warm darkest
+    900: '#78350f',   // near-black warm
+    950: '#451a03',   // black warm
+  },
+  brand: {
+    DEFAULT: '#15803d',     // green-700 — primary interactive green
+    50:  '#f0fdf4',         // green-50
+    100: '#dcfce7',         // green-100 — open state bg (confirmed)
+    200: '#bbf7d0',         // green-200
+    300: '#86efac',         // green-300
+    400: '#4ade80',         // green-400
+    500: '#22c55e',         // green-500
+    600: '#16a34a',         // green-600
+    700: '#15803d',         // green-700 — confirmed accent
+    800: '#166534',         // green-800
+    900: '#14532d',         // green-900 — confirmed deep
+    950: '#052e16',         // green-950
   },
   surface: {
     DEFAULT: '#ffffff',
-    50:  '#f8fafc',  // slate-50
-    100: '#f1f5f9',  // slate-100
-    200: '#e2e8f0',  // slate-200
-    800: '#1e293b',  // slate-800
-    900: '#0f172a',  // slate-900
-    950: '#020617',  // slate-950
+    50:  '#fafaf9',          // stone-50
+    100: '#f5f5f4',          // stone-100
+    200: '#e7e5e4',          // stone-200
+    300: '#d6d3d1',          // stone-300
+    400: '#a8a29e',          // stone-400
+    500: '#78716c',          // stone-500
+    600: '#57534e',          // stone-600 — confirmed secondary text
+    700: '#44403c',          // stone-700
+    800: '#292524',          // stone-800
+    900: '#1c1917',          // stone-900 — confirmed primary text
+    950: '#0c0a09',          // stone-950
   },
   danger: {
-    50:  '#fef2f2',  // red-50
-    100: '#fee2e2',  // red-100
-    200: '#fecaca',  // red-200
-    600: '#dc2626',  // red-600
-    700: '#b91c1c',  // red-700
-    800: '#991b1b',  // red-800
-    900: '#7f1d1d',  // red-900
-    950: '#450a0a',  // red-950
+    50:  '#fef2f2',          // red-50
+    100: '#fee2e2',          // red-100
+    200: '#fecaca',          // red-200
+    300: '#fca5a5',          // red-300
+    400: '#f87171',          // red-400
+    500: '#ef4444',          // red-500
+    600: '#dc2626',          // red-600 — confirmed locked/error
+    700: '#b91c1c',          // red-700
+    800: '#991b1b',          // red-800
+    900: '#7f1d1d',          // red-900
+    950: '#450a0a',          // red-950
   },
   warn: {
-    50:  '#fffbeb',  // amber-50
-    100: '#fef3c7',  // amber-100
-    200: '#fde68a',  // amber-200
-    600: '#d97706',  // amber-600
-    700: '#b45309',  // amber-700
-    800: '#92400e',  // amber-800
-    900: '#78350f',  // amber-900
-    950: '#451a03',  // amber-950
+    50:  '#fffbeb',          // amber-50 — shared with sand-50
+    100: '#fef3c7',          // amber-100 — shared with sand-100
+    200: '#fde68a',          // amber-200
+    300: '#fcd34d',          // amber-300
+    400: '#fbbf24',          // amber-400
+    500: '#f59e0b',          // amber-500
+    600: '#d97706',          // amber-600
+    700: '#b45309',          // amber-700
+    800: '#92400e',          // amber-800
+    900: '#78350f',          // amber-900
+    950: '#451a03',          // amber-950
   },
   info: {
-    50:  '#f0f9ff',  // sky-50
-    100: '#e0f2fe',  // sky-100
-    200: '#bae6fd',  // sky-200
-    600: '#0284c7',  // sky-600 → keep but rename as semantic
-    700: '#0369a1',  // sky-700
-    800: '#075985',  // sky-800
-    900: '#0c4a6e',  // sky-900
-    950: '#082f49',  // sky-950
+    50:  '#f0f9ff',          // sky-50
+    100: '#e0f2fe',          // sky-100
+    200: '#bae6fd',          // sky-200
+    300: '#7dd3fc',          // sky-300
+    400: '#38bdf8',          // sky-400
+    500: '#0ea5e9',          // sky-500
+    600: '#0284c7',          // sky-600
+    700: '#0369a1',          // sky-700
+    800: '#075985',          // sky-800
+    900: '#0c4a6e',          // sky-900
+    950: '#082f49',          // sky-950
   },
 }
 ```
@@ -208,105 +226,249 @@ colors: {
 
 ```css
 :root {
-  /* Brand */
-  --color-brand: 5 150 105;       /* emerald-600 */
-  --color-brand-hover: 4 120 87;   /* emerald-700 */
+  /* Brand — maps to green scale */
+  --color-brand: 21 128 61;          /* green-700 */
+  --color-brand-hover: 22 101 52;    /* green-800 */
   --color-brand-contrast: 255 255 255;
-  
-  /* Sand / Surface */
-  --color-sand: 246 241 231;       /* warm background */
-  --color-sand-accent: 196 173 130; /* sand-400 accent */
-  
-  /* Semantic surfaces */
+  --color-brand-light: 220 252 231;   /* green-100 */
+
+  /* Sand / Warm */
+  --color-sand: 254 243 199;         /* sand-100 */
+  --color-sand-light: 255 251 235;    /* sand-50 */
+
+  /* Surface — maps to stone scale */
   --color-surface: 255 255 255;
-  --color-surface-elevated: 248 250 252;
-  --color-on-surface: 15 23 42;    /* slate-900 */
-  --color-on-surface-variant: 71 85 105; /* slate-600 */
-  
+  --color-on-surface: 28 25 23;       /* stone-900 */
+  --color-on-surface-variant: 87 83 78; /* stone-600 */
+
   /* Status */
-  --color-danger: 220 38 38;
-  --color-warn: 217 119 6;
-  --color-info: 2 132 199;
-  --color-success: 5 150 105;
-  
-  /* Shell gradient (existing, codified) */
+  --color-danger: 220 38 38;          /* red-600 */
+  --color-warn: 217 119 6;           /* amber-600 */
+  --color-info: 2 132 199;           /* sky-600 */
+
+  /* Shell gradient (preserved from current) */
   --gradient-shell: radial-gradient(circle at top, rgba(234,179,8,0.16), transparent 28%), linear-gradient(180deg, #f6f1e7 0%, #eef3ea 48%, #e7efe8 100%);
-  
-  /* Existing */
-  --fg-shell: 15 23 42;
-  --ring-brand: 14 116 144;
+
+  /* Existing brand ring (preserved) */
+  --ring-brand: 21 128 61;           /* green-700, was teal-700 */
 }
 ```
 
-### 4.2 Typography Tokens
+**Migration mapping (applied per-phase, not wholesale):**
 
-Add type scale to `tailwind.config.js`:
+| Current | Target | When |
+|---|---|---|
+| `emerald-*` (meaning active/open) | `brand-*` or `green-*` | Per-file during phase |
+| `emerald-*` (meaning brand/identity) | `brand-*` | Per-file during phase |
+| `slate-*` (meaning neutral/surface) | `surface-*` or `stone-*` | Per-file during phase |
+| `gray-*` | `surface-*` or `stone-*` | Mandatory in every touched file |
+| `sky-*` (meaning info/selection) | `info-*` | Per-file during phase |
+| `amber-*` (meaning warn/stale) | `warn-*` | Per-file during phase |
+| `red-*` (meaning error/locked) | `danger-*` | Per-file during phase |
+| `blue-*` (button backgrounds) | `brand-*` via `<Button variant="primary">` | When migrating each file |
+
+### 5.2 Typography Tokens
+
+Add to `tailwind.config.js`:
 
 ```js
 // tailwind.config.js — theme.extend.fontSize
 fontSize: {
   'eyebrow': ['0.7rem', { lineHeight: '1rem', letterSpacing: '0.18em', fontWeight: '600' }],
   'label': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.16em', fontWeight: '600' }],
-  'body': ['0.875rem', { lineHeight: '1.5rem' }],       // text-sm
-  'body-lg': ['1rem', { lineHeight: '1.75rem' }],        // text-base
+  'body': ['0.875rem', { lineHeight: '1.5rem' }],
+  'body-lg': ['1rem', { lineHeight: '1.75rem' }],
   'heading-lg': ['1.875rem', { lineHeight: '2.25rem', letterSpacing: '-0.025em', fontWeight: '600' }],
   'heading-xl': ['2.25rem', { lineHeight: '2.5rem', letterSpacing: '-0.025em', fontWeight: '600' }],
 },
 ```
 
-This codifies the existing informal type scale without breaking current usage.
+This codifies existing informal scales without breaking current usage.
 
-### 4.3 Spacing Tokens
-
-Add spacing scale to `tailwind.config.js`:
+### 5.3 Spacing Tokens
 
 ```js
 // tailwind.config.js — theme.extend.spacing (additions)
 spacing: {
-  'panel-px': '1.25rem',   // 20px — consistent panel horizontal padding (currently p-4 or p-5)
-  'panel-py': '1.25rem',   // 20px — consistent panel vertical padding
-  'shell-px': '1.25rem',   // 20px — shell horizontal (currently px-4 or px-5)
-  'shell-py': '2rem',      // 32px — shell vertical (currently py-8)
+  'panel-px': '1.25rem',
+  'panel-py': '1.25rem',
+  'shell-px': '1.25rem',
+  'shell-py': '2rem',
 },
 ```
 
-### 4.4 Shadow Tokens
+### 5.4 Shadow Tokens
 
 ```js
 // tailwind.config.js — theme.extend.boxShadow
 boxShadow: {
-  'panel': '0 18px 60px -24px rgba(15,23,42,0.35)',
-  'panel-hover': '0 24px 70px -20px rgba(15,23,42,0.40)',
-  'elevated': '0 32px 120px -40px rgba(15,23,42,0.55)',
-  'subtle': '0 1px 3px 0 rgba(15,23,42,0.08)',
+  'panel': '0 18px 60px -24px rgba(28,25,23,0.35)',
+  'panel-hover': '0 24px 70px -20px rgba(28,25,23,0.40)',
+  'elevated': '0 32px 120px -40px rgba(28,25,23,0.55)',
+  'subtle': '0 1px 3px 0 rgba(28,25,23,0.08)',
 },
 ```
 
-This replaces the current `shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)]` with `shadow-panel`.
+Note: Shadow rgba uses `stone-900` value (28,25,23) instead of the old `slate-900` (15,23,42).
 
-### 4.5 Border Radius Tokens
+### 5.5 Border Radius Tokens
 
 ```js
 // tailwind.config.js — theme.extend.borderRadius (additions)
 borderRadius: {
-  'card': '1.5rem',      // 24px — matches current rounded-3xl for panels
-  'input': '1rem',       // 16px — consistent input radius
-  'chip': '9999px',      // Tailwind's rounded-full
-  'button': '1rem',      // 16px — consistent button radius
+  'card': '1.5rem',
+  'input': '1rem',
+  'chip': '9999px',
+  'button': '1rem',
 },
 ```
 
 ---
 
-## 5. Shared Primitives
+## 6. uiStyles.ts Extensions
 
-### 5.1 New Component Directory
+### 6.1 New Function: `accentPanelClasses()`
 
-Create `src/components/ui/` for shared primitives. These are not a full component library — they are the minimum viable primitives needed to eliminate the worst inconsistencies.
+Adds a green left-border accent variant for open/active pool states:
 
-### 5.2 Primitive: `Button`
+```ts
+export function accentPanelClasses() {
+  return [
+    panelClasses(),
+    'border-l-4',
+    'border-l-brand-100',
+  ].join(' ')
+}
+```
 
-**File:** `src/components/ui/Button.tsx`
+**Usage:** LockBanner (open state), TrustStatusBar (info tone), any panel that needs an "active/open" visual distinction.
+
+### 6.2 New Function: `dangerPanelClasses()`
+
+Adds a red left-border accent variant for locked/error states:
+
+```ts
+export function dangerPanelClasses() {
+  return [
+    panelClasses(),
+    'border-l-4',
+    'border-l-danger-600',
+  ].join(' ')
+}
+```
+
+**Usage:** LockBanner (locked state), DataAlert (error variant), TrustStatusBar (error tone).
+
+### 6.3 New Function: `warnPanelClasses()`
+
+Adds an amber left-border accent variant for stale/warning states:
+
+```ts
+export function warnPanelClasses() {
+  return [
+    panelClasses(),
+    'border-l-4',
+    'border-l-warn-600',
+  ].join(' ')
+}
+```
+
+**Usage:** TrustStatusBar (warning tone), DataAlert (warning variant).
+
+### 6.4 Updated Function: `pageShellClasses()`
+
+Update gradient background to use deeper sand/warm tones:
+
+```ts
+export function pageShellClasses() {
+  return [
+    'min-h-screen',
+    'bg-[radial-gradient(circle_at_top,_rgba(254,243,199,0.20),_transparent_28%),linear-gradient(180deg,var(--gradient-shell-base)_0%,var(--gradient-shell-mid)_48%,var(--gradient-shell-end)_100%)]',
+    'text-surface-900',
+  ].join(' ')
+}
+```
+
+With corresponding CSS custom properties in `globals.css`:
+
+```css
+:root {
+  --gradient-shell-base: #f6f1e7;
+  --gradient-shell-mid: #eef3ea;
+  --gradient-shell-end: #e7efe8;
+}
+```
+
+### 6.5 Updated Function: `sectionHeadingClasses()`
+
+Update from `emerald-800/70` to brand tokens:
+
+```ts
+export function sectionHeadingClasses() {
+  return [
+    'text-[0.7rem]',
+    'font-semibold',
+    'uppercase',
+    'tracking-[0.18em]',
+    'text-brand-800/70',
+  ].join(' ')
+}
+```
+
+### 6.6 Updated Function: `scrollRegionFocusClasses()`
+
+Update from `emerald-500` to brand tokens:
+
+```ts
+export function scrollRegionFocusClasses() {
+  return [
+    'focus-visible:outline-none',
+    'focus-visible:ring-inset',
+    'focus-visible:ring-2',
+    'focus-visible:ring-brand-500',
+  ].join(' ')
+}
+```
+
+### 6.7 New Function: `inputClasses()`
+
+Adds consistent input styling for form inputs:
+
+```ts
+export function inputClasses() {
+  return [
+    'w-full',
+    'rounded-input',
+    'border',
+    'border-surface-200',
+    'bg-white',
+    'px-4',
+    'py-3',
+    'text-body-lg',
+    'text-surface-900',
+    'placeholder:text-surface-500',
+    'focus-visible:ring-brand-500',
+    'focus-visible:border-brand-300',
+    'transition-colors',
+  ].join(' ')
+}
+```
+
+**Usage:** Auth form inputs, commissioner form inputs, search inputs across all phases.
+
+### 6.8 Transition Plan for `uiStyles.ts`
+
+`uiStyles.ts` is NOT being removed. It grows with new functions and updated token values. Consumers migrate from inline styles to these functions per-phase. After all phases, `uiStyles.ts` remains the canonical source for layout/panel utility classes.
+
+---
+
+## 7. Shared Primitives
+
+### 7.1 New Component: `Button`
+
+**File:** `src/components/Button.tsx`
+
+This is the ONLY new component primitive. Button inconsistency is the worst problem in the codebase (6+ different button styles). All other patterns (panels, headings, chips) remain as `uiStyles.ts` functions or config-driven components.
 
 ```tsx
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
@@ -318,16 +480,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 ```
 
-**Variant tokens:**
+**Variant classes:**
 
-| Variant | Classes (proposed) |
+| Variant | Classes |
 |---|---|
 | `primary` | `rounded-button bg-brand-600 text-white hover:bg-brand-700 focus-visible:ring-brand-500 shadow-subtle` |
-| `secondary` | `rounded-button border border-surface-200 bg-white text-on-surface-variant hover:bg-surface-50 focus-visible:ring-brand-500` |
+| `secondary` | `rounded-button border border-surface-300 bg-white text-surface-700 hover:bg-surface-50 focus-visible:ring-brand-500` |
 | `danger` | `rounded-button bg-danger-600 text-white hover:bg-danger-700 focus-visible:ring-danger-500` |
-| `ghost` | `rounded-button text-on-surface-variant hover:bg-surface-50 focus-visible:ring-brand-500` |
+| `ghost` | `rounded-button text-surface-600 hover:bg-surface-50 focus-visible:ring-brand-500` |
 
-**Size tokens:**
+**Size classes:**
 
 | Size | Padding | Font |
 |---|---|---|
@@ -335,124 +497,87 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 | `md` (default) | `px-4 py-2.5` | `text-body-lg` |
 | `lg` | `px-6 py-3` | `text-body-lg font-semibold` |
 
-All buttons inherit 44px minimum touch target from globals.css.
+All buttons inherit 44px minimum touch target from `globals.css`.
 
-**Migration mapping from current ad-hoc buttons:**
+**Migration mapping:**
 
 | Current | New |
 |---|---|
-| `bg-blue-600 text-white hover:bg-blue-700` (auth actions) | `variant="primary"` |
-| `bg-green-600 hover:bg-green-700` (start pool) | `variant="primary"` |
-| `bg-red-600 hover:bg-red-700` (close pool) | `variant="danger"` |
-| `bg-slate-600 hover:bg-slate-700` (archive) | `variant="secondary"` |
-| `bg-slate-950 text-white` (newer actions) | `variant="primary"` |
-| `bg-emerald-600 text-white` (catalog sync) | `variant="primary"` |
+| `bg-blue-600 text-white hover:bg-blue-700` | `<Button variant="primary">` |
+| `bg-green-600 hover:bg-green-700` | `<Button variant="primary">` |
+| `bg-emerald-600 text-white` | `<Button variant="primary">` |
+| `bg-slate-950 text-white` | `<Button variant="primary">` |
+| `bg-red-600 hover:bg-red-700` | `<Button variant="danger">` |
+| `bg-slate-600 hover:bg-slate-700` | `<Button variant="secondary">` |
 
-### 5.3 Primitive: `Card`
+### 7.2 Kept Pattern: Config-Driven StatusChip/FreshnessChip
 
-**File:** `src/components/ui/Card.tsx`
+Per Product Planner confirmation: **keep the icon + color pattern**. Never use color alone. Update the token values in `STATUS_CONFIG` and `FRESHNESS_CONFIG`:
 
-This replaces `panelClasses()` usage with a React component:
+**StatusChip token migration:**
 
-```tsx
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  padding?: 'none' | 'sm' | 'md' | 'lg'
-  elevated?: boolean
+| Status | Current classes | New classes |
+|---|---|---|
+| `open` | `border-emerald-200 bg-emerald-50 text-emerald-900` | `border-brand-200 bg-brand-50 text-brand-900` |
+| `live` | `border-sky-200 bg-sky-50 text-sky-900` | `border-info-200 bg-info-50 text-info-900` |
+| `complete` | `border-slate-200 bg-slate-100 text-slate-900` | `border-surface-200 bg-surface-100 text-surface-900` |
+| `archived` | `border-slate-200 bg-slate-100 text-slate-700` | `border-surface-200 bg-surface-100 text-surface-700` |
+
+**FreshnessChip token migration:**
+
+| Status | Current classes | New classes |
+|---|---|---|
+| `current` | `border-emerald-200 bg-emerald-50 text-emerald-900` | `border-brand-200 bg-brand-50 text-brand-900` |
+| `stale` | `border-amber-200 bg-amber-50 text-amber-900` | `border-warn-200 bg-warn-50 bg-warn-900` |
+| `unknown` | `border-slate-200 bg-slate-100 text-slate-700` | `border-surface-200 bg-surface-100 text-surface-700` |
+
+### 7.3 Kept Pattern: LockBanner
+
+Per Product Planner confirmation:
+- **Open state:** `green-100` background → `brand-100` with accent left-border
+- **Locked state:** preserve `red-600` meaning → `danger-600` with danger accent
+
+Update `LockBanner.tsx` colors:
+
+| State | Current | New |
+|---|---|---|
+| Locked | `border-slate-200 bg-slate-100/90` | `border-danger-200/80 bg-danger-50/95` |
+| Open | `border-emerald-200 bg-emerald-50/90` | `border-brand-200 bg-brand-50/90` |
+
+### 7.4 Kept Pattern: TrustStatusBar `toneClasses()`
+
+Update `toneClasses()` to use semantic tokens:
+
+```ts
+function toneClasses(tone: TrustTone): string {
+  switch (tone) {
+    case 'error':
+      return 'border-danger-200/80 bg-danger-50/95 text-danger-950'
+    case 'warning':
+      return 'border-warn-200/80 bg-warn-50/95 text-warn-950'
+    default:
+      return 'border-brand-200/80 bg-white/95 text-surface-900'
+  }
 }
 ```
 
-**Classes:**
+### 7.5 Kept Pattern: DataAlert `VARIANT_CONFIG`
 
-| Prop | Classes |
-|---|---|
-| default | `rounded-card border border-white/60 bg-white/90 shadow-panel backdrop-blur` |
-| `elevated` | Same + `shadow-elevated` |
-| `padding="sm"` | `p-4` |
-| `padding="md"` (default inner) | `p-5` |
-| `padding="lg"` | `p-6` |
-| `padding="none"` | No padding |
+Update `VARIANT_CONFIG` to use semantic tokens:
 
-This preserves the frosted-glass panel aesthetic exactly.
-
-### 5.4 Primitive: `Input`
-
-**File:** `src/components/ui/Input.tsx`
-
-```tsx
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string
-  error?: string
-}
-```
-
-**Classes:** `w-full rounded-input border border-surface-200 bg-white px-4 py-3 text-body-lg text-on-surface placeholder:text-on-surface-variant/50 focus-visible:ring-brand-500 focus-visible:border-brand-300 transition-colors`
-
-Error state adds: `border-danger-400 focus-visible:ring-danger-500`
-
-### 5.5 Primitive: `MetricCard`
-
-**File:** `src/components/ui/MetricCard.tsx`
-
-Extends `Card` with `min-h-[8rem]` + `p-5`. Replaces `metricCardClasses()`.
-
-```tsx
-interface MetricCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  label: string
-  value: React.ReactNode
-  variant?: 'default' | 'brand' | 'danger' | 'warn'
-}
-```
-
-### 5.6 Primitive: `SectionHeading`
-
-**File:** `src/components/ui/SectionHeading.tsx`
-
-Replaces `sectionHeadingClasses()` function calls with a component:
-
-```tsx
-interface SectionHeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  color?: 'default' | 'inherit' | 'brand'
-}
-```
-
-**Variant mapping:**
-
-| Color | Classes |
-|---|---|
-| `default` | `text-eyebrow text-brand-800/70` |
-| `inherit` (current `.replace()` pattern) | `text-eyebrow text-current` |
-| `brand` | `text-eyebrow text-brand-700` |
-
-### 5.7 Primitive: `Chip`
-
-**File:** `src/components/ui/Chip.tsx`
-
-Replaces inline chip classes in `StatusChip`, `FreshnessChip`, and the freshness indicator in `TrustStatusBar`:
-
-```tsx
-interface ChipProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'brand' | 'info' | 'warn' | 'danger' | 'neutral'
-  icon?: string
-}
-```
-
-| Variant | Classes |
-|---|---|
-| `brand` | `border-brand-200 bg-brand-50 text-brand-900` |
-| `info` | `border-info-200 bg-info-50 text-info-900` |
-| `warn` | `border-warn-200 bg-warn-50 text-warn-900` |
-| `danger` | `border-danger-200 bg-danger-50 text-danger-900` |
-| `neutral` | `border-surface-200 bg-surface-100 text-on-surface-variant` |
-
-All variants share: `inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-chip border px-3 py-1 text-label`
+| Variant | Current | New |
+|---|---|---|
+| `error` | `border-red-200 bg-red-50/95 text-red-950` | `border-danger-200 bg-danger-50/95 text-danger-950` |
+| `warning` | `border-amber-200 bg-amber-50/95 text-amber-950` | `border-warn-200 bg-warn-50/95 text-warn-950` |
+| `info` | `border-sky-200 bg-sky-50/95 text-sky-950` | `border-info-200 bg-info-50/95 text-info-950` |
 
 ---
 
-## 6. Page Shell Strategy
+## 8. Page Shell Strategy
 
-### 6.1 Shell Architecture
+### 8.1 Shell Architecture
 
-The app currently has **three** distinct shell patterns:
+The app currently has three shell patterns:
 
 1. **Authenticated app shell** (`(app)/layout.tsx`) — `bg-gray-50`, white nav, `max-w-7xl`
 2. **Spectator page** (`spectator/page.tsx`) — `pageShellClasses()` with warm gradient
@@ -460,220 +585,160 @@ The app currently has **three** distinct shell patterns:
 
 **Proposed unified shell:**
 
-```
-┌─────────────────────────────────────────┐
-│ Navigation Bar                          │  ← bg-surface-elevated/95, border-b border-sand-200/60
-│ [Logo]              [My Pools] [Comm.]   │  ← brand-900 logo text, surface-variant links
-├─────────────────────────────────────────┤
-│                                         │
-│  Shell Gradient Background              │  ← CSS var --gradient-shell (preserved)
-│                                         │
-│  ┌───────────────────────────────┐      │
-│  │ Card (panelClasses)           │      │  ← rounded-card, frosted glass
-│  │ Content                       │      │
-│  └───────────────────────────────┘      │
-│                                         │
-└─────────────────────────────────────────┘
-```
+The `(app)/layout.tsx` adopts the `pageShellClasses()` gradient background. Auth/join pages get wrapped in a simplified version.
 
-### 6.2 Shell Component
+**`(app)/layout.tsx` changes:**
 
-**File:** `src/components/ui/PageShell.tsx`
+- Replace `bg-gray-50` → `min-h-screen bg-[radial-gradient(...)]` via updated `pageShellClasses()` or inline gradient
+- Replace nav `bg-white shadow-sm` → `bg-surface/95 backdrop-blur border-b border-sand-200/60`
+- Replace `text-gray-900` logo → `text-brand-950 font-bold`
+- Replace `text-gray-600` links → `text-surface-600 hover:text-surface-900`
 
-```tsx
-interface PageShellProps {
-  children: React.ReactNode
-  maxWidth?: 'narrow' | 'default' | 'wide'
-}
-```
+### 8.2 Auth/Join Pages
 
-| `maxWidth` | Value | Use case |
-|---|---|---|
-| `narrow` | `max-w-3xl` | Picks page |
-| `default` | `max-w-5xl` | Pool list, spectator |
-| `wide` | `max-w-7xl` | Commissioner detail |
-
-Classes: `min-h-screen text-on-surface` + background gradient via CSS custom property.
-
-### 6.3 Layout Changes
-
-**`src/app/(app)/layout.tsx`** changes:
-- Replace `bg-gray-50` with `PageShell` gradient background
-- Replace nav `bg-white shadow-sm` with `bg-surface/95 backdrop-blur border-b border-sand-200/60`
-- Replace `text-gray-900` logo with `text-brand-950 font-bold`
-- Replace `text-gray-600` links with `text-on-surface-variant hover:text-on-surface`
-- Replace `text-gray-600 hover:text-gray-900` with semantic tokens
-- Add `PageShell maxWidth="wide"` wrapper
-
-**`src/app/spectator/page.tsx`** changes:
-- Replace `pageShellClasses()` inline with `<PageShell maxWidth="default">`
-
-**`src/app/(auth)/` and `src/app/join/`** changes:
-- Wrap in `<PageShell maxWidth="narrow">` with `flex items-center justify-center`
-- Replace `bg-white rounded-lg shadow` card with `<Card>` component
+- Wrap in gradient background using CSS custom property `--gradient-shell`
+- Replace `bg-white rounded-lg shadow` card with `panelClasses()` panel
+- Replace `bg-blue-600` buttons with `<Button variant="primary">`
 
 ---
 
-## 7. Migration Strategy
+## 9. Migration Strategy
 
-### 7.1 Rollout Order (Mobile-First)
+### 9.1 Rollout Order (Per Product Planner Confirmation)
 
-The rollout order prioritizes mobile-facing pages first, then internal/commissioner pages:
+| Phase | Scope | Stories | Key Files | Why |
+|---|---|---|---|---|
+| **Phase 0** | Foundation | OPS-20 | `tailwind.config.js`, `globals.css`, `uiStyles.ts` extensions, `Button.tsx` | All other phases depend on this |
+| **Phase 1** | Participant Picks | OPS-21 | Picks page, LockBanner, PickProgress, SelectionSummaryCard, SubmissionConfirmation, GolferPicker | Trust-critical player interaction (confirmed Critical priority) |
+| **Phase 2** | Spectator + Pools + Join | OPS-23, OPS-24, OPS-25 | Leaderboard, TrustStatusBar, StatusChip, FreshnessChip, DataAlert, PoolCard, Pools page, Join page | High-priority public-facing pages |
+| **Phase 3** | Commissioner + Detail + Global | OPS-26, OPS-27, OPS-29 | Commissioner dashboard, Pool detail, Global styles, App layout, MetricCard | Medium priority — internal tools + global polish |
+| **Phase 4** | Auth | OPS-28 | Sign-in, Sign-up pages | Low priority — functional, not trust-critical |
 
-| Phase | Scope | Pages/Components | Why First |
-|---|---|---|---|
-| **Phase 0** | Token layer + primitives | `tailwind.config.js`, `globals.css`, `src/components/ui/*` | Foundation — all other phases depend on this |
-| **Phase 1** | Spectator leaderboard | `spectator/`, `Leaderboard*`, `TrustStatusBar`, `FreshnessChip`, `StatusChip` | Highest public visibility, already uses `pageShellClasses()` |
-| **Phase 2** | Picks flow | `participant/picks/`, `LockBanner`, `GolferPicker`, `PickProgress`, `SelectionSummaryCard`, `SubmissionConfirmation` | Player-facing, trust-critical |
-| **Phase 3** | Auth & join | `(auth)/`, `join/` | New user entry point, currently has no design system |
-| **Phase 4** | Commissioner dashboard | `commissioner/`, `CommissionerGolferPanel`, `GolferCatalogPanel`, `PoolCard`, metric cards | Internal tool, lowest urgency |
-
-### 7.2 Migration Rules
+### 9.2 Migration Rules
 
 1. **Never break existing behavior.** Each phase must ship without visual regressions.
-2. **Token-first migration.** Replace `emerald-X` with `brand-X`, `slate-X` with `surface-X`, `sky-X` with `info-X`, etc. only in the files touched by that phase.
-3. **Component-primitive substitution.** When touching a file, replace `panelClasses()` with `<Card>`, inline button styles with `<Button>`, etc.
-4. **No orphaned code.** After a phase is complete, any `uiStyles.ts` function that has zero remaining consumers can be removed.
-5. **`gray` → `slate` (surface) is mandatory in every touched file.** No file leaves Phase N still using `gray`.
-
-### 7.3 uiStyles.ts Transition Plan
-
-| Phase | Action | Remaining Consumers |
-|---|---|---|
-| Phase 0 | Keep all functions; they reference new theme tokens | All |
-| Phase 1 | Migrate spectator components to `Card`, `SectionHeading`, `Chip` | Decrease by ~8 |
-| Phase 2 | Migrate picks components | Decrease by ~5 |
-| Phase 3 | Migrate auth/join | Decrease by ~3 |
-| Phase 4 | Migrate commissioner | Decrease to 0 |
-| Cleanup | Remove `uiStyles.ts` | 0 |
+2. **Token-first migration.** Replace `emerald-X` with `brand-X`, `slate-X` with `surface-X`, `gray-X` with `surface-X` or `stone-X`, `sky-X` with `info-X`, `red-X` with `danger-X` only in files touched by that phase.
+3. **Button substitution.** When touching a file, replace ad-hoc button styles with `<Button>`.
+4. **uiStyles.ts function substitution.** When touching a file, replace inline panel styles with `panelClasses()`, `accentPanelClasses()`, etc.
+5. **`gray` → `surface` or `stone` is mandatory in every touched file.** No file leaves Phase N still using `gray`.
+6. **Keep icon + color pattern** in StatusChip and FreshnessChip — never color alone.
+7. **LockBanner** uses `brand-100` (green-100) for open, `danger-600` (red-600) for locked.
 
 ---
 
-## 8. Exact Files to Touch
+## 10. Exact Files to Touch
 
 ### Phase 0: Foundation
 
 | File | Change |
 |---|---|
-| `tailwind.config.js` | Add `brand`, `sand`, `surface`, `danger`, `warn`, `info` color tokens; add `fontSize`, `boxShadow`, `borderRadius` extensions; add `panel-px`, `panel-py`, `shell-px`, `shell-py` spacing |
-| `src/app/globals.css` | Add CSS custom properties for `--color-brand`, `--color-sand`, `--color-surface`, `--color-danger`, `--color-warn`, `--color-info`, `--gradient-shell`; update body styles to use `bg-sand-50 text-on-surface` |
-| `src/components/ui/Button.tsx` | New file — Button primitive |
-| `src/components/ui/Card.tsx` | New file — Card primitive (replaces `panelClasses()`) |
-| `src/components/ui/Input.tsx` | New file — Input primitive |
-| `src/components/ui/MetricCard.tsx` | New file — MetricCard primitive (replaces `metricCardClasses()`) |
-| `src/components/ui/SectionHeading.tsx` | New file — SectionHeading primitive (replaces `sectionHeadingClasses()`) |
-| `src/components/ui/Chip.tsx` | New file — Chip primitive |
-| `src/components/ui/PageShell.tsx` | New file — PageShell primitive (replaces `pageShellClasses()`) |
-| `src/components/ui/index.ts` | New file — barrel export |
+| `tailwind.config.js` | Add `sand`, `brand` (green), `surface` (stone), `danger` (red), `warn` (amber), `info` (sky) color tokens; add `fontSize` (eyebrow, label, body, body-lg, heading-lg, heading-xl), `boxShadow` (panel, panel-hover, elevated, subtle), `borderRadius` (card, input, chip, button), `spacing` (panel-px, panel-py, shell-px, shell-py) extensions |
+| `src/app/globals.css` | Add CSS custom properties for `--color-brand`, `--color-sand`, `--color-surface`, `--color-danger`, `--color-warn`, `--color-info`, `--gradient-shell`; update body style to `bg-sand-50 text-surface-900`; update focus ring to use `--ring-brand` (green-700); update shadow overlays to use stone-900 RGB values |
+| `src/components/uiStyles.ts` | Add `accentPanelClasses()`, `dangerPanelClasses()`, `warnPanelClasses()`; update `sectionHeadingClasses()` to use `brand-800/70`; update `scrollRegionFocusClasses()` to use `brand-500` |
+| `src/components/Button.tsx` | New file — Button primitive with primary/secondary/danger/ghost variants and sm/md/lg sizes |
 
-### Phase 1: Spectator
+### Phase 1: Participant Picks (OPS-21)
 
 | File | Change |
 |---|---|
-| `src/app/spectator/pools/[poolId]/page.tsx` | Replace `pageShellClasses()` with `<PageShell>`, migrate colors |
-| `src/components/leaderboard.tsx` | Replace `panelClasses()` with `<Card>`, migrate colors |
-| `src/components/LeaderboardHeader.tsx` | Replace `sectionHeadingClasses()` with `<SectionHeading>`, migrate colors |
+| `src/app/(app)/participant/picks/[poolId]/page.tsx` | Wrap in gradient background; migrate `slate` → `surface`, `emerald` → `brand` |
+| `src/app/(app)/participant/picks/[poolId]/PicksForm.tsx` | Migrate buttons to `<Button>`, migrate colors |
+| `src/components/LockBanner.tsx` | Replace locked section with `dangerPanelClasses()` / `danger-600` tokens; replace open section with `accentPanelClasses()` / `brand-100` tokens; update `sectionHeadingClasses()` reference |
+| `src/components/PickProgress.tsx` | Migrate `emerald` → `brand`, `slate` → `surface` |
+| `src/components/SelectionSummaryCard.tsx` | Replace `panelClasses()` call, migrate `sky` → `info` |
+| `src/components/SubmissionConfirmation.tsx` | Replace panel styles, migrate colors |
+| `src/components/GolferCatalogPanel.tsx` | Migrate buttons to `<Button>`, migrate colors |
+
+### Phase 2: Spectator + Pools + Join (OPS-23, OPS-24, OPS-25)
+
+| File | Change |
+|---|---|
+| `src/app/spectator/pools/[poolId]/page.tsx` | Replace `pageShellClasses()` with updated gradient tokens; migrate colors |
+| `src/components/leaderboard.tsx` | Replace `panelClasses()` with updated tokens; migrate colors |
+| `src/components/LeaderboardHeader.tsx` | Replace `sectionHeadingClasses()`, migrate to `brand` tokens |
 | `src/components/LeaderboardRow.tsx` | Migrate `gray` → `surface`, `emerald` → `brand`, `sky` → `info` |
-| `src/components/LeaderboardEmptyState.tsx` | Replace `panelClasses()` with `<Card>`, migrate colors |
-| `src/components/StatusChip.tsx` | Migrate to `<Chip>`, update `STATUS_CONFIG` to use `brand`/`info`/`neutral` variants |
-| `src/components/FreshnessChip.tsx` | Migrate to `<Chip>`, update `FRESHNESS_CONFIG` to use `brand`/`warn`/`neutral` variants |
-| `src/components/TrustStatusBar.tsx` | Replace `panelClasses()` with `<Card>`, migrate `toneClasses()` to use `danger`/`warn`/`brand` tokens |
-| `src/components/DataAlert.tsx` | Replace `panelClasses()` with `<Card>`, migrate `VARIANT_CONFIG` to use `danger`/`warn`/`info` tokens |
+| `src/components/LeaderboardEmptyState.tsx` | Replace `panelClasses()`, migrate colors |
+| `src/components/StatusChip.tsx` | Update `STATUS_CONFIG` classes to use `brand`/`info`/`surface` tokens; keep icon + color pattern |
+| `src/components/FreshnessChip.tsx` | Update `FRESHNESS_CONFIG` classes to use `brand`/`warn`/`surface` tokens; keep icon + color pattern |
+| `src/components/TrustStatusBar.tsx` | Update `toneClasses()` to use `danger`/`warn`/`brand` tokens; use `accentPanelClasses()` / `dangerPanelClasses()` / `warnPanelClasses()` |
+| `src/components/DataAlert.tsx` | Update `VARIANT_CONFIG` to use `danger`/`warn`/`info` tokens |
 | `src/components/EntryGolferBreakdown.tsx` | Migrate colors |
 | `src/components/GolferContribution.tsx` | Migrate `gray` → `surface` |
 | `src/components/GolferScorecard.tsx` | Migrate `gray` → `surface` |
 | `src/components/score-display.tsx` | Migrate `green` → `brand`, `red` → `danger`, `gray` → `surface` |
 | `src/components/GolferDetailSheet.tsx` | Migrate colors, replace gradient with tokens |
 | `src/components/CopyLinkButton.tsx` | Migrate to `<Button>` |
+| `src/components/PoolCard.tsx` | Replace `bg-white rounded-lg shadow` with `panelClasses()`; migrate `gray` → `surface` |
+| `src/app/(app)/participant/pools/page.tsx` | Migrate colors, use `panelClasses()` |
+| `src/app/join/[inviteCode]/page.tsx` | Wrap in gradient, replace card with `panelClasses()`, buttons with `<Button>` |
+| `src/app/join/[inviteCode]/JoinPoolForm.tsx` | Migrate buttons and inputs |
 
-### Phase 2: Picks Flow
-
-| File | Change |
-|---|---|
-| `src/app/(app)/participant/picks/[poolId]/page.tsx` | Wrap in `<PageShell maxWidth="narrow">` |
-| `src/app/(app)/participant/picks/[poolId]/PicksForm.tsx` | Migrate to `<Button>`, `<Input>`, `<Card>` |
-| `src/components/LockBanner.tsx` | Replace `panelClasses()` with `<Card>`, migrate colors |
-| `src/components/PickProgress.tsx` | Migrate colors |
-| `src/components/SelectionSummaryCard.tsx` | Replace `panelClasses()` with `<Card>`, migrate `sky` → `info` |
-| `src/components/SubmissionConfirmation.tsx` | Replace `panelClasses()` with `<Card>`, migrate colors |
-| `src/components/golfer-picker.tsx` | Migrate to `<Input>`, `<Button>` |
-| `src/components/PoolCard.tsx` | Replace `bg-white rounded-lg shadow` with `<Card>` |
-
-### Phase 3: Auth & Join
+### Phase 3: Commissioner + Detail + Global (OPS-26, OPS-27, OPS-29)
 
 | File | Change |
 |---|---|
-| `src/app/(app)/layout.tsx` | Replace `bg-gray-50` with `<PageShell>` gradient, update nav to use brand tokens |
-| `src/app/(auth)/sign-in/page.tsx` | Wrap in `<PageShell>`, replace card with `<Card>`, buttons with `<Button>` |
-| `src/app/(auth)/sign-up/page.tsx` | Wrap in `<PageShell>`, replace card with `<Card>`, buttons with `<Button>` |
-| `src/app/join/[inviteCode]/page.tsx` | Wrap in `<PageShell>`, replace card with `<Card>`, buttons with `<Button>` |
-| `src/app/(app)/participant/pools/page.tsx` | Migrate colors, use `<Card>` |
-
-### Phase 4: Commissioner
-
-| File | Change |
-|---|---|
-| `src/app/(app)/commissioner/page.tsx` | Migrate to `<Card>`, `<Button>`, `<SectionHeading>` |
-| `src/app/(app)/commissioner/pools/[poolId]/page.tsx` | Migrate to `<Card>`, `<Button>`, `<SectionHeading>`, `<MetricCard>` |
-| `src/app/(app)/commissioner/pools/[poolId]/PoolConfigForm.tsx` | Migrate to `<Card>`, `<Input>`, `<Button>` |
-| `src/app/(app)/commissioner/pools/[poolId]/PoolStatusSection.tsx` | Migrate to `<MetricCard>`, `<SectionHeading>` |
-| `src/app/(app)/commissioner/pools/[poolId]/InviteLinkSection.tsx` | Migrate to `<Card>`, `<Button>`, `<SectionHeading>` |
-| `src/app/(app)/commissioner/pools/[poolId]/PoolActions.tsx` | Migrate to `<Button>` variants |
+| `src/app/(app)/layout.tsx` | Replace `bg-gray-50` with `pageShellClasses()` gradient; update nav to use `brand` and `surface` tokens; replace `gray` links |
+| `src/app/(app)/commissioner/page.tsx` | Migrate to `panelClasses()`, `<Button>`, `sectionHeadingClasses()` |
+| `src/app/(app)/commissioner/pools/[poolId]/page.tsx` | Migrate to `panelClasses()`, `<Button>`, `sectionHeadingClasses()`, `metricCardClasses()` |
+| `src/app/(app)/commissioner/pools/[poolId]/PoolConfigForm.tsx` | Migrate to `panelClasses()`, inputs, `<Button>` |
+| `src/app/(app)/commissioner/pools/[poolId]/PoolStatusSection.tsx` | Migrate to `metricCardClasses()`, `sectionHeadingClasses()` |
+| `src/app/(app)/commissioner/pools/[poolId]/InviteLinkSection.tsx` | Migrate to `panelClasses()`, `<Button>`, `sectionHeadingClasses()` |
+| `src/app/(app)/commissioner/pools/[poolId]/PoolActions.tsx` | Migrate buttons to `<Button>` variants |
 | `src/app/(app)/commissioner/pools/[poolId]/ArchivePoolButton.tsx` | Migrate to `<Button variant="secondary">` |
 | `src/app/(app)/commissioner/pools/[poolId]/ReopenPoolButton.tsx` | Migrate to `<Button variant="secondary">` |
 | `src/app/(app)/commissioner/pools/[poolId]/DeletePoolButton.tsx` | Migrate to `<Button variant="danger">` |
-| `src/app/(app)/commissioner/pools/[poolId]/CreatePoolForm.tsx` | Migrate to `<Card>`, `<Input>`, `<Button>` |
-| `src/components/CommissionerGolferPanel.tsx` | Migrate to `<Card>`, `<SectionHeading>` |
-| `src/components/GolferCatalogPanel.tsx` | Migrate to `<Card>`, `<Button>` |
+| `src/app/(app)/commissioner/CreatePoolForm.tsx` | Migrate to `panelClasses()`, `<Button>` |
+| `src/components/CommissionerGolferPanel.tsx` | Migrate to `panelClasses()`, `<Button>` |
+| `src/components/GolferCatalogPanel.tsx` | Migrate to `panelClasses()`, `<Button>` — if not already done in Phase 1 |
 
-### Phase 4 Cleanup
+### Phase 4: Auth (OPS-28)
 
 | File | Change |
 |---|---|
-| `src/components/uiStyles.ts` | Delete (all consumers migrated) |
-| `tailwind.config.js` | Verify no unused theme extensions |
+| `src/app/(auth)/sign-in/page.tsx` | Wrap in gradient, replace card with `panelClasses()`, buttons with `<Button>`, inputs with `inputClasses()` |
+| `src/app/(auth)/sign-up/page.tsx` | Wrap in gradient, replace card with `panelClasses()`, buttons with `<Button>`, inputs with `inputClasses()` |
+| `src/app/(auth)/sign-up/actions.ts` | No visual changes (server action) |
+| `src/app/(auth)/sign-in/actions.ts` | No visual changes (server action) |
 
 ---
 
-## 9. Accessibility Preservation
+## 11. Accessibility Preservation
 
-The redesign must preserve all existing accessibility patterns:
+The redesign preserves all existing accessibility patterns:
 
 - 44px minimum touch targets (enforced in `globals.css`)
 - `role="status"` + `aria-live` on all status/freshness/trust indicators
 - `sr-only` for visually hidden labels
-- Focus-visible rings using `/ring-brand` CSS custom property
-- `prefers-reduced-motion` suppression (enforced in `globals.css`)
-- Skip-to-content link
+- Focus-visible rings using `--ring-brand` CSS custom property (updated to green-700)
+- `prefers-reduced-motion` suppression (preserved in `globals.css`)
+- Skip-to-content link (preserved in layout)
 - Keyboard navigation in `GolferPicker` (arrow keys, enter, escape)
 - `<dialog>` element for `GolferDetailSheet`
+- **Icon + color pattern** in StatusChip/FreshnessChip (confirmed — never color alone)
 
-All new primitives (`Button`, `Card`, `Input`, `Chip`) must maintain these patterns. The `Button` component auto-inherits 44px touch targets from globals.
+New `Button` component inherits 44px touch targets from globals.
 
 ---
 
-## 10. Testing Strategy
+## 12. Testing Strategy
 
-### 10.1 Visual Regression Approach
+### 12.1 Verification Approach
 
-Since there is no visual regression testing framework currently, each phase should:
+Each phase should:
 
-1. Run `npm run build` to verify no TypeScript or build errors
-2. Run `npm run lint` to verify no lint warnings
-3. Manually verify each affected page on mobile (375px) and desktop (1280px) viewports
+1. Run `npm run build` — no TypeScript or build errors
+2. Run `npm run lint` — no lint warnings
+3. Manually verify each affected page on mobile (375px) and desktop (1280px)
 4. Verify all a11y patterns (screen reader, keyboard nav, focus rings) still work
+5. Verify lock state and freshness indicators remain prominent and obvious
 
-### 10.2 Component Tests
+### 12.2 Component Tests
 
-New primitives (`Button`, `Card`, `Input`, `Chip`, etc.) should have unit tests verifying:
-- Correct variant classes are applied
-- HTML attributes pass through correctly
-- Accessibility attributes (`role`, `aria-*`) are present where expected
-- 44px touch targets are respected
+- **Button** component: verify variant classes, size classes, HTML attributes pass-through, 44px touch target
+- **uiStyles.ts functions**: verify `accentPanelClasses()`, `dangerPanelClasses()`, `warnPanelClasses()` return expected class strings
+- Existing tests in `src/lib/__tests__/` and `src/components/__tests__/` must continue to pass
 
-Existing tests in `src/components/__tests__/` and `src/lib/__tests__/` must continue to pass. Since components are visually-driven and tests use React Testing Library (which queries by role/text), most tests should not break if component behavior stays the same.
-
-### 10.3 No-Break Guarantee
+### 12.3 No-Break Guarantee
 
 Each phase must ship without:
 - TypeScript errors
@@ -681,34 +746,36 @@ Each phase must ship without:
 - Lint warnings
 - Breaking existing tests
 - Visual regressions visible on mobile (375px) or desktop (1280px)
+- Loss of accessibility patterns (lock state prominence, freshness indicators)
 
 ---
 
-## 11. Constraints and Guardrails
+## 13. Constraints and Guardrails
 
 | Constraint | Enforcement |
 |---|---|
-| Mobile first | All token values and responsive breakpoints must be validated at 375px first |
-| Trust visible | Lock state and freshness must remain first-class UI elements — no redesign removes or obscures them |
+| Mobile first | All token values validated at 375px first |
+| Trust visible | Lock state and freshness remain first-class UI elements |
 | Lock state obvious | Lock/open remains a prominent banner, not a subtle indicator |
 | Freshness obvious | Freshness chips and trust bar remain visually prominent |
-| Next action obvious | Primary actions remain visually dominant via `Button variant="primary"` |
-| No fake status | Status chips show real state only — no mock or placeholder states |
-| Reusable primitives over one-off styling | Every new visual pattern becomes a primitive first |
-| Favor existing Tailwind conventions | Use `tailwind.config.js` theme extensions, not a new CSS-in-JS system |
-| Keep product semantics intact | No flow changes, no API changes, only visual layer changes |
-| Backward compatibility | `uiStyles.ts` functions remain functional until Phase 4 cleanup removes all consumers |
+| Next action obvious | Primary actions visually dominant via `<Button variant="primary">` |
+| No fake status | Status chips show real state only |
+| Keep `uiStyles.ts` function pattern | Hybrids: extend functions, add `Button` component only |
+| Keep icon + color in chips | Never color alone for status |
+| Favor Tailwind conventions | Use `tailwind.config.js` theme extensions, not a new CSS-in-JS system |
+| Keep product semantics intact | No flow changes, no API changes, only visual layer |
+| `gray` → `surface`/`stone` mandatory | Every touched file must eliminate `gray` |
 
 ---
 
-## 12. Assumptions Awaiting Product Planner Confirmation
+## 14. Decisions Resolved by Product Planner (OPS-15)
 
-| Assumption | Default | Risk if Wrong |
+| Decision | Choice | Rationale |
 |---|---|---|
-| Visual direction: refine existing emerald/sand palette (not dark mode) | Refine and deepen | If dark mode needed, Phase 0 tokens need inversion layer |
-| Page rollout priority: Spectator → Picks → Auth → Commissioner | As listed | Lower priority pages can be deferred |
-| Button style: rounded (1rem radius) with solid fill | `rounded-button bg-brand-600` | If different button shape needed, only Button.tsx changes |
-| Card style: preserve frosted-glass panels | Keep `backdrop-blur` + `bg-white/90` | If opaque cards needed, only Card.tsx changes |
-| Input style: rounded with brand focus ring | `rounded-input focus-visible:ring-brand-500` | Low risk — standard pattern |
-
-These assumptions are documented explicitly so Product Planner can override them at the DESIGN_REVIEW gate.
+| Visual direction | Option A: Refine existing emerald/sand → deepen to green/sand | Preserve and deepen, not overhaul |
+| Component strategy | Option C: Hybrid — keep `uiStyles.ts`, add Button, extend functions | Proven pattern with selective component for worst inconsistency |
+| Page priority | Phase 1: Picks, Phase 2: Spectator/Pools/Join, Phase 3: Commissioner/Detail/Global, Phase 4: Auth | Trust-critical picks first |
+| Breakpoints | Keep Tailwind defaults (`sm:`, `md:`, `lg:`) | No changes needed |
+| Palette anchors | `green-900`, `green-700`, `green-100` = active/open; `sand-100`, `sand-50` = success; `stone-900`, `stone-600` = text; `red-600` = locked/error | Confirmed palette |
+| LockBanner | `green-100` for open, preserve `red-600` for locked | Keep meaning, update tokens |
+| StatusChip | Keep icon + color pattern, never color alone | Accessibility requirement |
