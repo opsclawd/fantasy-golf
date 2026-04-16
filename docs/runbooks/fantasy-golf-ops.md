@@ -64,8 +64,6 @@ select cron.schedule(
       url := (select decrypted_secret from vault.decrypted_secrets where name = 'app_url') || '/api/cron/scoring',
       headers := jsonb_build_object('Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret')),
       body := '{}'::jsonb,
-      timeout_milliseconds := 5000
-    );
   $$
 );
 ```
@@ -238,11 +236,11 @@ Post-deploy smoke checks or user reports indicate something is wrong.
 ### Step 2: Roll Back Immediately
 
 ```bash
-# Get the SHA of the previous main commit
-git log --oneline -2
+# Get the SHA of the squash commit to revert
+git log --oneline -1
 
-# Revert the bad merge
-git revert -m 1 <merge-commit-sha>
+# Revert the squash commit
+git revert <squash-commit-sha>
 
 # Push the revert
 git push origin main
