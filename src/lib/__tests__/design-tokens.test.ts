@@ -37,3 +37,20 @@ describe('tailwind config spacing tokens', () => {
     expect(spacing['6x']).toBe('3rem')
   })
 })
+
+describe('tailwind config typography tokens', () => {
+  it('defines label font size', () => {
+    const fontSize = tailwindConfig.theme.extend.fontSize
+    expect(fontSize.label[0]).toBe('0.875rem')
+  })
+
+  it('defines sans font family with Inter first', () => {
+    const fontFamily = tailwindConfig.theme.extend.fontFamily
+    expect(fontFamily.sans[0]).toBe('Inter')
+  })
+
+  it('defines mono font family', () => {
+    const fontFamily = tailwindConfig.theme.extend.fontFamily
+    expect(fontFamily.mono).toBeDefined()
+  })
+})

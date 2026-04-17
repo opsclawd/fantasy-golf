@@ -40,6 +40,13 @@ module.exports = {
         '10x': '5rem',
         '12x': '6rem',
       },
+      fontSize: {
+        label: ['0.875rem', { lineHeight: '1.25rem', fontWeight: '500' }],
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
     },
   },
   plugins: [],
