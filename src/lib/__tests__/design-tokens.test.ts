@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import tailwindConfig from '../../../tailwind.config.js'
 
 const colors = tailwindConfig.theme.extend.colors
+const spacing = tailwindConfig.theme.extend.spacing
 
 describe('tailwind config color tokens', () => {
   it('defines primary color tokens', () => {
@@ -24,5 +25,15 @@ describe('tailwind config color tokens', () => {
     expect(colors.neutral[900]).toBe('#1c1917')
     expect(colors.neutral[600]).toBe('#57534e')
     expect(colors.neutral[200]).toBe('#e7e5e4')
+  })
+})
+
+describe('tailwind config spacing tokens', () => {
+  it('defines 8px-base rhythm spacing', () => {
+    expect(spacing['1x']).toBe('0.5rem')
+    expect(spacing['2x']).toBe('1rem')
+    expect(spacing['3x']).toBe('1.5rem')
+    expect(spacing['4x']).toBe('2rem')
+    expect(spacing['6x']).toBe('3rem')
   })
 })
