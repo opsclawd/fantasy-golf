@@ -11,6 +11,16 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    env: {
+      NODE_ENV: 'test',
+    },
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.worktrees/**',
+      '**/cypress/**',
+      '**/.{idea,git,output,temp}/**',
+    ],
     setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
