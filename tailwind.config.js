@@ -6,7 +6,48 @@ module.exports = {
     './src/lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: {
+          900: '#14532d',
+          700: '#15803d',
+          100: '#dcfce7',
+        },
+        surface: {
+          warm: '#fef3c7',
+          base: '#fffbeb',
+        },
+        action: {
+          warning: '#f59e0b',
+          error: '#dc2626',
+        },
+        neutral: {
+          900: '#1c1917',
+          600: '#57534e',
+          200: '#e7e5e4',
+        },
+      },
+      spacing: {
+        '1x': '0.5rem',
+        '1.5x': '0.75rem',
+        '2x': '1rem',
+        '2.5x': '1.25rem',
+        '3x': '1.5rem',
+        '4x': '2rem',
+        '5x': '2.5rem',
+        '6x': '3rem',
+        '8x': '4rem',
+        '10x': '5rem',
+        '12x': '6rem',
+      },
+      fontSize: {
+        label: ['0.875rem', { lineHeight: '1.25rem', fontWeight: '500' }],
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
+    },
   },
   plugins: [],
 }
