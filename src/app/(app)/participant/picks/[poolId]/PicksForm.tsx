@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { GolferPicker, type Golfer } from '@/components/golfer-picker'
+import { Button } from '@/components/ui/Button'
 import { SelectionSummaryCard } from '@/components/SelectionSummaryCard'
 import { SubmissionConfirmation } from '@/components/SubmissionConfirmation'
 
@@ -24,13 +25,9 @@ function SubmitButton({ hasEnoughPicks, isEdit }: { hasEnoughPicks: boolean; isE
   const { pending } = useFormStatus()
 
   return (
-    <button
-      type="submit"
-      disabled={pending || !hasEnoughPicks}
-      className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
+    <Button type="submit" variant="primary" size="lg" disabled={pending || !hasEnoughPicks}>
       {pending ? 'Saving...' : isEdit ? 'Update Picks' : 'Submit Picks'}
-    </button>
+    </Button>
   )
 }
 
@@ -64,13 +61,14 @@ export function PicksForm({
           requiredCount={picksPerEntry}
           selectedGolferNames={selectedGolferNames}
         />
-        <button
+        <Button
           type="button"
-          className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+          variant="secondary"
+          className="w-full sm:w-auto"
           onClick={() => window.location.reload()}
         >
           Edit picks
-        </button>
+        </Button>
       </div>
     )
   }
@@ -85,10 +83,10 @@ export function PicksForm({
       />
 
       <div className="rounded-3xl border border-white/70 bg-white/90 p-4 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur sm:p-6">
-        <h2 className="mb-2 text-lg font-semibold text-slate-950">
+        <h2 className="mb-2 text-lg font-semibold text-stone-950">
           {existingGolferIds.length > 0 ? 'Edit Your Picks' : 'Select Your Golfers'}
         </h2>
-        <p className="mb-4 text-sm text-slate-600">
+        <p className="mb-4 text-sm text-stone-600">
           Build your card by searching or filtering the field. Your summary updates as you go.
         </p>
         <GolferPicker

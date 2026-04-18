@@ -90,9 +90,9 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections, go
     <div className="space-y-4">
       <PickProgress current={selectedIds.length} required={maxSelections} />
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200/80 bg-white/80 p-3 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-3 rounded-3xl border border-stone-200/80 bg-white/90 p-3 sm:flex-row sm:items-end">
         <div className="flex-1">
-          <label htmlFor="golfer-search" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="golfer-search" className="mb-1 block text-sm font-medium text-stone-700">
             Search golfers
           </label>
           <input
@@ -101,18 +101,18 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections, go
             placeholder="Search by name"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+            className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5"
           />
         </div>
         <div className="sm:w-56">
-          <label htmlFor="golfer-country" className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor="golfer-country" className="mb-1 block text-sm font-medium text-stone-700">
             Country
           </label>
           <select
             id="golfer-country"
             value={countryFilter}
             onChange={(e) => setCountryFilter(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5"
+            className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5"
           >
             <option value="">All Countries</option>
             {countries.map((country) => (
@@ -125,13 +125,13 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections, go
       </div>
 
       <div
-        className="max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white/90"
+        className="max-h-80 overflow-y-auto rounded-3xl border border-stone-200/80 bg-white/90"
         role="listbox"
         aria-multiselectable="true"
         aria-label="Available golfers"
       >
         {visibleGolfers.length === 0 ? (
-          <p className="p-3 text-sm text-gray-500">No golfers match your filters.</p>
+          <p className="p-3 text-sm text-stone-500">No golfers match your filters.</p>
         ) : (
           <ul>
             {visibleGolfers.map((golfer, index) => {
@@ -160,17 +160,17 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections, go
                     aria-selected={isSelected}
                     aria-disabled={isDisabled}
                     aria-label={`${isSelected ? 'Remove' : 'Select'} ${golfer.name} from ${golfer.country}`}
-                    className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-inset ${
-                      isSelected ? 'bg-sky-50' : ''
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-stone-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-inset ${
+                      isSelected ? 'bg-green-50 border-l-4 border-l-green-700' : ''
                     } ${isDisabled ? 'cursor-not-allowed opacity-60' : ''}`}
                   >
                     <span>
                       <span className="font-medium">{golfer.name}</span>
-                      <span className="ml-2 text-sm text-gray-500">{golfer.country}</span>
+                      <span className="ml-2 text-sm text-stone-500">{golfer.country}</span>
                     </span>
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
-                        isSelected ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600'
+                        isSelected ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-600'
                       }`}
                     >
                       {isSelected ? 'Selected' : 'Select'}
@@ -183,7 +183,7 @@ export function GolferPicker({ selectedIds, onSelectionChange, maxSelections, go
         )}
       </div>
 
-      <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-sm text-slate-600">
+      <div className="rounded-3xl border border-stone-200/80 bg-stone-50/80 px-3 py-2 text-sm text-stone-600">
         {selectedGolfers.length > 0 ? (
           <p aria-live="polite">Current picks: {selectedGolfers.map((g) => g.name).join(', ')}</p>
         ) : (

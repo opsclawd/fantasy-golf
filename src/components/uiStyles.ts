@@ -36,6 +36,6 @@ export function sectionHeadingClasses() {
     'font-semibold',
     'uppercase',
     'tracking-[0.18em]',
-    'text-green-800/70',
+    'text-green-700/70',
   ].join(' ')
 }

@@ -5,22 +5,22 @@ import { sectionHeadingClasses } from './uiStyles'
 const STATUS_CONFIG: Record<PoolStatus, { label: string; icon: string; classes: string }> = {
   open: {
     label: 'Open',
-    icon: '\u25CB', // circle outline
+    icon: '\u25CB',
     classes: 'border-green-200 bg-green-50 text-green-900',
   },
   live: {
     label: 'Live',
-    icon: '\u25CF', // filled circle
-    classes: 'border-sky-200 bg-sky-50 text-sky-900',
+    icon: '\u25CF',
+    classes: 'border-green-200 bg-green-50 text-green-900',
   },
   complete: {
     label: 'Complete',
-    icon: '\u2713', // checkmark
+    icon: '\u2713',
     classes: 'border-stone-200 bg-stone-100 text-stone-900',
   },
   archived: {
     label: 'Archived',
-    icon: '\u25A3', // filled square
+    icon: '\u25A3',
     classes: 'border-stone-200 bg-stone-100 text-stone-700',
   },
 }
@@ -34,7 +34,7 @@ export function StatusChip({ status }: { status: PoolStatus }) {
       aria-label={`Pool status: ${config.label}`}
     >
       <span aria-hidden="true">{config.icon}</span>
-      <span className={sectionHeadingClasses().replace('text-green-800/70', 'text-current')}>
+      <span className={sectionHeadingClasses().replace('text-green-700/70', 'text-current')}>
         {config.label}
       </span>
     </span>

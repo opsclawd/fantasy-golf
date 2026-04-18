@@ -63,7 +63,7 @@ export function DataAlert({ variant, title, message, className }: DataAlertProps
         <span>
           <span className="sr-only">{config.srPrefix} </span>
           <span
-            className={`${sectionHeadingClasses().replace('text-emerald-800/70', 'text-current').replace('uppercase', 'normal-case').replace('tracking-[0.18em]', 'tracking-[0.08em]')} break-words`}
+            className={`${sectionHeadingClasses().replace('text-green-700/70', 'text-current').replace('uppercase', 'normal-case').replace('tracking-[0.18em]', 'tracking-[0.08em]')} break-words`}
           >
             {title}
           </span>

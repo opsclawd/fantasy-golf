@@ -49,7 +49,7 @@ export function FreshnessChip({ status, refreshedAt }: FreshnessChipProps) {
       <span aria-hidden="true" className="shrink-0">
         {config.icon}
       </span>
-      <span className={`${sectionHeadingClasses().replace('text-emerald-800/70', 'text-current')} truncate`}>
+      <span className={`${sectionHeadingClasses().replace('text-green-700/70', 'text-current')} truncate`}>
         {config.label}
       </span>
       {timeLabel && (
