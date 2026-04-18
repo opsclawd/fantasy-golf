@@ -14,9 +14,9 @@ export function PickProgress({ current, required }: PickProgressProps) {
     : `${ariaValueNow} of ${required} golfers selected`
 
   return (
-    <div className="space-y-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3" role="status" aria-live="polite" aria-atomic="true">
+    <div className="space-y-3 rounded-3xl border border-stone-200/80 bg-stone-50/80 p-3" role="status" aria-live="polite" aria-atomic="true">
       <div className="flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium text-slate-900">
+        <span className="font-medium text-stone-900">
           {isComplete ? (
             <span className="text-green-700">
               <span aria-hidden="true">&#x2713; </span>
@@ -35,7 +35,7 @@ export function PickProgress({ current, required }: PickProgressProps) {
         )}
       </div>
       <div
-        className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
+        className="h-2.5 w-full overflow-hidden rounded-full bg-stone-200"
         role="progressbar"
         aria-valuenow={ariaValueNow}
         aria-valuemin={0}
@@ -45,7 +45,7 @@ export function PickProgress({ current, required }: PickProgressProps) {
       >
         <div
           className={`h-full rounded-full motion-safe:transition-[width,background-color] motion-safe:duration-300 ${
-            isComplete ? 'bg-green-600' : 'bg-sky-600'
+            isComplete ? 'bg-green-600' : 'bg-green-600'
           }`}
           style={{ width: `${percentage}%` }}
         />
