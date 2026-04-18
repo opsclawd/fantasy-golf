@@ -185,7 +185,7 @@ The acceptance criteria call for a "sand/cream success state." The current compo
 | Element | Current | New |
 |---|---|---|
 | Success section border | `border-emerald-200/80` | `border-green-200/80` |
-| Success section background | `bg-emerald-50/95` | `bg-sand-50/95` (sand-50 for warm cream state) |
+| Success section background | `bg-emerald-50/95` | `bg-amber-100/95` (surface.warm sand/cream) |
 | Success heading | `text-emerald-800` | `text-green-800` |
 | Success heading (via sectionHeadingClasses) | `text-emerald-800/70` → replaced by `sectionHeadingClasses()` | `sectionHeadingClasses()` (now `text-green-800/70`) + explicit `text-green-800` |
 | Pool name | `text-emerald-950` | `text-green-950` |
