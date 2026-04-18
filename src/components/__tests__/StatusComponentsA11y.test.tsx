@@ -89,12 +89,12 @@ describe('StatusChip token migration', () => {
     expect(archivedMarkup).not.toContain('slate-')
   })
 
-  it('retains sky tokens for live status', () => {
+  it('uses green tokens for live status', () => {
     const markup = renderToStaticMarkup(
       createElement(StatusChip, { status: 'live' }),
     )
-    expect(markup).toContain('border-sky-200')
-    expect(markup).toContain('bg-sky-50')
-    expect(markup).toContain('text-sky-900')
+    expect(markup).toContain('border-green-200')
+    expect(markup).toContain('bg-green-50')
+    expect(markup).toContain('text-green-900')
   })
 })
