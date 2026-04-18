@@ -26,7 +26,7 @@ export function scrollRegionFocusClasses() {
     'focus-visible:outline-none',
     'focus-visible:ring-inset',
     'focus-visible:ring-2',
-    'focus-visible:ring-emerald-500',
+    'focus-visible:ring-green-500',
   ].join(' ')
 }
 
@@ -36,6 +36,6 @@ export function sectionHeadingClasses() {
     'font-semibold',
     'uppercase',
     'tracking-[0.18em]',
-    'text-emerald-800/70',
+    'text-green-800/70',
   ].join(' ')
 }

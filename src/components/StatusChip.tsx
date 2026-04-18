@@ -6,7 +6,7 @@ const STATUS_CONFIG: Record<PoolStatus, { label: string; icon: string; classes: 
   open: {
     label: 'Open',
     icon: '\u25CB', // circle outline
-    classes: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    classes: 'border-green-200 bg-green-50 text-green-900',
   },
   live: {
     label: 'Live',
@@ -16,12 +16,12 @@ const STATUS_CONFIG: Record<PoolStatus, { label: string; icon: string; classes: 
   complete: {
     label: 'Complete',
     icon: '\u2713', // checkmark
-    classes: 'border-slate-200 bg-slate-100 text-slate-900',
+    classes: 'border-stone-200 bg-stone-100 text-stone-900',
   },
   archived: {
     label: 'Archived',
     icon: '\u25A3', // filled square
-    classes: 'border-slate-200 bg-slate-100 text-slate-700',
+    classes: 'border-stone-200 bg-stone-100 text-stone-700',
   },
 }
 
@@ -34,7 +34,7 @@ export function StatusChip({ status }: { status: PoolStatus }) {
       aria-label={`Pool status: ${config.label}`}
     >
       <span aria-hidden="true">{config.icon}</span>
-      <span className={sectionHeadingClasses().replace('text-emerald-800/70', 'text-current')}>
+      <span className={sectionHeadingClasses().replace('text-green-800/70', 'text-current')}>
         {config.label}
       </span>
     </span>

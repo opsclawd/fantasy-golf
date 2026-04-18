@@ -220,3 +220,37 @@ describe('getTrustStatusBarState', () => {
     expect(result.freshnessMessage).toContain('Refreshing scores...')
   })
 })
+
+describe('TrustStatusBar token migration', () => {
+  it('uses green/stone tokens for info tone (not emerald/slate)', () => {
+    const markup = renderToStaticMarkup(
+      createElement(TrustStatusBar, {
+        isLocked: false,
+        poolStatus: 'open',
+        freshness: 'current',
+        refreshedAt: '2026-03-29T12:00:00.000Z',
+        lastRefreshError: null,
+      }),
+    )
+
+    expect(markup).toContain('border-green-200')
+    expect(markup).toContain('text-stone-900')
+    expect(markup).not.toContain('emerald-')
+    expect(markup).not.toContain('slate-')
+  })
+
+  it('uses stone-600 for freshness labels (not slate-500)', () => {
+    const markup = renderToStaticMarkup(
+      createElement(TrustStatusBar, {
+        isLocked: true,
+        poolStatus: 'live',
+        freshness: 'current',
+        refreshedAt: '2026-03-29T12:00:00.000Z',
+        lastRefreshError: null,
+      }),
+    )
+
+    expect(markup).toContain('text-stone-600')
+    expect(markup).not.toContain('text-slate-500')
+  })
+})

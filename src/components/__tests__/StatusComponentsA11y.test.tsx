@@ -62,3 +62,39 @@ describe('status component accessibility attributes', () => {
     expect(markup).toContain('aria-valuemax="4"')
   })
 })
+
+describe('StatusChip token migration', () => {
+  it('uses green tokens for open status (not emerald)', () => {
+    const markup = renderToStaticMarkup(
+      createElement(StatusChip, { status: 'open' }),
+    )
+    expect(markup).toContain('border-green-200')
+    expect(markup).toContain('bg-green-50')
+    expect(markup).toContain('text-green-900')
+    expect(markup).not.toContain('emerald-')
+  })
+
+  it('uses stone tokens for complete and archived status (not slate)', () => {
+    const markup = renderToStaticMarkup(
+      createElement(StatusChip, { status: 'complete' }),
+    )
+    expect(markup).toContain('border-stone-200')
+    expect(markup).toContain('bg-stone-100')
+    expect(markup).not.toContain('slate-')
+
+    const archivedMarkup = renderToStaticMarkup(
+      createElement(StatusChip, { status: 'archived' }),
+    )
+    expect(archivedMarkup).toContain('border-stone-200')
+    expect(archivedMarkup).not.toContain('slate-')
+  })
+
+  it('retains sky tokens for live status', () => {
+    const markup = renderToStaticMarkup(
+      createElement(StatusChip, { status: 'live' }),
+    )
+    expect(markup).toContain('border-sky-200')
+    expect(markup).toContain('bg-sky-50')
+    expect(markup).toContain('text-sky-900')
+  })
+})

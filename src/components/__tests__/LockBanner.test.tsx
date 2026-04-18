@@ -37,3 +37,36 @@ describe('LockBanner', () => {
     expect(markup).toContain('This pool is archived. Picks are read-only.')
   })
 })
+
+describe('LockBanner token migration', () => {
+  it('uses stone tokens for locked state (not slate)', () => {
+    const props: any = {
+      isLocked: true,
+      deadline: '2026-04-09T00:00:00+00:00',
+      poolStatus: 'complete',
+      timezone: 'America/New_York',
+    }
+    const markup = renderToStaticMarkup(<LockBanner {...props} />)
+
+    expect(markup).toContain('border-stone-200')
+    expect(markup).toContain('bg-stone-100')
+    expect(markup).not.toContain('slate-')
+    expect(markup).not.toContain('emerald-')
+  })
+
+  it('uses green tokens for open state (not emerald)', () => {
+    const props: any = {
+      isLocked: false,
+      deadline: '2026-04-09T00:00:00+00:00',
+      poolStatus: 'open',
+      timezone: 'America/New_York',
+    }
+    const markup = renderToStaticMarkup(<LockBanner {...props} />)
+
+    expect(markup).toContain('border-green-200')
+    expect(markup).toContain('bg-green-100')
+    expect(markup).toContain('text-green-950')
+    expect(markup).not.toContain('emerald-')
+    expect(markup).not.toContain('slate-')
+  })
+})
