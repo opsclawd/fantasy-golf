@@ -34,7 +34,7 @@ export function StatusChip({ status }: { status: PoolStatus }) {
       aria-label={`Pool status: ${config.label}`}
     >
       <span aria-hidden="true">{config.icon}</span>
-      <span className={sectionHeadingClasses().replace('text-green-800/70', 'text-current')}>
+      <span className={sectionHeadingClasses().replace('text-green-700/70', 'text-current')}>
         {config.label}
       </span>
     </span>

@@ -29,7 +29,7 @@ export function SelectionSummaryCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className={sectionHeadingClasses().replace('text-emerald-800/70', 'text-green-700/80')}>
+          <p className={sectionHeadingClasses().replace('text-green-700/70', 'text-green-700/80')}>
             Current entry
           </p>
           <p className="mt-2 text-base font-semibold text-stone-950">

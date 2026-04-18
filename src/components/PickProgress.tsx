@@ -45,7 +45,7 @@ export function PickProgress({ current, required }: PickProgressProps) {
       >
         <div
           className={`h-full rounded-full motion-safe:transition-[width,background-color] motion-safe:duration-300 ${
-            isComplete ? 'bg-green-600' : 'bg-green-600'
+            'bg-green-600'
           }`}
           style={{ width: `${percentage}%` }}
         />
