@@ -31,8 +31,8 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
   if (!member) {
     if (pool.status === 'archived') {
       return (
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
-          <p className="text-gray-600">This pool is archived and read-only.</p>
+        <div className="rounded-3xl border border-stone-200/80 bg-stone-100 p-4 text-sm sm:p-5" role="status" aria-live="polite">
+          <p className="text-stone-600">This pool is archived and read-only.</p>
         </div>
       )
     }
@@ -76,8 +76,8 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
     <div className="mx-auto max-w-3xl space-y-4 sm:space-y-5">
       <section className={`${panelClasses()} p-5 sm:p-6`}>
         <p className={sectionHeadingClasses()}>Participant picks</p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-950">{pool.name}</h1>
-        <p className="mt-1 text-sm text-slate-600">{pool.tournament_name}</p>
+        <h1 className="mt-2 text-2xl font-bold text-stone-950">{pool.name}</h1>
+        <p className="mt-1 text-sm text-stone-600">{pool.tournament_name}</p>
       </section>
 
       <LockBanner
@@ -117,14 +117,14 @@ export default async function PicksPage({ params }: { params: Promise<{ poolId: 
         )}
         </>
       ) : isLocked && pool.status === 'archived' && !hasEntry ? (
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
-          <p className="text-gray-600">
+        <div className="rounded-3xl border border-stone-200/80 bg-stone-100 p-4 text-sm sm:p-5" role="status" aria-live="polite">
+          <p className="text-stone-600">
             This pool is archived and read-only.
           </p>
         </div>
       ) : isLocked && !hasEntry ? (
-        <div className="rounded-2xl border border-slate-200/80 bg-slate-50 p-4 text-sm sm:p-5" role="status" aria-live="polite">
-          <p className="text-gray-600">
+        <div className="rounded-3xl border border-stone-200/80 bg-stone-100 p-4 text-sm sm:p-5" role="status" aria-live="polite">
+          <p className="text-stone-600">
             You did not submit picks before the deadline.
           </p>
         </div>
