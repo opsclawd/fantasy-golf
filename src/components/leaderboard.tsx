@@ -114,7 +114,7 @@ export function Leaderboard({
 
   if (loading) {
     return (
-      <div className={`${panelClasses()} p-8 text-center text-slate-500`} role="status" aria-live="polite">
+      <div className={`${panelClasses()} p-8 text-center text-stone-500`} role="status" aria-live="polite">
         Loading leaderboard...
       </div>
     )
@@ -187,20 +187,20 @@ export function Leaderboard({
           tabIndex={0}
           aria-label="Leaderboard standings"
         >
-          <table className="min-w-[40rem] overflow-hidden rounded-2xl border border-slate-200/80 bg-white sm:min-w-full">
+          <table className="min-w-[28rem] overflow-hidden rounded-3xl border border-stone-200/80 bg-white sm:min-w-full">
             <caption className="sr-only">Live leaderboard rankings for pool entries</caption>
-            <thead className="bg-slate-100/80">
+            <thead className="bg-stone-100/80">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-stone-600 sm:px-5">
                   Rank
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                <th className="px-2 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-stone-600 sm:px-5">
                   Entry
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                <th className="px-2 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-stone-600 sm:px-5">
                   Score
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 sm:px-5">
+                <th className="hidden sm:table-cell px-2 py-3 text-right text-xs font-semibold uppercase tracking-[0.16em] text-stone-600 sm:px-5">
                   Birdies
                 </th>
               </tr>
@@ -219,6 +219,7 @@ export function Leaderboard({
                     golferNames={data.golferNames}
                     withdrawnGolferIds={withdrawnGolferIds}
                     onSelectGolfer={setSelectedGolferId}
+                    rowIndex={index}
                   />
                 )
               })}

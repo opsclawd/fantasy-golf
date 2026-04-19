@@ -9,19 +9,19 @@ const FRESHNESS_CONFIG: Record<
   current: {
     label: 'Current',
     icon: '\u2713', // checkmark
-    classes: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    classes: 'border-green-200 bg-green-50 text-green-900',
     srText: 'Data is current',
   },
   stale: {
     label: 'Stale',
     icon: '\u26A0', // warning
-    classes: 'border-amber-200 bg-amber-50 text-amber-900',
+    classes: 'border-amber-200 bg-amber-50 text-amber-800',
     srText: 'Data may be outdated',
   },
   unknown: {
     label: 'No data yet',
     icon: '\u2014', // em dash
-    classes: 'border-slate-200 bg-slate-100 text-slate-700',
+    classes: 'border-stone-200 bg-stone-100 text-stone-700',
     srText: 'No scoring data available',
   },
 }
@@ -49,7 +49,7 @@ export function FreshnessChip({ status, refreshedAt }: FreshnessChipProps) {
       <span aria-hidden="true" className="shrink-0">
         {config.icon}
       </span>
-      <span className={`${sectionHeadingClasses().replace('text-green-700/70', 'text-current')} truncate`}>
+      <span className={`${sectionHeadingClasses().replace('text-green-800/70', 'text-current')} truncate`}>
         {config.label}
       </span>
       {timeLabel && (
