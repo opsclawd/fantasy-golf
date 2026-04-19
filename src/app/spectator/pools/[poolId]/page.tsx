@@ -23,15 +23,15 @@ export default async function SpectatorPage({
 
   return (
     <div className={pageShellClasses()}>
-      <header className="border-b border-white/50 bg-white/55 backdrop-blur-sm">
+      <header className="border-b border-green-800/30 bg-primary-900/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className={sectionHeadingClasses()}>Spectator view</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              <p className={sectionHeadingClasses().replace('text-green-800/70', 'text-green-200/80')}>Spectator view</p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 {pool.name}
               </h1>
-              <p className="mt-2 text-sm text-slate-600 sm:text-base">{pool.tournament_name}</p>
+              <p className="mt-2 text-sm text-green-200/90 sm:text-base">{pool.tournament_name}</p>
             </div>
             <div className="max-sm:self-start">
               <StatusChip status={pool.status} />
