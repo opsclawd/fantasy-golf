@@ -99,6 +99,22 @@ This is a polish/audit story — no new features. The implementation engineer wi
 | `src/components/DataAlert.tsx` | Error/warning/info alert component |
 | `src/components/FreshnessChip.tsx` | Data freshness indicator chip |
 
+## Audit Finding: DataAlert.tsx Color Decision (2026-04-20)
+
+### error variant
+- Colors: `red-200`, `red-50/95`, `red-950`
+- **Decision:** Keep `red-*` as-is. Design token `action-error` is `#dc2626` (red-600 range). The lighter red palette in DataAlert is visually appropriate for the alert box styling.
+
+### warning variant
+- Colors: `amber-200`, `amber-50/95`, `amber-950`
+- **Decision:** Keep `amber-*` as-is. Design token `action-warning` is `#f59e0b` (amber-500 range). The lighter amber palette is visually appropriate for the alert box styling.
+
+### info variant
+- Colors: `sky-200`, `sky-50/95`, `sky-950`
+- **Decision:** Keep `sky-*` as-is. `sky` is NOT in the design token system. Per the migration table, there is no blue/info token. The blue-ish `sky` palette is appropriate for semantic "info" meaning and no migration is needed.
+
+---
+
 ## Success Criteria
 
 1. Zero hardcoded color values in target files that should use design tokens
