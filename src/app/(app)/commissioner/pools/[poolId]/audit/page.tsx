@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAuditEventsForPool, getPoolById } from '@/lib/pool-queries'
 import type { AuditEvent } from '@/lib/supabase/types'
+import { panelClasses } from '@/components/uiStyles'
 
 type ActionMeta = {
   label: string
@@ -135,27 +136,24 @@ export default async function CommissionerPoolAuditPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Audit Log</h1>
-          <p className="text-gray-500">
-            Event history for <span className="font-medium text-gray-700">{pool.name}</span>
-          </p>
-          <p className="mt-2 text-sm">
-            <Link
-              href={`/commissioner/pools/${poolId}/audit/score-trace`}
-              className="font-medium text-blue-600 hover:text-blue-800"
-            >
-              View score trace
-            </Link>
-          </p>
+      <div className="mb-6">
+        <div className="bg-gradient-to-r from-green-800 to-green-700 rounded-xl p-5 text-white shadow">
+          <p className="text-green-100 text-xs uppercase tracking-widest mb-1">Audit log</p>
+          <h1 className="text-2xl font-bold text-white">{pool.name}</h1>
+          <p className="mt-1 text-green-100 text-sm">Event history</p>
         </div>
-        <Link
-          href={`/commissioner/pools/${poolId}`}
-          className="text-sm font-medium text-blue-600 hover:text-blue-800"
-        >
-          Back to Pool
-        </Link>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm">
+          <Link href={`/commissioner/pools/${poolId}/audit/score-trace`} className="text-green-700 hover:text-green-900 font-medium">
+            View score trace
+          </Link>
+          <span className="mx-2 text-slate-400">|</span>
+          <Link href={`/commissioner/pools/${poolId}`} className="text-green-700 hover:text-green-900 font-medium">
+            Back to Pool
+          </Link>
+        </p>
       </div>
 
       {events.length === 0 ? (
@@ -176,7 +174,7 @@ export default async function CommissionerPoolAuditPage({
             const actorLabel = event.user_id ? event.user_id.slice(0, 8) : 'System'
 
             return (
-              <article key={event.id} className="rounded-lg bg-white p-4 shadow">
+              <article key={event.id} className={`${panelClasses()} p-4`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
                     <span

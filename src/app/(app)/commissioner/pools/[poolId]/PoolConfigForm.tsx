@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'rea
 import { useFormState, useFormStatus } from 'react-dom'
 import { updatePoolConfigAction, type UpdatePoolConfigState } from './actions'
 import type { Pool } from '@/lib/supabase/types'
-import { panelClasses, sectionHeadingClasses } from '@/components/uiStyles'
+import { panelClasses, scrollRegionFocusClasses, sectionHeadingClasses } from '@/components/uiStyles'
 
 interface TournamentOption {
   id: string
@@ -186,7 +186,7 @@ export function PoolConfigForm({ pool, isLocked }: { pool: Pool; isLocked: boole
       )}
 
       {isEditing ? (
-        <form action={formAction} className="mt-5 space-y-4">
+        <form action={formAction} className={`mt-5 space-y-4 ${scrollRegionFocusClasses()}`}>
           <div className="grid gap-4 lg:grid-cols-2">
             <div>
               <label htmlFor="tournamentId" className="mb-1 block text-sm font-medium text-slate-700">
