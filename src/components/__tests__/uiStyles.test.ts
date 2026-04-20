@@ -31,6 +31,5 @@ describe('uiStyles', () => {
     expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-2')
     expect(scrollRegionFocusClasses()).toContain('focus-visible:ring-green-500')
     expect(scrollRegionFocusClasses()).not.toContain('focus-visible:ring-offset-2')
-    expect(scrollRegionFocusClasses()).not.toBe('focus-visible:outline-none')
   })
 })
