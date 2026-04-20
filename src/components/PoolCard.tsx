@@ -9,9 +9,10 @@ interface PoolCardProps {
   href: string
   entryCount?: number
   submissionStatus?: string
+  className?: string
 }
 
-export function PoolCard({ pool, href, entryCount, submissionStatus }: PoolCardProps) {
+export function PoolCard({ pool, href, entryCount, submissionStatus, className = '' }: PoolCardProps) {
   const deadlineInstant = pool.deadline ? getTournamentLockInstant(pool.deadline, pool.timezone) : null
   const formattedDeadline = deadlineInstant
     ? deadlineInstant.toLocaleDateString(undefined, { timeZone: pool.timezone })
@@ -21,7 +22,7 @@ export function PoolCard({ pool, href, entryCount, submissionStatus }: PoolCardP
     <Link href={href}>
       <Card
         accent="left"
-        className="p-5 hover:bg-green-50/90 hover:border-l-green-600 hover:shadow-[0_18px_60px_-24px_rgba(21,128,61,0.18)] transition-colors cursor-pointer"
+        className={`p-5 border-l-green-700 bg-green-50/30 hover:bg-green-50/90 hover:border-l-green-600 hover:shadow-[0_18px_60px_-24px_rgba(21,128,61,0.18)] transition-colors cursor-pointer ${className}`}
       >
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-semibold text-stone-900">{pool.name}</h3>

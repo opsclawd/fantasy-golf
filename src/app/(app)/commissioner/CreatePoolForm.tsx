@@ -71,7 +71,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+      className="w-full rounded-lg px-4 py-2.5 bg-green-700 text-white hover:bg-green-900 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {pending ? 'Creating Pool...' : 'Create Pool'}
     </button>
