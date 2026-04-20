@@ -10,7 +10,7 @@ function ArchiveSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="px-4 py-2 bg-slate-600 text-white text-sm rounded hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:outline-none disabled:opacity-50"
+      className="px-4 py-2 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:outline-none disabled:opacity-50"
     >
       {pending ? 'Archiving...' : 'Archive Pool'}
     </button>

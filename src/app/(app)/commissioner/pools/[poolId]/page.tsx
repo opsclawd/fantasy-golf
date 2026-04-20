@@ -109,22 +109,23 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <div className="bg-gradient-to-r from-green-800 to-green-700 rounded-xl p-5 text-white shadow">
+          <p className="text-green-100 text-xs uppercase tracking-widest mb-1">Commissioner command center</p>
+          <h1 className="text-2xl font-bold text-white">{pool.name}</h1>
+          <p className="mt-1 text-green-100 text-sm">{pool.tournament_name}</p>
+        </div>
+      </div>
+
       <section className={`${panelClasses()} p-6`}>
-        <p className={sectionHeadingClasses()}>Commissioner command center</p>
-        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-slate-950">{pool.name}</h1>
-            <p className="mt-1 text-sm text-slate-500">{pool.tournament_name}</p>
-          </div>
-          <div className="flex flex-wrap gap-3 max-sm:w-full">
-            <StatusChip status={pool.status} />
-            {pool.status === 'open' && !isLocked && <StartPoolButton poolId={pool.id} />}
-            {pool.status === 'open' && !isLocked && <DeletePoolButton poolId={pool.id} />}
-            {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
-            {pool.status === 'complete' && canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone) && <ReopenPoolButton poolId={pool.id} />}
-            {pool.status === 'complete' && <ArchivePoolButton poolId={pool.id} />}
-            {pool.status === 'archived' && <DeletePoolButton poolId={pool.id} />}
-          </div>
+        <div className="flex flex-wrap gap-3 max-sm:w-full">
+          <StatusChip status={pool.status} />
+          {pool.status === 'open' && !isLocked && <StartPoolButton poolId={pool.id} />}
+          {pool.status === 'open' && !isLocked && <DeletePoolButton poolId={pool.id} />}
+          {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
+          {pool.status === 'complete' && canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone) && <ReopenPoolButton poolId={pool.id} />}
+          {pool.status === 'complete' && <ArchivePoolButton poolId={pool.id} />}
+          {pool.status === 'archived' && <DeletePoolButton poolId={pool.id} />}
         </div>
       </section>
 
@@ -161,7 +162,7 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
       <PoolConfigForm pool={pool} isLocked={isLocked} />
       <GolferCatalogPanel poolId={poolId} usage={usage} latestRun={latestRun} rosterCount={rosterCount} />
 
-      <section className={`${panelClasses()} overflow-hidden`}>
+      <section className={`${panelClasses()} overflow-hidden border-l-4 border-l-green-700`}>
         <div className="border-b border-slate-200/80 px-5 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>

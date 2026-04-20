@@ -6,6 +6,7 @@ import { deriveCompletedRounds, getEntryRoundScore, rankEntries } from '@/lib/sc
 import { createClient } from '@/lib/supabase/server'
 import type { Entry, TournamentScore } from '@/lib/supabase/types'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
+import { panelClasses } from '@/components/uiStyles'
 
 type RoundTrace = {
   golferId: string
@@ -108,20 +109,16 @@ export default async function CommissionerPoolAuditScoreTracePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Score Trace</h1>
-          <p className="text-gray-500">
-            Leaderboard derivation for <span className="font-medium text-gray-700">{pool.name}</span>
-          </p>
-          <p className="mt-1 text-sm text-gray-500">
-            Rankings are recomputed from stored <code>entries</code> and <code>tournament_scores</code>.
-          </p>
+      <div className="mb-6">
+        <div className="bg-gradient-to-r from-green-800 to-green-700 rounded-xl p-5 text-white shadow">
+          <p className="text-green-100 text-xs uppercase tracking-widest mb-1">Score trace</p>
+          <h1 className="text-2xl font-bold text-white">{pool.name}</h1>
+          <p className="mt-1 text-green-100 text-sm">Leaderboard derivation</p>
         </div>
-        <Link
-          href={`/commissioner/pools/${poolId}/audit`}
-          className="text-sm font-medium text-blue-600 hover:text-blue-800"
-        >
+      </div>
+
+      <div className="flex items-center justify-between">
+        <Link href={`/commissioner/pools/${poolId}/audit`} className="text-sm font-medium text-green-700 hover:text-green-900">
           Back to Audit Log
         </Link>
       </div>
@@ -158,7 +155,7 @@ export default async function CommissionerPoolAuditScoreTracePage({
             const totalMatches = derivedTotal === entry.totalScore
 
             return (
-              <article key={entry.id} className="rounded-lg bg-white p-4 shadow">
+              <article key={entry.id} className={`${panelClasses()} p-4`}>
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 pb-3">
                   <div>
                     <p className="text-sm text-gray-500">Entry {entry.id.slice(0, 8)}</p>
