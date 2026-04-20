@@ -115,6 +115,22 @@ This is a polish/audit story — no new features. The implementation engineer wi
 
 ---
 
+## Audit Finding: FreshnessChip.tsx Color Decision (2026-04-20)
+
+### current status
+- Colors: `border-green-200`, `bg-green-50`, `text-green-900`
+- **Decision:** Keep `green-*` as-is for now. Design tokens show `green-*` maps to `primary-*` tokens, but the specific mapping table shows `primary-100` for backgrounds and `primary-900` for text. The current green palette (`green-50`, `green-200`, `green-900`) is semantically correct for "current/fresh" status. Further token mapping review deferred to a follow-up story.
+
+### stale status
+- Colors: `border-amber-200`, `bg-amber-50`, `text-amber-800`
+- **Decision:** Keep `amber-800` as-is. Design token `action-warning` is `#f59e0b` (amber-500) which is too bright for text on a stale indicator. The darker `amber-800` provides sufficient contrast and is semantically correct for warning/stale status.
+
+### unknown status
+- Colors: `border-stone-200`, `bg-stone-100`, `text-stone-700`
+- **Decision:** Keep `stone-*` as-is. Per the design token migration table, `stone-*` is acceptable for neutral semantic meaning. The `neutral` token set only covers 900/600/200; stone scale is the correct choice for neutral/unknown status.
+
+---
+
 ## Success Criteria
 
 1. Zero hardcoded color values in target files that should use design tokens
