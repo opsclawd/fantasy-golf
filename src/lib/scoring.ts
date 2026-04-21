@@ -1,4 +1,10 @@
 import { TournamentScore, Entry } from './supabase/types'
+import {
+  rankEntriesDomain,
+  type PerGolferRounds,
+  type PlayerRoundScore,
+  type EntryLeaderboardSummary,
+} from './scoring/domain'
 
 function getRoundScore(score: TournamentScore): number | null {
   if (typeof score.total_score === 'number') return score.total_score
@@ -64,33 +70,32 @@ export function rankEntries(
   entries: Entry[],
   golferScores: Map<string, TournamentScore>,
   completedRounds: number
-): (Entry & { totalScore: number; totalBirdies: number; rank: number })[] {
-  const withScores = entries.map(entry => {
-    const totalScore = calculateEntryTotalScore(golferScores, entry.golfer_ids, completedRounds)
-    const totalBirdies = calculateEntryBirdies(golferScores, entry.golfer_ids)
-    return { ...entry, totalScore, totalBirdies }
-  })
+): EntryLeaderboardSummary[] {
+  const perGolferRounds = buildPerGolferRoundsFromFlat(golferScores, completedRounds)
+  return rankEntriesDomain(entries, perGolferRounds, completedRounds)
+}
 
-  withScores.sort((a, b) => {
-    if (a.totalScore !== b.totalScore) {
-      return a.totalScore - b.totalScore
-    }
-    return b.totalBirdies - a.totalBirdies
+function buildPerGolferRoundsFromFlat(
+  golferScores: Map<string, TournamentScore>,
+  _completedRounds: number
+): PerGolferRounds {
+  const map = new Map<string, PlayerRoundScore[]>()
+  
+  Array.from(golferScores.entries()).forEach(([golferId, score]) => {
+    if (score.round_id === null || !Number.isFinite(score.round_id)) return
+    if (score.status === 'withdrawn' || score.status === 'cut') return
+    
+    const existing = map.get(golferId) || []
+    existing.push({
+      golferId,
+      roundId: score.round_id as number,
+      scoreToPar: score.total_score ?? null,
+      strokes: null,
+      status: score.status,
+      birdies: score.total_birdies,
+    })
+    map.set(golferId, existing)
   })
-
-  const ranked: (Entry & { totalScore: number; totalBirdies: number; rank: number })[] = []
-  for (let i = 0; i < withScores.length; i++) {
-    let rank: number
-    if (
-      i > 0 &&
-      withScores[i].totalScore === withScores[i - 1].totalScore &&
-      withScores[i].totalBirdies === withScores[i - 1].totalBirdies
-    ) {
-      rank = ranked[i - 1].rank
-    } else {
-      rank = i + 1
-    }
-    ranked.push({ ...withScores[i], rank })
-  }
-  return ranked
+  
+  return map
 }
