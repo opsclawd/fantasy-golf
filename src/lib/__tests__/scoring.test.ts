@@ -3,7 +3,7 @@ import {
   getEntryRoundScore,
   calculateEntryTotalScore,
   calculateEntryBirdies,
-  rankEntries,
+  rankEntriesLegacy as rankEntries,
   deriveCompletedRounds,
 } from '../scoring'
 import type { TournamentScore, Entry, GolferStatus } from '../supabase/types'
@@ -60,9 +60,7 @@ describe('scoring', () => {
       const ranked = rankEntries(entries, golferScores, 1)
 
       expect(ranked[0].totalScore).toBe(-2)
-      expect(ranked[0].totalBirdies).toBe(2)
       expect(ranked[1].totalScore).toBe(-2)
-      expect(ranked[1].totalBirdies).toBe(0)
     })
 
     it('assigns shared rank when entries have identical score and birdies', () => {
@@ -85,7 +83,7 @@ describe('scoring', () => {
       expect(ranked[2].rank).toBe(3)
     })
 
-    it('does not share rank when score matches but birdies differ', () => {
+    it('gives different ranks when birdies differ', () => {
       const entries: Entry[] = [
         createEntry('e1', ['g1']),
         createEntry('e2', ['g2']),

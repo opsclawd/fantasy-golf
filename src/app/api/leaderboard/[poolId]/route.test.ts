@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './route'
 import { createClient } from '@/lib/supabase/server'
 import { classifyFreshness } from '@/lib/freshness'
-import { rankEntries } from '@/lib/scoring'
+import { deriveCompletedRounds } from '@/lib/scoring'
+import { rankEntries } from '@/lib/scoring/domain'
+import { getTournamentScoreRounds } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
@@ -15,7 +17,14 @@ vi.mock('@/lib/freshness', () => ({
 
 vi.mock('@/lib/scoring', () => ({
   deriveCompletedRounds: vi.fn(),
+}))
+
+vi.mock('@/lib/scoring/domain', () => ({
   rankEntries: vi.fn(),
+}))
+
+vi.mock('@/lib/scoring-queries', () => ({
+  getTournamentScoreRounds: vi.fn(),
 }))
 
 const originalEnv = {
@@ -99,6 +108,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
       }),
     } as never)
 
+    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
     vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
 
     const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
