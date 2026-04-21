@@ -1,7 +1,6 @@
 import type { GolferStatus, Entry } from '@/lib/supabase/types'
 
 export interface PlayerHoleScore {
-  golferId: string
   roundId: number
   scoreToPar: number | null
   status: GolferStatus

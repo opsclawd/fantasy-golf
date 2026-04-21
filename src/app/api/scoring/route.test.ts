@@ -4,7 +4,7 @@ import { POST } from './route'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTournamentScores } from '@/lib/slash-golf/client'
-import { rankEntries } from '@/lib/scoring'
+import { rankEntries, deriveCompletedRounds } from '@/lib/scoring/domain'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getActivePool,
@@ -17,6 +17,7 @@ import {
 import {
   getScoresForTournament,
   upsertTournamentScore,
+  getTournamentScoreRounds,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -31,8 +32,9 @@ vi.mock('@/lib/slash-golf/client', () => ({
   getTournamentScores: vi.fn(),
 }))
 
-vi.mock('@/lib/scoring', () => ({
+vi.mock('@/lib/scoring/domain', () => ({
   rankEntries: vi.fn(),
+  deriveCompletedRounds: vi.fn(),
 }))
 
 vi.mock('@/lib/audit', () => ({
@@ -52,6 +54,7 @@ vi.mock('@/lib/pool-queries', () => ({
 vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
+  getTournamentScoreRounds: vi.fn(),
 }))
 
 const originalEnv = { ...process.env }
@@ -131,6 +134,8 @@ describe('POST /api/scoring', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const request = new Request('http://localhost/api/scoring', {
       method: 'POST',
@@ -209,6 +214,8 @@ describe('POST /api/scoring', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const request = new Request('http://localhost/api/scoring', {
       method: 'POST',

@@ -96,3 +96,15 @@ export async function updateGolferStatus(
   if (error) return { error: error.message }
   return { error: null }
 }
+
+export async function getTournamentScoreRounds(
+  supabase: SupabaseClient,
+  tournamentId: string
+): Promise<TournamentScoreRound[]> {
+  const { data } = await supabase
+    .from('tournament_score_rounds')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .order('round_id', { ascending: true })
+  return (data as TournamentScoreRound[]) || []
+}
