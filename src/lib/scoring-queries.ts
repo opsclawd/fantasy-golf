@@ -28,7 +28,6 @@ export async function upsertTournamentScore(
       score_to_par: r.score_to_par ?? null,
       course_id: r.course_id ?? null,
       course_name: r.course_name ?? null,
-      round_status: golferScore.status ?? 'active',
       position: golferScore.position ?? null,
       total_score: golferScore.total_score ?? null,
       total_strokes_from_completed_rounds: golferScore.total_strokes_from_completed_rounds ?? null,
