@@ -150,7 +150,7 @@ export async function refreshScoresForPool(
       roundId: round.round_id,
       scoreToPar: round.score_to_par ?? null,
       status: round.status,
-      isComplete: true,
+      isComplete: round.strokes !== null,
     })
   }
 
