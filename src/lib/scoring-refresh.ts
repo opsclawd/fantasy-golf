@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getTournamentScores } from '@/lib/slash-golf/client'
-import { rankEntries } from '@/lib/scoring'
+import { rankEntries } from '@/lib/scoring/domain'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getPoolsByTournament,
@@ -8,11 +8,15 @@ import {
   updatePoolRefreshMetadata,
   insertAuditEvent,
 } from '@/lib/pool-queries'
+import type { Entry } from '@/lib/supabase/types'
 import {
   upsertTournamentScore,
   getScoresForTournament,
+  getTournamentScoreRounds,
 } from '@/lib/scoring-queries'
 import type { TournamentScore } from '@/lib/supabase/types'
+import type { GolferRoundScoresMap } from '@/lib/scoring/domain'
+import { deriveCompletedRounds } from '@/lib/scoring/domain'
 
 interface RefreshablePool {
   id: string
@@ -134,17 +138,29 @@ export async function refreshScoresForPool(
     last_refresh_error: null,
   })
 
-  // Step 4: Compute rankings, broadcast, and audit for each live pool
+  // Step 4: Build golfer round scores map from per-round archive
+  const scoreRounds = await getTournamentScoreRounds(supabase, pool.tournament_id)
+  const golferRoundScoresMap: GolferRoundScoresMap = new Map()
+
+  for (const round of scoreRounds) {
+    if (!golferRoundScoresMap.has(round.golfer_id)) {
+      golferRoundScoresMap.set(round.golfer_id, [])
+    }
+    golferRoundScoresMap.get(round.golfer_id)!.push({
+      roundId: round.round_id,
+      scoreToPar: round.score_to_par ?? null,
+      status: round.status,
+      isComplete: true,
+    })
+  }
+
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)
+  const completedRounds = deriveCompletedRounds(allScores)
 
   const golferScoresMap = new Map<string, TournamentScore>()
   for (const score of allScores) {
     golferScoresMap.set(score.golfer_id, score)
   }
-
-  const completedRounds = slashScores.length > 0
-    ? Math.max(...slashScores.map((s) => s.current_round ?? s.rounds?.length ?? 0))
-    : 0
 
   const refreshDetails = buildRefreshAuditDetails(
     oldScoresMap,
@@ -154,8 +170,8 @@ export async function refreshScoresForPool(
   )
 
   for (const tournamentPool of livePools) {
-    const entries = await getEntriesForPool(supabase, tournamentPool.id)
-    const ranked = rankEntries(entries as never[], golferScoresMap, completedRounds)
+    const entries = await getEntriesForPool(supabase, tournamentPool.id) as Entry[]
+    const ranked = rankEntries(entries, golferRoundScoresMap, completedRounds)
 
     await supabase.channel('pool_updates').send({
       type: 'broadcast',
