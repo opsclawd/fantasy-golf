@@ -25,6 +25,7 @@ export interface EntryLeaderboardSummary {
   totalScore: number | null
   totalBirdies: number
   completedRounds: number
+  completedHoles: number
   rank: number
   isTied: boolean
 }
@@ -36,7 +37,7 @@ export function isActiveGolfer(status: GolferStatus): boolean {
 }
 
 export function isBirdie(scoreToPar: number): boolean {
-  return scoreToPar <= -1
+  return scoreToPar < 0
 }
 
 export function computeEntryScore(
@@ -123,13 +124,14 @@ export function rankEntries(
   entries: Entry[],
   golferRoundScores: GolferRoundScoresMap,
   _completedRounds: number
-): (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[] {
+): (Entry & { totalScore: number | null; totalBirdies: number; completedHoles: number; rank: number; isTied: boolean })[] {
   const withScores = entries.map(entry => {
     const scoreResult = computeEntryScore(golferRoundScores, entry.golfer_ids)
     return {
       ...entry,
       totalScore: scoreResult.totalScore,
       totalBirdies: scoreResult.totalBirdies,
+      completedHoles: scoreResult.completedHoles,
     }
   })
 
@@ -140,7 +142,7 @@ export function rankEntries(
     return b.totalBirdies - a.totalBirdies
   })
 
-  const ranked: (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[] = []
+  const ranked: (Entry & { totalScore: number | null; totalBirdies: number; completedHoles: number; rank: number; isTied: boolean })[] = []
   for (let i = 0; i < withScores.length; i++) {
     let rank: number
     let isTied = false
