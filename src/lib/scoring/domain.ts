@@ -77,55 +77,8 @@ export function computeEntryScore(
     roundCompleteness.set(roundId, current === undefined ? allComplete : current && allComplete)
   }
 
-  const activeGolferHoleCounts = new Map<string, Set<string>>()
-  for (const [holeKey, entries] of holesIndex) {
-    for (const entry of entries) {
-      if (!activeSet.has(entry.golferId)) continue
-      if (!activeGolferHoleCounts.has(entry.golferId)) {
-        activeGolferHoleCounts.set(entry.golferId, new Set())
-      }
-      activeGolferHoleCounts.get(entry.golferId)!.add(holeKey)
-    }
-  }
-
-  const allHoleKeys = new Set<string>()
-  for (const holeSet of activeGolferHoleCounts.values()) {
-    for (const key of holeSet) {
-      allHoleKeys.add(key)
-    }
-  }
-
-  for (const [golferId, holeSet] of activeGolferHoleCounts) {
-    if (holeSet.size !== allHoleKeys.size) {
-      return {
-        totalScore: null,
-        totalBirdies: 0,
-        completedHoles: 0,
-        activeGolferIds,
-      }
-    }
-  }
-
-  for (const holeKey of allHoleKeys) {
-    const entries = holesIndex.get(holeKey)
-    if (!entries) continue
-    const activeGolferIdsWithEntry = entries
-      .filter(e => activeSet.has(e.golferId))
-      .map(e => e.golferId)
-    const hasAllActiveGolfers = activeGolferIdsWithEntry.length === activeGolferIds.length
-    if (!hasAllActiveGolfers) {
-      return {
-        totalScore: null,
-        totalBirdies: 0,
-        completedHoles: 0,
-        activeGolferIds,
-      }
-    }
-  }
-
   for (const [holeKey, entries] of holesIndex) {
     const roundId = parseInt(holeKey.split('-')[0])
-
     if (!roundCompleteness.get(roundId)) continue
 
     const activeEntries = entries.filter(e => activeSet.has(e.golferId) && e.status === 'active')
