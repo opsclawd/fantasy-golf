@@ -173,6 +173,37 @@ describe('domain scoring', () => {
     })
   })
 
+  describe('computeEntryScore hole-level', () => {
+    it('normal round — best ball per hole summed', () => {
+      const scores = makeGolferRoundScoresMapentries([
+        ['g1', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, -1, 'active', true))],
+        ['g2', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, -2, 'active', true))],
+        ['g3', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 0, 'active', true))],
+        ['g4', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 1, 'active', true))],
+      ])
+
+      const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
+
+      expect(result.totalScore).toBe(-26)
+      expect(result.totalBirdies).toBe(18)
+      expect(result.completedHoles).toBe(18)
+    })
+
+    it('round with missing golfer — skipped', () => {
+      const scores = makeGolferRoundScoresMapentries([
+        ['g1', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, -1, 'active', true))],
+        ['g2', Array.from({ length: 10 }, (_, i) => makePlayerHoleScore(i + 1, 1, -2, 'active', true))],
+        ['g3', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 0, 'active', true))],
+        ['g4', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 1, 'active', true))],
+      ])
+
+      const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
+
+      expect(result.totalScore).toBe(null)
+      expect(result.completedHoles).toBe(0)
+    })
+  })
+
   describe('deriveCompletedRounds', () => {
     it('returns 0 when no scores', () => {
       expect(deriveCompletedRounds([])).toBe(0)
