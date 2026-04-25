@@ -11,8 +11,8 @@ import {
   type PlayerHoleScore,
 } from '../scoring/domain'
 
-function makePlayerHoleScore(roundId: number, scoreToPar: number, status: GolferStatus, isComplete: boolean): PlayerHoleScore {
-  return { roundId, scoreToPar: scoreToPar as number, status, isComplete }
+function makePlayerHoleScore(holeId: number, roundId: number, scoreToPar: number, status: GolferStatus, isComplete: boolean): PlayerHoleScore {
+  return { holeId, roundId, scoreToPar: scoreToPar as number, status, isComplete }
 }
 
 function makeGolferRoundScoresMapentries(entries: [string, PlayerHoleScore[]][]): GolferRoundScoresMap {
@@ -37,10 +37,10 @@ describe('domain scoring', () => {
   describe('computeEntryScore', () => {
     it('normal 4 active golfers, complete round', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', [makePlayerHoleScore(1, -2, 'active', true)]],
-        ['g2', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g3', [makePlayerHoleScore(1, 0, 'active', true)]],
-        ['g4', [makePlayerHoleScore(1, 1, 'active', true)]],
+        ['g1', [makePlayerHoleScore(1, 1, -2, 'active', true)]],
+        ['g2', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g3', [makePlayerHoleScore(1, 1, 0, 'active', true)]],
+        ['g4', [makePlayerHoleScore(1, 1, 1, 'active', true)]],
       ])
 
       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
@@ -53,20 +53,20 @@ describe('domain scoring', () => {
     it('one golfer cut — excluded post-cut', () => {
       const scores = makeGolferRoundScoresMapentries([
         ['g1', [
-          makePlayerHoleScore(1, -1, 'active', true),
-          makePlayerHoleScore(2, -2, 'cut', true),
+          makePlayerHoleScore(1, 1, -1, 'active', true),
+          makePlayerHoleScore(1, 2, -2, 'cut', true),
         ]],
         ['g2', [
-          makePlayerHoleScore(1, 0, 'active', true),
-          makePlayerHoleScore(2, -1, 'active', true),
+          makePlayerHoleScore(1, 1, 0, 'active', true),
+          makePlayerHoleScore(1, 2, -1, 'active', true),
         ]],
         ['g3', [
-          makePlayerHoleScore(1, 1, 'active', true),
-          makePlayerHoleScore(2, 0, 'active', true),
+          makePlayerHoleScore(1, 1, 1, 'active', true),
+          makePlayerHoleScore(1, 2, 0, 'active', true),
         ]],
         ['g4', [
-          makePlayerHoleScore(1, 0, 'active', true),
-          makePlayerHoleScore(2, 1, 'active', true),
+          makePlayerHoleScore(1, 1, 0, 'active', true),
+          makePlayerHoleScore(1, 2, 1, 'active', true),
         ]],
       ])
 
@@ -80,20 +80,20 @@ describe('domain scoring', () => {
     it('one golfer WD mid-round — excluded post-WD', () => {
       const scores = makeGolferRoundScoresMapentries([
         ['g1', [
-          makePlayerHoleScore(1, -1, 'active', true),
-          makePlayerHoleScore(2, -2, 'withdrawn', true),
+          makePlayerHoleScore(1, 1, -1, 'active', true),
+          makePlayerHoleScore(1, 2, -2, 'withdrawn', true),
         ]],
         ['g2', [
-          makePlayerHoleScore(1, 0, 'active', true),
-          makePlayerHoleScore(2, -1, 'active', true),
+          makePlayerHoleScore(1, 1, 0, 'active', true),
+          makePlayerHoleScore(1, 2, -1, 'active', true),
         ]],
         ['g3', [
-          makePlayerHoleScore(1, 1, 'active', true),
-          makePlayerHoleScore(2, 0, 'active', true),
+          makePlayerHoleScore(1, 1, 1, 'active', true),
+          makePlayerHoleScore(1, 2, 0, 'active', true),
         ]],
         ['g4', [
-          makePlayerHoleScore(1, 0, 'active', true),
-          makePlayerHoleScore(2, 1, 'active', true),
+          makePlayerHoleScore(1, 1, 0, 'active', true),
+          makePlayerHoleScore(1, 2, 1, 'active', true),
         ]],
       ])
 
@@ -106,20 +106,20 @@ describe('domain scoring', () => {
     it('partial round — only completed holes count', () => {
       const scores = makeGolferRoundScoresMapentries([
         ['g1', [
-          makePlayerHoleScore(1, -1, 'active', true),
-          makePlayerHoleScore(2, -2, 'active', false),
+          makePlayerHoleScore(1, 1, -1, 'active', true),
+          makePlayerHoleScore(1, 2, -2, 'active', false),
         ]],
         ['g2', [
-          makePlayerHoleScore(1, 0, 'active', true),
-          makePlayerHoleScore(2, -1, 'active', true),
+          makePlayerHoleScore(1, 1, 0, 'active', true),
+          makePlayerHoleScore(1, 2, -1, 'active', true),
         ]],
         ['g3', [
-          makePlayerHoleScore(1, 1, 'active', true),
-          makePlayerHoleScore(2, 0, 'active', true),
+          makePlayerHoleScore(1, 1, 1, 'active', true),
+          makePlayerHoleScore(1, 2, 0, 'active', true),
         ]],
         ['g4', [
-          makePlayerHoleScore(1, 0, 'active', true),
-          makePlayerHoleScore(2, 1, 'active', true),
+          makePlayerHoleScore(1, 1, 0, 'active', true),
+          makePlayerHoleScore(1, 2, 1, 'active', true),
         ]],
       ])
 
@@ -132,14 +132,14 @@ describe('domain scoring', () => {
 
     it('tie on score, broken by birdies', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g2', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g3', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g4', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g5', [makePlayerHoleScore(1, -2, 'active', true)]],
-        ['g6', [makePlayerHoleScore(1, -2, 'active', true)]],
-        ['g7', [makePlayerHoleScore(1, -2, 'active', true)]],
-        ['g8', [makePlayerHoleScore(1, -2, 'active', true)]],
+        ['g1', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g2', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g3', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g4', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g5', [makePlayerHoleScore(1, 1, -2, 'active', true)]],
+        ['g6', [makePlayerHoleScore(1, 1, -2, 'active', true)]],
+        ['g7', [makePlayerHoleScore(1, 1, -2, 'active', true)]],
+        ['g8', [makePlayerHoleScore(1, 1, -2, 'active', true)]],
       ])
 
       const entry1Score = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
@@ -153,14 +153,14 @@ describe('domain scoring', () => {
 
     it('tie on score and birdies — shared rank', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g2', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g3', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g4', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g5', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g6', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g7', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g8', [makePlayerHoleScore(1, -1, 'active', true)]],
+        ['g1', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g2', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g3', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g4', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g5', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g6', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g7', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g8', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
       ])
 
       const entry1Score = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
@@ -190,14 +190,14 @@ describe('domain scoring', () => {
   describe('rankEntries', () => {
     it('ranks by score then birdies', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g2', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g3', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g4', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g5', [makePlayerHoleScore(1, 0, 'active', true)]],
-        ['g6', [makePlayerHoleScore(1, 0, 'active', true)]],
-        ['g7', [makePlayerHoleScore(1, 0, 'active', true)]],
-        ['g8', [makePlayerHoleScore(1, 0, 'active', true)]],
+        ['g1', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g2', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g3', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g4', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g5', [makePlayerHoleScore(1, 1, 0, 'active', true)]],
+        ['g6', [makePlayerHoleScore(1, 1, 0, 'active', true)]],
+        ['g7', [makePlayerHoleScore(1, 1, 0, 'active', true)]],
+        ['g8', [makePlayerHoleScore(1, 1, 0, 'active', true)]],
       ])
 
       const entries: Entry[] = [
@@ -217,14 +217,14 @@ describe('domain scoring', () => {
 
     it('assigns shared rank when score and birdies are identical', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g2', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g3', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g4', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g5', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g6', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g7', [makePlayerHoleScore(1, -1, 'active', true)]],
-        ['g8', [makePlayerHoleScore(1, -1, 'active', true)]],
+        ['g1', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g2', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g3', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g4', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g5', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g6', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g7', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
+        ['g8', [makePlayerHoleScore(1, 1, -1, 'active', true)]],
       ])
 
       const entries: Entry[] = [
