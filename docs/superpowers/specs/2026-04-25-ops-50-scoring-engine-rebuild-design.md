@@ -37,7 +37,9 @@ The difference is significant when golfers have different round profiles (e.g., 
 
 1. **`computeEntryScore()` in `domain.ts` is already correct.** The algorithm iterates over `golferRoundScores`, groups by `roundId`, takes the minimum `scoreToPar` per round, sums those minima, and counts completed rounds. The bug is that the input data (`buildGolferRoundScoresMap`) produces wrong-shaped data.
 
-2. **`tournament_holes` table does not exist yet.** The hole-by-hole design from 2026-04-11 was specced but never implemented. OPS-50 must create this table and populate it correctly.
+2. **`PlayerHoleScore` interface in `domain.ts` currently lacks `holeId`.** The hole-level algorithm requires `holeId` to uniquely identify each hole. The interface must be updated to include `holeId: number` before the hole-level algorithm can work correctly.
+
+3. **`tournament_holes` table does not exist yet.** The hole-by-hole design from 2026-04-11 was specced but never implemented. OPS-50 must create this table and populate it correctly.
 
 3. **The existing `tournament_score_rounds` table has round-level aggregates**, not hole-level data. `score_to_par` in that table is the golfer's total score-to-par for completed rounds, not per-hole scores.
 
@@ -120,6 +122,7 @@ function buildGolferRoundScoresMap(
   for (const [golferId, holes] of holesByGolfer) {
     const rounds: PlayerHoleScore[] = holes.map(hole => ({
       roundId: hole.round_id,
+      holeId: hole.hole_id,    // ADD THIS: enables hole-level best ball
       scoreToPar: hole.score_to_par,
       status: golferStatuses.get(golferId) ?? 'active',
       isComplete: true,  // only completed holes are stored
@@ -230,6 +233,18 @@ With hole-level data:
 - A golfer who is cut/WD is filtered from `activeGolferIds` for subsequent rounds but their completed holes still exist in `golferRoundScores`
 
 ## Data Model Changes
+
+### Update `PlayerHoleScore` in `src/lib/scoring/domain.ts`
+
+```ts
+export interface PlayerHoleScore {
+  roundId: number
+  holeId: number         // ADD THIS: 1-18 — enables hole-level indexing
+  scoreToPar: number | null
+  status: GolferStatus
+  isComplete: boolean
+}
+```
 
 ### New type: `TournamentHole`
 
