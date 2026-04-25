@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { TournamentScore, TournamentScoreRound } from './supabase/types'
+import type { TournamentScore, TournamentScoreRound, TournamentHole } from './supabase/types'
 import type { GolferScore, GolferScoreRound } from './slash-golf/types'
 
 export interface TournamentHole {
