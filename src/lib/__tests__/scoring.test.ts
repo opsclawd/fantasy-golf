@@ -5,8 +5,9 @@ import {
   calculateEntryBirdies,
   rankEntriesLegacy as rankEntries,
   deriveCompletedRounds,
+  buildGolferRoundScoresMap,
 } from '../scoring'
-import type { TournamentScore, Entry, GolferStatus } from '../supabase/types'
+import type { TournamentScore, Entry, GolferStatus, TournamentHole } from '../supabase/types'
 
 describe('scoring', () => {
   describe('getEntryRoundScore', () => {
@@ -149,6 +150,24 @@ describe('scoring', () => {
       ]
 
       expect(deriveCompletedRounds(allScores)).toBe(2)
+    })
+  })
+
+  describe('buildGolferRoundScoresMap with hole data', () => {
+    it('maps tournament holes to PlayerHoleScore entries with holeId', () => {
+      const holesByGolfer = new Map<string, TournamentHole[]>([
+        ['g1', [
+          { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: 0 },
+          { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 2, strokes: 3, par: 4, score_to_par: -1 },
+        ]],
+      ])
+      const statuses = new Map<string, GolferStatus>([['g1', 'active']])
+
+      const result = buildGolferRoundScoresMap(holesByGolfer, statuses)
+
+      expect(result.get('g1')?.length).toBe(2)
+      expect(result.get('g1')?.[0]).toMatchObject({ roundId: 1, holeId: 1, scoreToPar: 0, isComplete: true })
+      expect(result.get('g1')?.[1]).toMatchObject({ roundId: 1, holeId: 2, scoreToPar: -1, isComplete: true })
     })
   })
 })
