@@ -89,9 +89,18 @@ Before proceeding, I need to clarify scope:
 
 ## Acceptance Criteria
 
-- [ ] Master freeze doc exists at `docs/superpowers/specs/YYYY-MM-DD-ops-49-mvp-rules-freeze.md`
-- [ ] All 8 rule domains covered with explicit file/function references
-- [ ] Edge cases documented (no "TBD" or "unknown")
-- [ ] `isTied` behavior for legacy ranking addressed explicitly
-- [ ] CLAUDE.md "Critical Rules" section updated with checklist + link to full doc
-- [ ] Self-review passed: no placeholders, no internal contradictions
+- [x] Master freeze doc exists at `docs/rules-spec.md` (note: per issue deliverable, placed at `docs/rules-spec.md` not `docs/superpowers/specs/`)
+- [x] All 8 rule domains covered with explicit file/function references
+- [x] Edge cases documented (no "TBD" or "unknown") — see Section 9 Edge Case Matrix
+- [x] `isTied` behavior for legacy ranking addressed explicitly (rankEntriesLegacy documented as deprecated)
+- [x] Open questions documented (Section 11) with clarification needs
+- [ ] CLAUDE.md "Critical Rules" section updated with checklist + link to full doc (deferred to implementation phase)
+- [x] Self-review passed: no placeholders, no internal contradictions
+
+## Design Decisions Resolved
+
+1. **Audience depth:** Both. Rules spec is layered: summary-style in Sections 1–8, detailed reference in Section 9 (matrix). Future engineers can use Section 9 as implementation reference.
+
+2. **What constitutes "frozen":** Snapshot of current behavior with known gaps documented in Section 11 (Open Questions). `rankEntriesLegacy` is documented as deprecated but still deployed.
+
+3. **Legacy code treatment:** `rankEntriesLegacy` (`scoring.ts:84`) is documented as non-canonical. It lacks `isTied` in its return type and does not properly handle ties. `rankEntries` (domain) is the canonical implementation.
