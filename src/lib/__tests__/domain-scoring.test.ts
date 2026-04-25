@@ -176,25 +176,27 @@ describe('domain scoring', () => {
   describe('computeEntryScore hole-level', () => {
     it('normal round — best ball per hole summed', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, -1, 'active', true))],
-        ['g2', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, -2, 'active', true))],
-        ['g3', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 0, 'active', true))],
-        ['g4', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 1, 'active', true))],
+        ['g1', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, -1, 'active', true))],
+        ['g2', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, -2, 'active', true))],
+        ['g3', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, 0, 'active', true))],
+        ['g4', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, 1, 'active', true))],
       ])
 
       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
 
-      expect(result.totalScore).toBe(-26)
+      // Best ball each hole: g2's -2 beats g1's -1 on all 18 holes
+      // Sum = 18 * (-2) = -36
+      expect(result.totalScore).toBe(-36)
       expect(result.totalBirdies).toBe(18)
       expect(result.completedHoles).toBe(18)
     })
 
     it('round with missing golfer — skipped', () => {
       const scores = makeGolferRoundScoresMapentries([
-        ['g1', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, -1, 'active', true))],
-        ['g2', Array.from({ length: 10 }, (_, i) => makePlayerHoleScore(i + 1, 1, -2, 'active', true))],
-        ['g3', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 0, 'active', true))],
-        ['g4', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(i + 1, 1, 1, 'active', true))],
+        ['g1', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, -1, 'active', true))],
+        ['g2', Array.from({ length: 10 }, (_, i) => makePlayerHoleScore(1, i + 1, -2, 'active', true))],
+        ['g3', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, 0, 'active', true))],
+        ['g4', Array.from({ length: 18 }, (_, i) => makePlayerHoleScore(1, i + 1, 1, 'active', true))],
       ])
 
       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
