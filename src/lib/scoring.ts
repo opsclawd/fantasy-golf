@@ -135,3 +135,13 @@ export function rankEntriesLegacy(
   }
   return ranked
 }
+
+export function rankEntriesWithHoles(
+  entries: Entry[],
+  holesByGolfer: Map<string, TournamentHole[]>,
+  golferStatuses: Map<string, GolferStatus>,
+  completedRounds: number
+): (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[] {
+  const golferRoundScoresMap = buildGolferRoundScoresMap(holesByGolfer, golferStatuses)
+  return domainRankEntries(entries, golferRoundScoresMap, completedRounds) as (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[]
+}
