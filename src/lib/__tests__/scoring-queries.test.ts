@@ -1,6 +1,55 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { TournamentHole } from '../supabase/types'
 
 import { upsertTournamentScore } from '../scoring-queries'
+
+describe('tournament_holes queries', () => {
+  it('getTournamentHolesForGolfers returns holes grouped by golfer', async () => {
+    const mockHoles = [
+      { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: 0 },
+      { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 2, strokes: 3, par: 4, score_to_par: -1 },
+    ]
+
+    const chain: any = {}
+    chain.from = vi.fn(() => chain)
+    chain.select = vi.fn(() => chain)
+    chain.eq = vi.fn(() => chain)
+    chain.in = vi.fn(() => chain)
+    chain.order = vi.fn()
+      .mockReturnValueOnce(chain)
+      .mockReturnValueOnce({
+        data: mockHoles,
+        error: null,
+      })
+
+    const mockSupabase = { from: chain.from }
+
+    const { getTournamentHolesForGolfers } = await import('../scoring-queries')
+    const result = await getTournamentHolesForGolfers(mockSupabase as any, 't1', ['g1', 'g2'])
+
+    expect(mockSupabase.from).toHaveBeenCalledWith('tournament_holes')
+    expect(result.get('g1')?.length).toBe(2)
+    expect(result.get('g1')?.[0].score_to_par).toBe(0)
+  })
+
+  it('upsertTournamentHoles writes multiple holes', async () => {
+    const mockSupabase = {
+      from: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockReturnThis(),
+    }
+
+    mockSupabase.upsert.mockReturnValue({ error: null })
+
+    const { upsertTournamentHoles } = await import('../scoring-queries')
+    const holes: TournamentHole[] = [
+      { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: 0 },
+    ]
+
+    const result = await upsertTournamentHoles(mockSupabase as any, holes)
+    expect(result.error).toBe(null)
+    expect(mockSupabase.upsert).toHaveBeenCalled()
+  })
+})
 
 describe('upsertTournamentScore', () => {
   beforeEach(() => {
