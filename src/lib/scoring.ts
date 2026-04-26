@@ -65,7 +65,7 @@ export function buildGolferRoundScoresMap(
 ): GolferRoundScoresMap {
   const result: GolferRoundScoresMap = new Map()
 
-  for (const [golferId, holes] of holesByGolfer) {
+  Array.from(holesByGolfer.entries()).forEach(([golferId, holes]) => {
     const rounds: { holeId: number; roundId: number; scoreToPar: number | null; status: GolferStatus; isComplete: boolean }[] = holes.map(hole => ({
       roundId: hole.round_id,
       holeId: hole.hole_id,
@@ -74,21 +74,21 @@ export function buildGolferRoundScoresMap(
       isComplete: true,
     }))
     result.set(golferId, rounds)
-  }
+  })
 
   return result
 }
 
 function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, TournamentScore>): GolferRoundScoresMap {
   const result: GolferRoundScoresMap = new Map()
-  for (const [golferId, score] of tournamentScores) {
+  Array.from(tournamentScores.entries()).forEach(([golferId, score]) => {
     result.set(golferId, [{
       roundId: score.round_id ?? 1,
       scoreToPar: score.total_score ?? null,
       status: score.status,
       isComplete: true,
     }])
-  }
+  })
   return result
 }
 

@@ -54,8 +54,8 @@ export function computeEntryScore(
 
   const holesIndex = new Map<string, Array<{ golferId: string; scoreToPar: number | null; isComplete: boolean; status: GolferStatus }>>()
 
-  for (const [golferId, rounds] of golferRoundScores) {
-    for (const round of rounds) {
+  for (const [golferId, rounds] of Array.from(golferRoundScores.entries())) {
+    for (const round of Array.from(rounds)) {
       const holeKey = `${round.roundId}-${round.holeId}`
       if (!holesIndex.has(holeKey)) {
         holesIndex.set(holeKey, [])
@@ -70,14 +70,14 @@ export function computeEntryScore(
   }
 
   const roundCompleteness = new Map<number, boolean>()
-  for (const [holeKey, entries] of holesIndex) {
+  for (const [holeKey, entries] of Array.from(holesIndex.entries())) {
     const roundId = parseInt(holeKey.split('-')[0])
     const allComplete = entries.every(e => e.isComplete)
     const current = roundCompleteness.get(roundId)
     roundCompleteness.set(roundId, current === undefined ? allComplete : current && allComplete)
   }
 
-  for (const [holeKey, entries] of holesIndex) {
+  for (const [holeKey, entries] of Array.from(holesIndex.entries())) {
     const roundId = parseInt(holeKey.split('-')[0])
     if (!roundCompleteness.get(roundId)) continue
 
