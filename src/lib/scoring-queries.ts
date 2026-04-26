@@ -1,6 +1,45 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { TournamentScore, TournamentScoreRound } from './supabase/types'
+import type { TournamentScore, TournamentScoreRound, TournamentHole } from './supabase/types'
 import type { GolferScore, GolferScoreRound } from './slash-golf/types'
+
+export async function getTournamentHolesForGolfers(
+  supabase: SupabaseClient,
+  tournamentId: string,
+  golferIds: string[]
+): Promise<Map<string, TournamentHole[]>> {
+  const { data, error } = await supabase
+    .from('tournament_holes')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .in('golfer_id', golferIds)
+    .order('round_id', { ascending: true })
+    .order('hole_id', { ascending: true })
+
+  if (error) throw new Error(error.message)
+
+  const result = new Map<string, TournamentHole[]>()
+  for (const hole of (data as TournamentHole[]) || []) {
+    if (!result.has(hole.golfer_id)) {
+      result.set(hole.golfer_id, [])
+    }
+    result.get(hole.golfer_id)!.push(hole)
+  }
+  return result
+}
+
+export async function upsertTournamentHoles(
+  supabase: SupabaseClient,
+  holes: TournamentHole[]
+): Promise<{ error: string | null }> {
+  if (holes.length === 0) return { error: null }
+
+  const { error } = await supabase
+    .from('tournament_holes')
+    .upsert(holes, { onConflict: 'golfer_id,tournament_id,round_id,hole_id' })
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
 
 export async function upsertTournamentScoreRound(
   supabase: SupabaseClient,
