@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { upsertTournamentScore } from '../scoring-queries'
+import { upsertTournamentHoles, upsertTournamentScore } from '../scoring-queries'
 
 describe('upsertTournamentScore', () => {
   beforeEach(() => {
@@ -163,5 +163,30 @@ describe('upsertTournamentScore', () => {
     for (const record of archiveUpserts) {
       expect(record).not.toHaveProperty('round_status')
     }
+  })
+
+  it('upsertTournamentHoles persists hole records', async () => {
+    const upsertedRecords: unknown[] = []
+
+    const builder: any = {
+      upsert: vi.fn((records: unknown) => {
+        upsertedRecords.push(...(Array.isArray(records) ? records : [records]))
+        return builder
+      }),
+      then: (onFulfilled: (value: { error: null }) => unknown, onRejected?: (reason: unknown) => unknown) =>
+        Promise.resolve({ error: null }).then(onFulfilled, onRejected),
+    }
+
+    const supabase = {
+      from: vi.fn(() => builder),
+    } as never
+
+    const holes = [
+      { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: 0 },
+      { golfer_id: 'g1', tournament_id: 't1', round_id: 1, hole_id: 2, strokes: 5, par: 4, score_to_par: 1 },
+    ]
+    const result = await upsertTournamentHoles(supabase, holes)
+    expect(result.error).toBeNull()
+    expect(upsertedRecords).toHaveLength(2)
   })
 })
