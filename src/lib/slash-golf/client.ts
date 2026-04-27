@@ -1,4 +1,4 @@
-import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus } from './types'
+import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus, SlashScorecard, SlashHole, SlashStats } from './types'
 
 const BASE_URL = 'https://live-golf-data.p.rapidapi.com'
 
@@ -313,5 +313,50 @@ export async function getLeaderboard(tournamentId: string, year?: number): Promi
       teeTime: typeof row.teeTime === 'string' ? row.teeTime : null,
       teeTimeTimestamp: typeof row.teeTimeTimestamp === 'string' ? row.teeTimeTimestamp : null,
     })),
+  }
+}
+
+export async function getScorecard(tournamentId: string, golferId: string, year?: number): Promise<SlashScorecard> {
+  const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, playerId: golferId, ...(year && { year: year.toString() }) })
+  const res = await fetch(`${BASE_URL}/scorecard?${params}`, {
+    headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
+    cache: 'no-store'
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    console.error('[slash-golf] scorecard fetch failed', { status: res.status, golferId, body })
+    throw new Error('Failed to fetch scorecard')
+  }
+  const raw = await res.json()
+  const holes = Array.isArray(raw.holes) ? raw.holes.map((h: Record<string, unknown>) => ({
+    holeId: parseMongoNumber(h.holeId) ?? 0,
+    par: parseMongoNumber(h.par) ?? 0,
+    strokes: parseMongoNumber(h.strokes) ?? 0,
+    scoreToPar: parseMongoNumber(h.scoreToPar) ?? 0,
+  })).filter((h: SlashHole) => h.holeId > 0) : []
+
+  return {
+    tournId: typeof raw.tournId === 'string' ? raw.tournId : tournamentId,
+    playerId: typeof raw.playerId === 'string' ? raw.playerId : golferId,
+    year: typeof raw.year === 'string' ? raw.year : (year?.toString() ?? ''),
+    status: normalizeSlashStatus(raw.status),
+    currentRound: parseMongoNumber(raw.currentRound) ?? 1,
+    holes,
+  }
+}
+
+export async function getStats(tournamentId: string, golferId: string, year?: number): Promise<SlashStats> {
+  const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, playerId: golferId, ...(year && { year: year.toString() }) })
+  const res = await fetch(`${BASE_URL}/stats?${params}`, {
+    headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
+    cache: 'no-store'
+  })
+  if (!res.ok) throw new Error('Failed to fetch stats')
+  const raw = await res.json()
+  return {
+    tournId: typeof raw.tournId === 'string' ? raw.tournId : tournamentId,
+    playerId: typeof raw.playerId === 'string' ? raw.playerId : golferId,
+    worldRank: typeof raw.worldRank === 'number' ? raw.worldRank : null,
+    projectedOWGR: typeof raw.projectedOWGR === 'number' ? raw.projectedOWGR : null,
   }
 }
