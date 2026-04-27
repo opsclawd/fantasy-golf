@@ -2,7 +2,7 @@ export type PoolStatus = 'open' | 'live' | 'complete' | 'archived'
 
 export type PoolFormat = 'best_ball'
 
-export type GolferStatus = 'active' | 'withdrawn' | 'cut'
+export type GolferStatus = 'active' | 'withdrawn' | 'cut' | 'dq' | 'complete'
 export type FreshnessStatus = 'current' | 'stale' | 'unknown'
 
 export type MemberRole = 'commissioner' | 'player'
