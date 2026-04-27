@@ -172,7 +172,7 @@ export default async function CommissionerPoolAuditScoreTracePage({
                       Rank <span className="font-semibold text-gray-900">{entry.rank}</span>
                     </p>
                     <p>
-                      Leaderboard score <span className="font-semibold text-gray-900"><ScoreDisplay score={entry.totalScore} /></span>
+                      Leaderboard score <span className="font-semibold text-gray-900"><ScoreDisplay score={entry.totalScore ?? 0} /></span>
                     </p>
                     <p>
                       Birdies <span className="font-semibold text-gray-900">{entry.totalBirdies}</span>
