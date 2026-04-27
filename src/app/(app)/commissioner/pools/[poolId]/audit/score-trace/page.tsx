@@ -209,7 +209,7 @@ export default async function CommissionerPoolAuditScoreTracePage({
                                 {row.roundScore === null ? (
                                   <span className="text-gray-400">-</span>
                                 ) : (
-                                  <ScoreDisplay score={row.roundScore} />
+                                  <ScoreDisplay score={row.roundScore ?? 0} />
                                 )}
                               </td>
                               <td className="px-2 py-2">
