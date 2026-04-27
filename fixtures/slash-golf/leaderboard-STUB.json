@@ -1,0 +1,39 @@
+{
+  // fixture: Slash Golf /leaderboard response
+  // tournamentId: <fill in from live API>
+  // captured: <date>
+  // note: Capture real response from GET /leaderboard?orgId=1&tournId=<id>
+  "orgId": "1",
+  "year": "2026",
+  "tournId": "014",
+  "status": "In Progress",
+  "roundId": 2,
+  "roundStatus": "In Progress",
+  "timestamp": "2026-04-10T15:23:33.217000",
+  "leaderboardRows": [
+    {
+      "playerId": "22405",
+      "lastName": "Rose",
+      "firstName": "Justin",
+      "isAmateur": false,
+      "status": "active",
+      "currentRound": 2,
+      "total": "-1",
+      "currentRoundScore": "+1",
+      "position": "T11",
+      "totalStrokesFromCompletedRounds": "70",
+      "rounds": [
+        {
+          "roundId": 1,
+          "courseId": "014",
+          "courseName": "Augusta National Golf Club",
+          "strokes": 70,
+          "scoreToPar": "-2"
+        }
+      ],
+      "thru": "4",
+      "startingHole": 1,
+      "currentHole": 5
+    }
+  ]
+}
