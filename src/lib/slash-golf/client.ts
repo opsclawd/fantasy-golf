@@ -1,4 +1,4 @@
-import type { Tournament, GolferScore, GolferScoreRound } from './types'
+import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus } from './types'
 
 const BASE_URL = 'https://live-golf-data.p.rapidapi.com'
 
@@ -170,6 +170,16 @@ function normalizeGolferStatus(value: unknown): 'active' | 'withdrawn' | 'cut' {
   return 'active'
 }
 
+function normalizeSlashStatus(value: unknown): SlashGolferStatus {
+  if (typeof value !== 'string') return 'active'
+  const s = value.trim().toLowerCase()
+  if (s === 'withdrawn' || s === 'wd') return 'withdrawn'
+  if (s === 'cut' || s === 'cu') return 'cut'
+  if (s === 'dq') return 'dq'
+  if (s === 'complete' || s === 'finished' || s === 'f') return 'complete'
+  return 'active'
+}
+
 function parseThruValue(value: unknown): number {
   if (typeof value !== 'string') return 0
 
@@ -243,4 +253,65 @@ function isTournamentMetadataOnlyResponse(raw: unknown): boolean {
     || 'timeZone' in record
     || 'format' in record
   )
+}
+
+export async function getTournamentMeta(tournamentId: string, year?: number): Promise<SlashTournamentMeta> {
+  const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, ...(year && { year: year.toString() }) })
+  const res = await fetch(`${BASE_URL}/tournament?${params}`, {
+    headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
+    next: { revalidate: 3600 }
+  })
+  if (!res.ok) throw new Error('Failed to fetch tournament metadata')
+  const raw = await res.json()
+  return {
+    tournId: typeof raw.tournId === 'string' ? raw.tournId : '',
+    name: typeof raw.name === 'string' ? raw.name : '',
+    year: typeof raw.year === 'string' ? raw.year : (year?.toString() ?? ''),
+    status: typeof raw.status === 'string' ? raw.status : '',
+    currentRound: parseMongoNumber(raw.currentRound) ?? null,
+    courses: Array.isArray(raw.courses) ? raw.courses.map((c: Record<string, unknown>) => ({
+      courseId: typeof c.courseId === 'string' ? c.courseId : '',
+      courseName: typeof c.courseName === 'string' ? c.courseName : '',
+    })) : [],
+    format: typeof raw.format === 'string' ? raw.format : null,
+    date: typeof raw.date === 'string' ? raw.date : null,
+  }
+}
+
+export async function getLeaderboard(tournamentId: string, year?: number): Promise<SlashLeaderboard> {
+  const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, ...(year && { year: year.toString() }) })
+  const res = await fetch(`${BASE_URL}/leaderboard?${params}`, {
+    headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
+    cache: 'no-store'
+  })
+  if (!res.ok) throw new Error('Failed to fetch leaderboard')
+  const raw = await res.json()
+  const rows = Array.isArray(raw.leaderboardRows) ? raw.leaderboardRows : []
+  return {
+    tournId: typeof raw.tournId === 'string' ? raw.tournId : '',
+    year: typeof raw.year === 'string' ? raw.year : (year?.toString() ?? ''),
+    status: typeof raw.status === 'string' ? raw.status : '',
+    roundId: parseMongoNumber(raw.roundId) ?? 0,
+    roundStatus: typeof raw.roundStatus === 'string' ? raw.roundStatus : '',
+    timestamp: typeof raw.timestamp === 'string' ? raw.timestamp : '',
+    leaderboardRows: rows.map((row: Record<string, unknown>) => ({
+      playerId: typeof row.playerId === 'string' ? row.playerId : '',
+      lastName: typeof row.lastName === 'string' ? row.lastName : '',
+      firstName: typeof row.firstName === 'string' ? row.firstName : '',
+      isAmateur: typeof row.isAmateur === 'boolean' ? row.isAmateur : false,
+      status: normalizeSlashStatus(row.status),
+      currentRound: parseMongoNumber(row.currentRound) ?? 1,
+      total: typeof row.total === 'string' ? row.total : (typeof row.total === 'object' ? row.total : '0'),
+      currentRoundScore: typeof row.currentRoundScore === 'string' ? row.currentRoundScore : (typeof row.currentRoundScore === 'object' ? row.currentRoundScore : '0'),
+      position: typeof row.position === 'string' ? row.position : null,
+      totalStrokesFromCompletedRounds: typeof row.totalStrokesFromCompletedRounds === 'string' ? row.totalStrokesFromCompletedRounds : null,
+      rounds: Array.isArray(row.rounds) ? row.rounds : [],
+      thru: typeof row.thru === 'string' ? row.thru : null,
+      startingHole: parseMongoNumber(row.startingHole),
+      currentHole: parseMongoNumber(row.currentHole),
+      courseId: typeof row.courseId === 'string' ? row.courseId : null,
+      teeTime: typeof row.teeTime === 'string' ? row.teeTime : null,
+      teeTimeTimestamp: typeof row.teeTimeTimestamp === 'string' ? row.teeTimeTimestamp : null,
+    })),
+  }
 }
