@@ -165,6 +165,57 @@ describe('getTournamentScores', () => {
     expect(round.score_to_par).toBe(0)
     expect(round.strokes).toBe(72)
   })
+
+  it('getTournamentMeta returns normalized tournament metadata', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        orgId: '1',
+        year: '2026',
+        tournId: '014',
+        name: 'The Masters',
+        status: 'In Progress',
+        currentRound: 2,
+        courses: [{ courseId: '014', courseName: 'Augusta National Golf Club' }],
+        format: 'stroke',
+        date: '2026-04-10',
+      }),
+    }))
+
+    const meta = await getTournamentMeta('014', 2026)
+    expect(meta).toMatchObject({
+      tournId: '014',
+      name: 'The Masters',
+      year: '2026',
+      status: 'In Progress',
+      currentRound: 2,
+      courses: [{ courseId: '014', courseName: 'Augusta National Golf Club' }],
+    })
+  })
+
+  it('getLeaderboard returns normalized leaderboard with round status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        orgId: '1',
+        year: '2026',
+        tournId: '014',
+        status: 'In Progress',
+        roundId: 2,
+        roundStatus: 'In Progress',
+        timestamp: '2026-04-10T15:23:33.217000',
+        leaderboardRows: [
+          { playerId: '22405', lastName: 'Rose', firstName: 'Justin', isAmateur: false, status: 'active' },
+        ],
+      }),
+    }))
+
+    const board = await getLeaderboard('014', 2026)
+    expect(board.tournId).toBe('014')
+    expect(board.roundStatus).toBe('In Progress')
+    expect(board.leaderboardRows).toHaveLength(1)
+    expect(board.leaderboardRows[0].status).toBe('active')
+  })
 })
 
 describe('getTournamentMeta', () => {
