@@ -2,7 +2,7 @@ export type PoolStatus = 'open' | 'live' | 'complete' | 'archived'
 
 export type PoolFormat = 'best_ball'
 
-export type GolferStatus = 'active' | 'withdrawn' | 'cut'
+export type GolferStatus = 'active' | 'withdrawn' | 'cut' | 'dq' | 'complete'
 export type FreshnessStatus = 'current' | 'stale' | 'unknown'
 
 export type MemberRole = 'commissioner' | 'player'
@@ -23,6 +23,23 @@ export interface Pool {
   created_at: string
   refreshed_at: string | null
   last_refresh_error: string | null
+  last_refresh_success_at?: string | null
+  refresh_attempt_count?: number
+  last_refresh_attempt_at?: string | null
+}
+
+export interface RefreshLock {
+  tournament_id: string
+  locked_by: string
+  locked_at: string
+  expires_at: string
+}
+
+export interface LockAcquireResult {
+  acquired: boolean
+  lockId?: string
+  heldBy?: string
+  expiresAt?: string
 }
 
 export interface PoolMember {

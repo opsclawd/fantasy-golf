@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from './route'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getPoolById } from '@/lib/pool-queries'
+import { getPoolById, acquireRefreshLock, releaseRefreshLock } from '@/lib/pool-queries'
 import { refreshScoresForPool } from '@/lib/scoring-refresh'
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -10,6 +10,8 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/pool-queries', () => ({
   getPoolById: vi.fn(),
+  acquireRefreshLock: vi.fn(),
+  releaseRefreshLock: vi.fn(),
 }))
 
 vi.mock('@/lib/scoring-refresh', () => ({
@@ -90,6 +92,8 @@ describe('POST /api/scoring/refresh', () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
     vi.mocked(createAdminClient).mockReturnValue({} as never)
     vi.mocked(getPoolById).mockResolvedValue(pool as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({ acquired: true, lockId: 'lock-1' })
+    vi.mocked(releaseRefreshLock).mockResolvedValue({ error: null })
     vi.mocked(refreshScoresForPool).mockResolvedValue({
       data: { completedRounds: 2, refreshedAt: '2026-04-08T12:00:00.000Z' },
       error: null,
@@ -116,25 +120,25 @@ describe('POST /api/scoring/refresh', () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
     vi.mocked(createAdminClient).mockReturnValue({} as never)
     vi.mocked(getPoolById).mockResolvedValue(pool as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({
+      acquired: false,
+      heldBy: 'other-instance',
+      expiresAt: new Date(Date.now() + 60000).toISOString(),
+    })
 
-    vi.mocked(refreshScoresForPool).mockReturnValue(new Promise(() => {}))
+    const request = new Request('http://localhost/api/scoring/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer secret',
+      },
+      body: JSON.stringify({ poolId: 'pool-1' }),
+    })
 
-    const makeRequest = () =>
-      new Request('http://localhost/api/scoring/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer secret',
-        },
-        body: JSON.stringify({ poolId: 'pool-1' }),
-      })
+    const response = await POST(request)
 
-    const first = POST(makeRequest())
-
-    const second = await POST(makeRequest())
-
-    expect(second.status).toBe(409)
-    const body = await second.json()
-    expect(body.error.code).toBe('UPDATE_IN_PROGRESS')
+    expect(response.status).toBe(409)
+    const body = await response.json()
+    expect(body.error.code).toBe('REFRESH_LOCKED')
   })
 })

@@ -49,6 +49,8 @@ vi.mock('@/lib/pool-queries', () => ({
   updatePoolStatus: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
   insertAuditEvent: vi.fn(),
+  acquireRefreshLock: vi.fn(),
+  releaseRefreshLock: vi.fn(),
 }))
 
 vi.mock('@/lib/scoring-queries', () => ({
@@ -112,6 +114,8 @@ describe('POST /api/scoring', () => {
       year: 2026,
       status: 'live',
     } as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({ acquired: true, lockId: 'lock-1' })
+    vi.mocked(releaseRefreshLock).mockResolvedValue({ error: null })
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
     ] as never)
@@ -189,6 +193,8 @@ describe('POST /api/scoring', () => {
       year: 2026,
       status: 'live',
     } as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({ acquired: true, lockId: 'lock-1' })
+    vi.mocked(releaseRefreshLock).mockResolvedValue({ error: null })
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
       { id: 'pool-2', tournament_id: 't-1', status: 'live' },
@@ -272,6 +278,8 @@ describe('POST /api/scoring', () => {
       id: 'pool-1',
       tournament_id: 't-1',
     } as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({ acquired: true, lockId: 'lock-1' })
+    vi.mocked(releaseRefreshLock).mockResolvedValue({ error: null })
     vi.mocked(getScoresForTournament).mockResolvedValue([] as never)
     vi.mocked(getTournamentScores).mockResolvedValue([
       { golfer_id: 'g1', hole_scores: [0, -1], thru: 2 },

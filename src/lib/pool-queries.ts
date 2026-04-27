@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Pool, PoolMember, AuditEvent, PoolStatus } from './supabase/types'
+import type { Pool, PoolMember, AuditEvent, PoolStatus, LockAcquireResult } from './supabase/types'
 import { getTournamentLockInstant } from './picks'
+
+const LOCK_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 export async function insertPool(
   supabase: SupabaseClient,
@@ -259,6 +261,112 @@ export async function deletePoolById(
   poolId: string
 ): Promise<{ error: string | null }> {
   const { error } = await supabase.from('pools').delete().eq('id', poolId)
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+export async function acquireRefreshLock(
+  supabase: SupabaseClient,
+  tournamentId: string,
+  lockId: string
+): Promise<LockAcquireResult> {
+  const now = new Date()
+  const expiresAt = new Date(now.getTime() + LOCK_TTL_MS)
+
+  const lockRecord = {
+    tournament_id: tournamentId,
+    locked_by: lockId,
+    locked_at: now.toISOString(),
+    expires_at: expiresAt.toISOString(),
+  }
+
+  const { error: insertError } = await (supabase as any)
+    .from('refresh_locks')
+    .insert(lockRecord)
+
+  if (!insertError) {
+    return { acquired: true, lockId }
+  }
+
+  if (insertError.code === '23505') {
+    const { data: existing } = await (supabase as any)
+      .from('refresh_locks')
+      .select('locked_by, expires_at')
+      .eq('tournament_id', tournamentId)
+      .single()
+
+    if (existing) {
+      const existingExpiry = new Date(existing.expires_at)
+      if (existingExpiry <= now) {
+        const { error: updateError } = await (supabase as any)
+          .from('refresh_locks')
+          .update({
+            locked_by: lockId,
+            locked_at: now.toISOString(),
+            expires_at: expiresAt.toISOString(),
+          })
+          .eq('tournament_id', tournamentId)
+          .eq('expires_at', existing.expires_at)
+
+        if (!updateError) {
+          return { acquired: true, lockId }
+        }
+      }
+      return {
+        acquired: false,
+        heldBy: existing.locked_by,
+        expiresAt: existing.expires_at,
+      }
+    }
+  }
+
+  return { acquired: false }
+}
+
+export async function releaseRefreshLock(
+  supabase: SupabaseClient,
+  tournamentId: string,
+  lockId: string
+): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any)
+    .from('refresh_locks')
+    .delete()
+    .eq('tournament_id', tournamentId)
+    .eq('locked_by', lockId)
+
+  if (error) return { error: error.message }
+  return { error: null }
+}
+
+export async function updatePoolRefreshTelemetry(
+  supabase: SupabaseClient,
+  poolId: string,
+  telemetry: { refresh_attempt_count?: 'increment'; last_refresh_attempt_at?: string }
+): Promise<{ error: string | null }> {
+  const updates: Record<string, unknown> = {}
+
+  if (telemetry.refresh_attempt_count === 'increment') {
+    const { data: pool } = await supabase
+      .from('pools')
+      .select('refresh_attempt_count')
+      .eq('id', poolId)
+      .single()
+    updates.refresh_attempt_count = (pool?.refresh_attempt_count ?? 0) + 1
+  }
+
+  if (telemetry.last_refresh_attempt_at) {
+    updates.last_refresh_attempt_at = telemetry.last_refresh_attempt_at
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { error: null }
+  }
+
+  const { error } = await supabase
+    .from('pools')
+    .update(updates)
+    .eq('id', poolId)
+
   if (error) return { error: error.message }
   return { error: null }
 }
