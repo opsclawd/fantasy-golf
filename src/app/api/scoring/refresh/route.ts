@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getPoolById } from '@/lib/pool-queries'
+import { getPoolById, acquireRefreshLock, releaseRefreshLock } from '@/lib/pool-queries'
 import { refreshScoresForPool } from '@/lib/scoring-refresh'
 
-let isUpdating = false
+function generateLockId(): string {
+  return crypto.randomUUID()
+}
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get('Authorization')
@@ -11,20 +13,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (isUpdating) {
-    return NextResponse.json(
-      { data: null, error: { code: 'UPDATE_IN_PROGRESS', message: 'Refresh already running' } },
-      { status: 409 }
-    )
-  }
-
-  isUpdating = true
   let poolId: string | undefined
   try {
     const body = await request.json()
     poolId = body.poolId
   } catch {
-    isUpdating = false
     return NextResponse.json(
       { data: null, error: { code: 'BAD_REQUEST', message: 'Invalid JSON body' } },
       { status: 400 }
@@ -32,24 +25,33 @@ export async function POST(request: Request) {
   }
 
   if (!poolId) {
-    isUpdating = false
     return NextResponse.json(
       { data: null, error: { code: 'BAD_REQUEST', message: 'poolId required' } },
       { status: 400 }
     )
   }
 
+  const supabase = createAdminClient()
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) {
+    return NextResponse.json(
+      { data: null, error: { code: 'NOT_FOUND', message: 'Pool not found' } },
+      { status: 404 }
+    )
+  }
+
+  const lockId = generateLockId()
+  const lockResult = await acquireRefreshLock(supabase, pool.tournament_id, lockId)
+
+  if (!lockResult.acquired) {
+    return NextResponse.json(
+      { data: null, error: { code: 'REFRESH_LOCKED', message: 'Refresh already running for this tournament' } },
+      { status: 409 }
+    )
+  }
+
   try {
-    const supabase = createAdminClient()
-
-    const pool = await getPoolById(supabase, poolId)
-    if (!pool) {
-      return NextResponse.json(
-        { data: null, error: { code: 'NOT_FOUND', message: 'Pool not found' } },
-        { status: 404 }
-      )
-    }
-
     const result = await refreshScoresForPool(supabase, pool)
 
     if (result.error) {
@@ -78,6 +80,6 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   } finally {
-    isUpdating = false
+    await releaseRefreshLock(supabase, pool.tournament_id, lockId)
   }
 }
