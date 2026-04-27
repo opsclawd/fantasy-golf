@@ -1,0 +1,11 @@
+{
+  // fixture: Slash Golf /stats response
+  // tournamentId: <fill in from live API>
+  // golferId: <fill in from live API>
+  // captured: <date>
+  // note: Capture real response from GET /stats?orgId=1&tournId=<id>&playerId=<id>
+  "tournId": "014",
+  "playerId": "22405",
+  "worldRank": 12,
+  "projectedOWGR": 8.5
+}

@@ -66,12 +66,37 @@ npx supabase db push  # Push migrations to remote DB
 
 ## Critical Rules
 
-- **Do not** couple scoring logic to Next.js handlers, React components, or Supabase SDK calls
-- **Do not** make client UI the source of truth for auth, deadlines, or scoring state
-- **Leaderboard freshness model**: the server owns staleness via a configurable threshold (currently 15m). The API triggers an upstream refresh on fetch when data is older than the threshold. The client re-fetches on: mount, realtime `scores` broadcasts, realtime channel reconnect (`SUBSCRIBED` after drop), and tab visibility change to `visible`. No fixed-interval polling. Always surface freshness/refreshing state in the UI so users can see when data is in-flight or stale.
-- Keep business rules in `src/lib/scoring.ts` and pure utilities; not in page components
-- Use server-side validation for all pool, pick, and scoring mutations
-- Preserve visible freshness and lock-state messaging in UI
+These are the non-negotiable rules for the MVP. The full authoritative specification is at [`docs/rules-spec.md`](./docs/rules-spec.md).
+
+### Game Rules
+
+- [ ] **Entry size**: Exactly `picks_per_entry` golfers (default: 4). No duplicates within an entry.
+- [ ] **Best-ball scoring**: Lowest `scoreToPar` among active golfers per round, summed across completed rounds.
+- [ ] **Tiebreaker**: Total score (lower is better) → total birdies (higher is better) → shared rank.
+- [ ] **Active golfers only**: `cut` and `withdrawn` golfers are excluded from best-ball calculation after they occur.
+- [ ] **Round completion gating**: A round only counts if ALL golfers in the entry have `isComplete: true`.
+- [ ] **Playoff holes**: Do NOT count toward MVP scoring.
+
+### Locking Rules
+
+- [ ] **Pick locks at pool deadline**: Lock instant = midnight (00:00) in the pool's configured timezone on the deadline date.
+- [ ] **Pool status lock**: Non-`open` pools are always locked regardless of deadline.
+- [ ] **All users subject to lock**: Commissioner picks lock the same as player picks.
+
+### Data Architecture
+
+- [ ] **Scoring logic is pure**: Keep in `src/lib/scoring.ts` and `src/lib/scoring/domain.ts`. No coupling to handlers, components, or Supabase SDK.
+- [ ] **Server owns freshness**: Staleness threshold = 15 minutes. Client re-fetches on: mount, realtime broadcast, reconnect, visibility change.
+- [ ] **Server-side validation**: All pool, pick, and scoring mutations must be validated server-side.
+- [ ] **Archive before write**: Round data archived to `tournament_score_rounds` before writing current score.
+- [ ] **Archive records exclude `round_status`**: Board-authorized rule to prevent circular dependencies.
+
+### Spectator Visibility
+
+- [ ] **Always surface freshness state**: Show users when data is in-flight or stale.
+- [ ] **Always surface lock state**: Show users when picks are locked.
+
+For detailed specifications, edge cases, and open questions, see [`docs/rules-spec.md`](./docs/rules-spec.md).
 
 ## Compound Engineering
 
