@@ -1,0 +1,32 @@
+{
+  // fixture: Slash Golf /scorecard response
+  // tournamentId: <fill in from live API>
+  // golferId: <fill in from live API>
+  // captured: <date>
+  // note: Capture real response from GET /scorecard?orgId=1&tournId=<id>&playerId=<id>
+  "tournId": "014",
+  "playerId": "22405",
+  "year": "2026",
+  "status": "active",
+  "currentRound": 2,
+  "holes": [
+    { "holeId": 1, "par": 4, "strokes": 4, "scoreToPar": 0 },
+    { "holeId": 2, "par": 5, "strokes": 4, "scoreToPar": -1 },
+    { "holeId": 3, "par": 4, "strokes": 3, "scoreToPar": -1 },
+    { "holeId": 4, "par": 4, "strokes": 5, "scoreToPar": 1 },
+    { "holeId": 5, "par": 3, "strokes": 4, "scoreToPar": 1 },
+    { "holeId": 6, "par": 5, "strokes": 5, "scoreToPar": 0 },
+    { "holeId": 7, "par": 4, "strokes": 4, "scoreToPar": 0 },
+    { "holeId": 8, "par": 3, "strokes": 3, "scoreToPar": 0 },
+    { "holeId": 9, "par": 4, "strokes": 4, "scoreToPar": 0 },
+    { "holeId": 10, "par": 4, "strokes": 4, "scoreToPar": 0 },
+    { "holeId": 11, "par": 4, "strokes": 5, "scoreToPar": 1 },
+    { "holeId": 12, "par": 3, "strokes": 3, "scoreToPar": 0 },
+    { "holeId": 13, "par": 5, "strokes": 4, "scoreToPar": -1 },
+    { "holeId": 14, "par": 4, "strokes": 4, "scoreToPar": 0 },
+    { "holeId": 15, "par": 5, "strokes": 5, "scoreToPar": 0 },
+    { "holeId": 16, "par": 3, "strokes": 2, "scoreToPar": -1 },
+    { "holeId": 17, "par": 4, "strokes": 4, "scoreToPar": 0 },
+    { "holeId": 18, "par": 4, "strokes": 5, "scoreToPar": 1 }
+  ]
+}
