@@ -31,7 +31,7 @@ export interface RefreshResult {
 }
 
 export interface RefreshError {
-  code: 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR'
+  code: 'NO_SCORES' | 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR'
   message: string
 }
 
@@ -80,6 +80,26 @@ export async function refreshScoresForPool(
     return {
       data: null,
       error: { code: 'FETCH_FAILED', message: errorMessage },
+    }
+  }
+
+  if (slashScores.length === 0) {
+    const errorMessage = 'No golfers returned from scoring API'
+
+    await updatePoolRefreshMetadata(supabase, pool.id, {
+      last_refresh_error: errorMessage,
+    })
+
+    await insertAuditEvent(supabase, {
+      pool_id: pool.id,
+      user_id: null,
+      action: 'scoreRefreshFailed',
+      details: { error: errorMessage },
+    })
+
+    return {
+      data: null,
+      error: { code: 'NO_SCORES', message: errorMessage },
     }
   }
 
