@@ -153,10 +153,16 @@ export async function refreshScoresForPool(
   }
 
   // Step 3: Update refresh metadata (success)
-  await updatePoolRefreshMetadata(supabase, pool.id, {
+  const metadataResult = await updatePoolRefreshMetadata(supabase, pool.id, {
     refreshed_at: refreshedAt,
     last_refresh_error: null,
   })
+  if (metadataResult.error) {
+    return {
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: metadataResult.error },
+    }
+  }
 
   // Step 4: Build golfer round scores map from per-round archive
   const scoreRounds = await getTournamentScoreRounds(supabase, pool.tournament_id)
@@ -199,12 +205,18 @@ export async function refreshScoresForPool(
       payload: { poolId: tournamentPool.id, ranked, completedRounds, updatedAt: refreshedAt },
     })
 
-    await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
+    const poolMetaResult = await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
       refreshed_at: refreshedAt,
       last_refresh_error: null,
     })
+    if (poolMetaResult.error) {
+      return {
+        data: null,
+        error: { code: 'INTERNAL_ERROR', message: poolMetaResult.error },
+      }
+    }
 
-    await insertAuditEvent(supabase, {
+    const auditResult = await insertAuditEvent(supabase, {
       pool_id: tournamentPool.id,
       user_id: null,
       action: 'scoreRefreshCompleted',
@@ -213,6 +225,12 @@ export async function refreshScoresForPool(
         entryCount: (entries || []).length,
       },
     })
+    if (auditResult.error) {
+      return {
+        data: null,
+        error: { code: 'INTERNAL_ERROR', message: auditResult.error },
+      }
+    }
   }
 
   return {

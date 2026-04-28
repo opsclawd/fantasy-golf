@@ -115,7 +115,7 @@ describe('scoring refresh edge cases', () => {
     expect(result.error!.message).toContain('Failed to persist')
   })
 
-  it('updatePoolRefreshMetadata fails on success path → returns success (audit failure is non-fatal)', async () => {
+  it('updatePoolRefreshMetadata fails on success path → INTERNAL_ERROR', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
     const mockSupabase = createMockSupabase()
 
@@ -144,11 +144,12 @@ describe('scoring refresh edge cases', () => {
 
     const result = await refreshScoresForPool(mockSupabase, pool)
 
-    expect(result.error).toBeNull()
-    expect(result.data).not.toBeNull()
+    expect(result.data).toBeNull()
+    expect(result.error).not.toBeNull()
+    expect(result.error!.code).toBe('INTERNAL_ERROR')
   })
 
-  it('insertAuditEvent fails on success path → returns success (audit failure is non-fatal)', async () => {
+  it('insertAuditEvent fails on success path → INTERNAL_ERROR', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
     const mockSupabase = createMockSupabase()
 
@@ -176,8 +177,9 @@ describe('scoring refresh edge cases', () => {
 
     const result = await refreshScoresForPool(mockSupabase, pool)
 
-    expect(result.error).toBeNull()
-    expect(result.data).not.toBeNull()
+    expect(result.data).toBeNull()
+    expect(result.error).not.toBeNull()
+    expect(result.error!.code).toBe('INTERNAL_ERROR')
   })
 
   it('getEntriesForPool returns empty array → broadcast sends with empty ranked array', async () => {
