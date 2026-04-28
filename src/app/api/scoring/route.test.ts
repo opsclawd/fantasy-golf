@@ -13,6 +13,8 @@ import {
   getEntriesForPool,
   updatePoolRefreshMetadata,
   insertAuditEvent,
+  acquireRefreshLock,
+  releaseRefreshLock,
 } from '@/lib/pool-queries'
 import {
   getScoresForTournament,
@@ -48,6 +50,7 @@ vi.mock('@/lib/pool-queries', () => ({
   getEntriesForPool: vi.fn(),
   updatePoolStatus: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
+  updatePoolRefreshTelemetry: vi.fn(),
   insertAuditEvent: vi.fn(),
   acquireRefreshLock: vi.fn(),
   releaseRefreshLock: vi.fn(),

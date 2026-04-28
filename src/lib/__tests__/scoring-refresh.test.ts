@@ -38,6 +38,7 @@ vi.mock('@/lib/pool-queries', () => ({
   getPoolsByTournament: vi.fn(),
   getEntriesForPool: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
+  updatePoolRefreshTelemetry: vi.fn(),
   insertAuditEvent: vi.fn(),
 }))
 

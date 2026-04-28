@@ -60,10 +60,11 @@ describe('acquireRefreshLock', () => {
       data: { locked_by: 'expired-lock', expires_at: pastDate },
       error: null,
     })
+    const mockEq3 = vi.fn().mockResolvedValue({ error: null })
+    const mockEq2 = vi.fn().mockReturnValue({ eq: mockEq3 })
     const mockEq = vi.fn().mockReturnValue({ single: mockSingle })
     const mockSelect = vi.fn().mockReturnValue({ eq: mockEq })
-    const mockUpdateEq = vi.fn().mockResolvedValue({ error: null })
-    const mockUpdate = vi.fn().mockReturnValue({ eq: mockUpdateEq })
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockEq2 })
     const mockInsert = vi.fn().mockResolvedValue({
       error: { code: '23505', message: 'duplicate key' },
     })
@@ -87,9 +88,8 @@ describe('releaseRefreshLock', () => {
   })
 
   it('happy path: releases lock when lockId matches', async () => {
-    const mockEq1 = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null }),
-    })
+    const mockEq2 = vi.fn().mockResolvedValue({ error: null })
+    const mockEq1 = vi.fn().mockImplementation(() => ({ eq: mockEq2 }))
     const mockDelete = vi.fn().mockReturnValue({
       eq: mockEq1,
     })
@@ -102,7 +102,7 @@ describe('releaseRefreshLock', () => {
 
     expect(result.error).toBeNull()
     expect(mockEq1).toHaveBeenCalledWith('tournament_id', 'tournament-1')
-    expect(mockEq1).toHaveBeenCalledWith('locked_by', 'lock-id-1')
+    expect(mockEq2).toHaveBeenCalledWith('locked_by', 'lock-id-1')
   })
 
   it('error: returns error when release fails', async () => {
