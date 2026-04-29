@@ -50,11 +50,12 @@ export async function POST(request: Request) {
     const result = await refreshScoresForPool(supabase, pool)
 
     if (result.error) {
-      const statusMap = {
+      const statusMap: Record<string, number> = {
         FETCH_FAILED: 502,
         UPSERT_FAILED: 500,
         INTERNAL_ERROR: 500,
-      } as const
+        NO_SCORES: 200,
+      }
       return NextResponse.json(
         { data: null, error: result.error },
         { status: statusMap[result.error.code] }
