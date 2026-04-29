@@ -1,6 +1,7 @@
 import type { PoolStatus } from '@/lib/supabase/types'
 
 import { sectionHeadingClasses } from './uiStyles'
+import { getTournamentLockInstant } from '@/lib/picks'
 
 const STATUS_CONFIG: Record<PoolStatus, { label: string; icon: string; classes: string }> = {
   open: {
@@ -25,8 +26,20 @@ const STATUS_CONFIG: Record<PoolStatus, { label: string; icon: string; classes: 
   },
 }
 
-export function StatusChip({ status }: { status: PoolStatus }) {
+interface StatusChipProps {
+  status: PoolStatus
+  deadline?: string
+  timezone?: string
+}
+
+export function StatusChip({ status, deadline, timezone }: StatusChipProps) {
   const config = STATUS_CONFIG[status]
+
+  const deadlineText =
+    status === 'open' && deadline && timezone
+      ? formatDeadline(deadline, timezone)
+      : null
+
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${config.classes}`}
@@ -37,6 +50,26 @@ export function StatusChip({ status }: { status: PoolStatus }) {
       <span className={sectionHeadingClasses().replace('text-green-700/70', 'text-current')}>
         {config.label}
       </span>
+      {deadlineText && (
+        <span className="text-[0.7rem] font-normal normal-case tracking-normal">
+          {deadlineText}
+        </span>
+      )}
     </span>
   )
+}
+
+function formatDeadline(deadline: string, timezone: string): string {
+  const lockInstant = getTournamentLockInstant(deadline, timezone)
+  if (!lockInstant) return ''
+
+  return lockInstant.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    timeZone: timezone,
+  })
 }
