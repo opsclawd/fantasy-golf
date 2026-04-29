@@ -32,6 +32,7 @@ import {
   deletePoolById,
 } from '@/lib/pool-queries'
 import { buildTournamentRosterInsert } from '@/lib/tournament-roster/queries'
+import { refreshScoresForPool } from '@/lib/scoring-refresh'
 import type { PoolFormat, PoolStatus } from '@/lib/supabase/types'
 
 // --- Status transition actions ---
@@ -578,5 +579,33 @@ export async function addMissingGolferAction(
   }
 
   revalidatePath(`/commissioner/pools/${poolId}`)
+  return { success: true }
+}
+
+export type RefreshPoolScoresResult = {
+  success: boolean
+  error?: string
+}
+
+export async function refreshPoolScoresAction(
+  poolId: string,
+): Promise<RefreshPoolScoresResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Not authenticated.' }
+
+  const pool = await getPoolById(supabase, poolId)
+  if (!pool) return { success: false, error: 'Pool not found.' }
+  if (pool.commissioner_id !== user.id) {
+    return { success: false, error: 'Only the commissioner can refresh scores.' }
+  }
+
+  const { error: refreshError } = await refreshScoresForPool(supabase, pool)
+  if (refreshError) {
+    return { success: false, error: refreshError.message }
+  }
+
+  revalidatePath(`/commissioner/pools/${poolId}`)
+  revalidatePath(`/pools/${poolId}`)
   return { success: true }
 }

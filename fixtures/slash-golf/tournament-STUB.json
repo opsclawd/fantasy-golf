@@ -1,0 +1,17 @@
+{
+  // fixture: Slash Golf /tournament response
+  // tournamentId: <fill in from live API>
+  // captured: <date>
+  // note: Capture real response from GET /tournament?orgId=1&tournId=<id>
+  "orgId": "1",
+  "year": "2026",
+  "tournId": "014",
+  "name": "The Masters",
+  "status": "In Progress",
+  "currentRound": 2,
+  "courses": [
+    { "courseId": "014", "courseName": "Augusta National Golf Club" }
+  ],
+  "format": "stroke",
+  "date": "2026-04-10"
+}

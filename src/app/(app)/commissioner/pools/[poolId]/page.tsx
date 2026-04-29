@@ -14,6 +14,7 @@ import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReopenPoolButton } from './ReopenPoolButton'
 import { ArchivePoolButton } from './ArchivePoolButton'
 import { DeletePoolButton } from './DeletePoolButton'
+import { CommissionerErrorBanner } from './CommissionerErrorBanner'
 import InviteLinkSection from './InviteLinkSection'
 import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
@@ -121,11 +122,11 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
         <div className="flex flex-wrap gap-3 max-sm:w-full">
           <StatusChip status={pool.status} />
           {pool.status === 'open' && !isLocked && <StartPoolButton poolId={pool.id} />}
-          {pool.status === 'open' && !isLocked && <DeletePoolButton poolId={pool.id} />}
+          {pool.status === 'open' && !isLocked && <DeletePoolButton poolId={pool.id} poolName={pool.name} />}
           {pool.status === 'live' && <ClosePoolButton poolId={pool.id} />}
           {pool.status === 'complete' && canReopenPool(pool.status as PoolStatus, pool.deadline, pool.timezone) && <ReopenPoolButton poolId={pool.id} />}
           {pool.status === 'complete' && <ArchivePoolButton poolId={pool.id} />}
-          {pool.status === 'archived' && <DeletePoolButton poolId={pool.id} />}
+          {pool.status === 'archived' && <DeletePoolButton poolId={pool.id} poolName={pool.name} />}
         </div>
       </section>
 
@@ -139,6 +140,9 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
       {pool.status !== 'open' && (
         <section className={`${panelClasses()} p-4`}>
+          {pool.last_refresh_error && (
+            <CommissionerErrorBanner lastRefreshError={pool.last_refresh_error} poolId={poolId} />
+          )}
           <TrustStatusBar
             isLocked={true}
             poolStatus={pool.status}

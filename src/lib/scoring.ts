@@ -64,7 +64,7 @@ function buildGolferRoundScoresMap(tournamentScores: Map<string, TournamentScore
   for (const [golferId, score] of tournamentScores) {
     result.set(golferId, [{
       roundId: score.round_id ?? 1,
-      scoreToPar: score.total_score,
+      scoreToPar: score.total_score ?? null,
       status: score.status,
       isComplete: true,
     }])

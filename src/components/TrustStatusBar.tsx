@@ -29,6 +29,7 @@ interface TrustStatusBarState {
 
 interface TrustStatusBarProps extends GetTrustStatusBarStateInput {
   className?: string
+  onRefresh?: () => void
 }
 
 function getLockMessage(isLocked: boolean, poolStatus: PoolStatus): string {
@@ -164,11 +165,13 @@ export function getTrustStatusBarState(
   }
 }
 
-export function TrustStatusBar({ className, ...input }: TrustStatusBarProps) {
+export function TrustStatusBar({ className, onRefresh, ...input }: TrustStatusBarProps) {
   const state = getTrustStatusBarState(input)
   const classes = [panelClasses(), 'border p-4', toneClasses(state.tone), className]
     .filter(Boolean)
     .join(' ')
+
+  const showStaleIndicator = input.poolStatus === 'live' && input.freshness === 'stale' && !input.isRefreshing && !input.lastRefreshError
 
   return createElement(
     'section',
@@ -206,9 +209,27 @@ export function TrustStatusBar({ className, ...input }: TrustStatusBarProps) {
           'div',
           { className: 'mt-3 rounded-2xl border border-black/5 bg-white/65 px-3 py-2' },
           createElement(
-            'p',
-            { className: 'text-xs font-semibold uppercase tracking-[0.18em] text-stone-600' },
-            `Freshness: ${state.freshnessLabel}`,
+            'div',
+            { className: 'flex items-center justify-between' },
+            createElement(
+              'p',
+              { className: 'flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-stone-600' },
+              showStaleIndicator
+                ? createElement('span', { className: 'inline-block h-2 w-2 rounded-full bg-amber-400 animate-pulse' })
+                : null,
+              `Freshness: ${state.freshnessLabel}`,
+            ),
+            showStaleIndicator && onRefresh
+              ? createElement(
+                  'button',
+                  {
+                    type: 'button',
+                    onClick: onRefresh,
+                    className: 'text-xs font-medium text-amber-700 hover:text-amber-900 underline',
+                  },
+                  'Refresh now',
+                )
+              : null,
           ),
           createElement('p', { className: 'mt-1 text-sm text-stone-800' }, state.freshnessMessage),
         )
