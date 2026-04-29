@@ -182,7 +182,93 @@ select * from cron.job_run_details where jobname = 'four-hour-scoring-dispatch' 
 
 ---
 
-## 8. Related Documentation
+## 9. Tournament Operations Runbook
+
+A step-by-step guide for pool commissioners to run a tournament weekend. No technical background required.
+
+### 9.1 Pre-Tournament (1–3 Days Before)
+
+**Create the pool**
+1. Sign in to Fantasy Golf Pool
+2. Click **Create Pool**
+3. Enter a pool name (e.g., "Masters 2026 Office Pool")
+4. Select the tournament from the dropdown (e.g., "The Masters")
+5. Choose scoring format — "Best Ball" is standard
+6. Set the **entry deadline** to tee time of the first group
+7. Set the **pool timezone** to the tournament's local time (e.g., ET for Augusta)
+8. Click **Create Pool**
+
+**Invite participants**
+1. Open the pool detail page
+2. Click **Invite** or **Share**
+3. Copy the invite link and send it to participants via Slack, email, or text
+4. Participants join by visiting the link and signing in
+
+**Verify setup**
+- [ ] Pool status shows "Open" or "Upcoming"
+- [ ] Deadline is set to the correct tee time
+- [ ] Timezone matches tournament local time
+- [ ] At least 2 participants have joined
+- [ ] All participants have submitted picks before the deadline
+
+### 9.2 Tournament Weekend (Saturday–Sunday)
+
+**Verify scoring is running**
+1. Open the pool detail page
+2. Check the **Last Refreshed** timestamp on the leaderboard
+3. If **Last Refreshed** is more than 4 hours ago, scoring may be stalled
+4. The leaderboard should update automatically every 4 hours via cron
+
+**Monitor staleness**
+- Green freshness indicator = scores updated within 4 hours
+- Yellow/stale indicator = scores are outdated — action needed
+- Red error banner = score refresh failed — escalate immediately
+
+**Force a manual refresh (if scores look stale)**
+1. Sign in as the pool commissioner
+2. Open the pool detail page
+3. Click the **Refresh Scores** button (may be labeled "Refresh Pool" or shown in a menu)
+4. Wait 30 seconds and refresh the page
+5. The **Last Refreshed** timestamp should update
+
+**If the refresh button fails**
+1. Note the error message
+2. Go to the [Supabase Dashboard](https://supabase.com) → Database → SQL Editor
+3. Run: `select id, status, refreshed_at, last_refresh_error from pools where status = 'live';`
+4. If `last_refresh_error` is not null, copy the error text and escalate to the ops team
+
+### 9.3 Post-Tournament (After Final Round)
+
+**Close the pool**
+1. Sign in as the pool commissioner
+2. Open the pool detail page
+3. Click **Close Pool** or **End Tournament**
+4. Confirm the action — this locks all entries permanently
+
+**Verify final leaderboard**
+1. Confirm the leaderboard shows correct winning positions
+2. Check that withdrawn golfers show as WD (Withdrawn) not active
+3. If scoring errors are suspected, compare against [Slash Golf](https://rapidapi.com/slashgolf) leaderboard
+
+**Archive the pool**
+1. In the pool detail page, click **Archive Pool**
+2. Archived pools are read-only and available for historical reference
+3. The archive preserves all picks, scores, and audit history
+
+### 9.4 Quick Reference Commands
+
+| Action | Where | How |
+|---|---|---|
+| Create pool | App UI | New Pool → select tournament → save |
+| Invite participants | Pool detail → Share | Copy link and send |
+| Check last refresh | Pool leaderboard header | Read timestamp |
+| Force score refresh | Pool detail → Commissioner menu | Click Refresh |
+| Close pool | Pool detail → Commissioner menu | Click Close Pool |
+| Archive pool | Pool detail → Commissioner menu | Click Archive |
+
+---
+
+## 10. Related Documentation
 
 | Document | Purpose |
 |---|---|
