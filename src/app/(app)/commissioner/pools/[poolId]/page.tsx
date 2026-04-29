@@ -14,6 +14,7 @@ import { StartPoolButton, ClosePoolButton } from './PoolActions'
 import { ReopenPoolButton } from './ReopenPoolButton'
 import { ArchivePoolButton } from './ArchivePoolButton'
 import { DeletePoolButton } from './DeletePoolButton'
+import { CommissionerErrorBanner } from './CommissionerErrorBanner'
 import InviteLinkSection from './InviteLinkSection'
 import { PoolConfigForm } from './PoolConfigForm'
 import { PoolStatusSection } from './PoolStatusSection'
@@ -139,6 +140,9 @@ export default async function CommissionerPoolDetail({ params }: { params: Promi
 
       {pool.status !== 'open' && (
         <section className={`${panelClasses()} p-4`}>
+          {pool.last_refresh_error && (
+            <CommissionerErrorBanner lastRefreshError={pool.last_refresh_error} poolId={poolId} />
+          )}
           <TrustStatusBar
             isLocked={true}
             poolStatus={pool.status}
