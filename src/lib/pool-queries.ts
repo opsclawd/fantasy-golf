@@ -203,7 +203,7 @@ export async function getEntriesForPool(
 export async function updatePoolRefreshMetadata(
   supabase: SupabaseClient,
   poolId: string,
-  metadata: { refreshed_at?: string; last_refresh_error?: string | null }
+  metadata: { refreshed_at?: string; last_refresh_error?: string | null; last_refresh_success_at?: string | null }
 ): Promise<{ error: string | null }> {
   const { error } = await supabase
     .from('pools')
