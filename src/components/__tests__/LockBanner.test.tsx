@@ -70,3 +70,31 @@ describe('LockBanner token migration', () => {
     expect(markup).not.toContain('slate-')
   })
 })
+
+describe('LockBanner warning tone near deadline', () => {
+  it('renders with warning tone when pool is open and deadline is within 24 hours', () => {
+    const soon = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString()
+    const html = renderToStaticMarkup(
+      <LockBanner isLocked={false} deadline={soon} poolStatus="open" timezone="America/New_York" />
+    )
+    expect(html).toContain('border-amber')
+    expect(html).toContain('bg-amber')
+  })
+
+  it('renders with info tone when pool is open and deadline is more than 24 hours away', () => {
+    const later = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
+    const html = renderToStaticMarkup(
+      <LockBanner isLocked={false} deadline={later} poolStatus="open" timezone="America/New_York" />
+    )
+    expect(html).toContain('border-green')
+    expect(html).toContain('bg-green')
+  })
+
+  it('shows secondary line with timezone when within 24 hours', () => {
+    const soon = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString()
+    const html = renderToStaticMarkup(
+      <LockBanner isLocked={false} deadline={soon} poolStatus="open" timezone="America/New_York" />
+    )
+    expect(html).toContain('America/New_York')
+  })
+})
