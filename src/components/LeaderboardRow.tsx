@@ -1,4 +1,5 @@
 import { ScoreDisplay } from './score-display'
+import { TieExplanationBadge } from './TieExplanationBadge'
 
 export interface RankedEntry {
   id: string
@@ -35,6 +36,9 @@ export function LeaderboardRow({
       </td>
       <td className="px-2 py-4 sm:px-5">
         <p className="text-sm font-semibold text-stone-900">{entry.user_id.slice(0, 9)}</p>
+        {isTied && (
+          <TieExplanationBadge isTied={true} entryName={entry.user_id.slice(0, 9)} totalBirdies={entry.totalBirdies} />
+        )}
         <div className="mt-2 flex flex-wrap gap-2">
           {entry.golfer_ids.map((id) => {
             const isWithdrawn = withdrawnGolferIds.has(id)
