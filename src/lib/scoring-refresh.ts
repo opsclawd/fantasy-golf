@@ -6,6 +6,7 @@ import {
   getPoolsByTournament,
   getEntriesForPool,
   updatePoolRefreshMetadata,
+  updatePoolRefreshTelemetry,
   insertAuditEvent,
 } from '@/lib/pool-queries'
 import type { Entry } from '@/lib/supabase/types'
@@ -59,7 +60,14 @@ export async function refreshScoresForPool(
     oldScoresMap.set(score.golfer_id, score)
   }
 
-  // Step 1: Fetch scores from external API
+  // Step 1: Record telemetry at attempt start
+  const attemptTime = new Date().toISOString()
+  await updatePoolRefreshTelemetry(supabase, pool.id, {
+    refresh_attempt_count: 'increment',
+    last_refresh_attempt_at: attemptTime,
+  })
+
+  // Step 2: Fetch scores from external API
   let slashScores
   try {
     slashScores = await getTournamentScores(pool.tournament_id, pool.year)
@@ -155,6 +163,7 @@ export async function refreshScoresForPool(
   // Step 3: Update refresh metadata (success)
   const metadataResult = await updatePoolRefreshMetadata(supabase, pool.id, {
     refreshed_at: refreshedAt,
+    last_refresh_success_at: refreshedAt,
     last_refresh_error: null,
   })
   if (metadataResult.error) {
