@@ -60,7 +60,7 @@ export function LockBanner({ isLocked, deadline, poolStatus, timezone }: LockBan
           aria-hidden="true"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-stone-300 bg-white/75 text-lg"
         >
-          &#x1F512;
+          🔒
         </span>
         <div>
           <p className={sectionHeadingClasses()}>Tournament lock</p>
@@ -88,7 +88,7 @@ export function LockBanner({ isLocked, deadline, poolStatus, timezone }: LockBan
           within24Hours ? 'border-amber-200' : 'border-green-200'
         } bg-white/75 text-lg`}
       >
-        {within24Hours ? '⚠️' : '&#x1F513;'}
+        {within24Hours ? '⚠️' : '🔓'}
       </span>
       <div>
         <p className={`${sectionHeadingClasses()} ${within24Hours ? 'text-amber-900' : 'text-green-900'}`}>
