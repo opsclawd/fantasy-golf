@@ -165,6 +165,97 @@ describe('getTournamentScores', () => {
     expect(round.score_to_par).toBe(0)
     expect(round.strokes).toBe(72)
   })
+
+  it('getTournamentMeta returns normalized tournament metadata', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        orgId: '1',
+        year: '2026',
+        tournId: '014',
+        name: 'The Masters',
+        status: 'In Progress',
+        currentRound: 2,
+        courses: [{ courseId: '014', courseName: 'Augusta National Golf Club' }],
+        format: 'stroke',
+        date: '2026-04-10',
+      }),
+    }))
+
+    const meta = await getTournamentMeta('014', 2026)
+    expect(meta).toMatchObject({
+      tournId: '014',
+      name: 'The Masters',
+      year: '2026',
+      status: 'In Progress',
+      currentRound: 2,
+      courses: [{ courseId: '014', courseName: 'Augusta National Golf Club' }],
+    })
+  })
+
+  it('getLeaderboard returns normalized leaderboard with round status', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        orgId: '1',
+        year: '2026',
+        tournId: '014',
+        status: 'In Progress',
+        roundId: 2,
+        roundStatus: 'In Progress',
+        timestamp: '2026-04-10T15:23:33.217000',
+        leaderboardRows: [
+          { playerId: '22405', lastName: 'Rose', firstName: 'Justin', isAmateur: false, status: 'active' },
+        ],
+      }),
+    }))
+
+    const board = await getLeaderboard('014', 2026)
+    expect(board.tournId).toBe('014')
+    expect(board.roundStatus).toBe('In Progress')
+    expect(board.leaderboardRows).toHaveLength(1)
+    expect(board.leaderboardRows[0].status).toBe('active')
+  })
+
+  it('getScorecard returns per-hole scorecard for a golfer', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        tournId: '014',
+        playerId: '22405',
+        year: '2026',
+        status: 'active',
+        currentRound: 2,
+        holes: [
+          { holeId: 1, par: 4, strokes: 4, scoreToPar: 0 },
+          { holeId: 2, par: 5, strokes: 4, scoreToPar: -1 },
+        ],
+      }),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.tournId).toBe('014')
+    expect(scorecard.playerId).toBe('22405')
+    expect(scorecard.holes).toHaveLength(2)
+    expect(scorecard.holes[0]).toMatchObject({ holeId: 1, par: 4, scoreToPar: 0 })
+    expect(scorecard.holes[1]).toMatchObject({ holeId: 2, par: 5, scoreToPar: -1 })
+  })
+
+  it('getStats returns player ranking stats', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        tournId: '014',
+        playerId: '22405',
+        worldRank: 12,
+        projectedOWGR: 8.5,
+      }),
+    }))
+
+    const stats = await getStats('014', '22405', 2026)
+    expect(stats.playerId).toBe('22405')
+    expect(stats.worldRank).toBe(12)
+  })
 })
 
 describe('getTournamentMeta', () => {
