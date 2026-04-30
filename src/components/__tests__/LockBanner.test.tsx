@@ -82,7 +82,7 @@ describe('LockBanner warning tone near deadline', () => {
 
   it('renders with info tone when pool is open and deadline is more than 24 hours away', () => {
     const html = renderToStaticMarkup(
-      <LockBanner isLocked={false} deadline="2026-04-29T12:00:00+00:00" poolStatus="open" timezone="America/New_York" />
+      <LockBanner isLocked={false} deadline="2026-05-01T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
     )
     expect(html).toContain('border-green')
     expect(html).toContain('bg-green')
