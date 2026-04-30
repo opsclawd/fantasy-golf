@@ -23,6 +23,23 @@ export interface Pool {
   created_at: string
   refreshed_at: string | null
   last_refresh_error: string | null
+  last_refresh_success_at?: string | null
+  refresh_attempt_count?: number
+  last_refresh_attempt_at?: string | null
+}
+
+export interface RefreshLock {
+  tournament_id: string
+  locked_by: string
+  locked_at: string
+  expires_at: string
+}
+
+export interface LockAcquireResult {
+  acquired: boolean
+  lockId?: string
+  heldBy?: string
+  expiresAt?: string
 }
 
 export interface PoolMember {
