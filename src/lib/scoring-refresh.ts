@@ -32,7 +32,7 @@ export interface RefreshResult {
 }
 
 export interface RefreshError {
-  code: 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR'
+  code: 'NO_SCORES' | 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR'
   message: string
 }
 
@@ -91,6 +91,26 @@ export async function refreshScoresForPool(
     }
   }
 
+if (slashScores.length === 0) {
+    const errorMessage = 'No golfers returned from scoring API'
+
+    await updatePoolRefreshMetadata(supabase, pool.id, {
+      last_refresh_error: errorMessage,
+    })
+
+    await insertAuditEvent(supabase, {
+      pool_id: pool.id,
+      user_id: null,
+      action: 'scoreRefreshFailed',
+      details: { error: errorMessage },
+    })
+
+    return {
+      data: null,
+      error: { code: 'NO_SCORES', message: errorMessage },
+    }
+  }
+
   // Step 3: Upsert scores into DB
   // upsertTournamentScore writes to both tournament_scores (current state)
   // and tournament_score_rounds (per-round archive) via the golferScore.rounds array
@@ -141,11 +161,17 @@ export async function refreshScoresForPool(
   }
 
   // Step 3: Update refresh metadata (success)
-  await updatePoolRefreshMetadata(supabase, pool.id, {
+  const metadataResult = await updatePoolRefreshMetadata(supabase, pool.id, {
     refreshed_at: refreshedAt,
     last_refresh_success_at: refreshedAt,
     last_refresh_error: null,
   })
+  if (metadataResult.error) {
+    return {
+      data: null,
+      error: { code: 'INTERNAL_ERROR', message: metadataResult.error },
+    }
+  }
 
   // Step 4: Build golfer round scores map from per-round archive
   const scoreRounds = await getTournamentScoreRounds(supabase, pool.tournament_id)
@@ -188,12 +214,18 @@ export async function refreshScoresForPool(
       payload: { poolId: tournamentPool.id, ranked, completedRounds, updatedAt: refreshedAt },
     })
 
-    await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
+    const poolMetaResult = await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
       refreshed_at: refreshedAt,
       last_refresh_error: null,
     })
+    if (poolMetaResult.error) {
+      return {
+        data: null,
+        error: { code: 'INTERNAL_ERROR', message: poolMetaResult.error },
+      }
+    }
 
-    await insertAuditEvent(supabase, {
+    const auditResult = await insertAuditEvent(supabase, {
       pool_id: tournamentPool.id,
       user_id: null,
       action: 'scoreRefreshCompleted',
@@ -202,6 +234,12 @@ export async function refreshScoresForPool(
         entryCount: (entries || []).length,
       },
     })
+    if (auditResult.error) {
+      return {
+        data: null,
+        error: { code: 'INTERNAL_ERROR', message: auditResult.error },
+      }
+    }
   }
 
   return {

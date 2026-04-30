@@ -39,6 +39,13 @@ function formatDeadline(deadline: string, timeZone: string): string {
   })
 }
 
+function isWithin24Hours(deadline: string, timeZone: string, now: Date = new Date()): boolean {
+  const lockAt = getTournamentLockInstant(deadline, timeZone)
+  if (!lockAt) return false
+  const hoursRemaining = (lockAt.getTime() - now.getTime()) / (1000 * 60 * 60)
+  return hoursRemaining > 0 && hoursRemaining <= 24
+}
+
 export function LockBanner({ isLocked, deadline, poolStatus, timezone }: LockBannerProps) {
   const lockedMessage = getLockedMessage(poolStatus)
 
@@ -65,24 +72,34 @@ export function LockBanner({ isLocked, deadline, poolStatus, timezone }: LockBan
   }
 
   const formattedDeadline = formatDeadline(deadline, timezone)
+  const within24Hours = poolStatus === 'open' && isWithin24Hours(deadline, timezone)
 
   return (
     <div
-      className={`${panelClasses()} mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4`}
+      className={`${panelClasses()} mb-4 flex items-center gap-3 border ${
+        within24Hours ? 'border-amber-200 bg-amber-100/90' : 'border-green-200 bg-green-100/90'
+      } p-4`}
       role="status"
       aria-live="polite"
     >
       <span
         aria-hidden="true"
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg"
+        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border ${
+          within24Hours ? 'border-amber-200' : 'border-green-200'
+        } bg-white/75 text-lg`}
       >
-        &#x1F513;
+        {within24Hours ? '⚠️' : '&#x1F513;'}
       </span>
       <div>
-        <p className={`${sectionHeadingClasses()} text-green-900`}>Tournament lock</p>
-        <p className="text-base font-semibold text-green-950">Picks are open</p>
-        <p className="text-sm text-green-800">
+        <p className={`${sectionHeadingClasses()} ${within24Hours ? 'text-amber-900' : 'text-green-900'}`}>
+          Tournament lock
+        </p>
+        <p className={`text-base font-semibold ${within24Hours ? 'text-amber-950' : 'text-green-950'}`}>
+          {within24Hours ? 'Picks close soon' : 'Picks are open'}
+        </p>
+        <p className={`text-sm ${within24Hours ? 'text-amber-800' : 'text-green-800'}`}>
           Deadline: {formattedDeadline}
+          {within24Hours && ` (${timezone})`}
         </p>
       </div>
     </div>

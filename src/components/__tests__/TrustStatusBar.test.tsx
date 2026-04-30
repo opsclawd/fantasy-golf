@@ -221,6 +221,65 @@ describe('getTrustStatusBarState', () => {
   })
 })
 
+describe('TrustStatusBar stale pulsing indicator', () => {
+  it('shows pulsing amber indicator when pool status is live and freshness is stale', () => {
+    const html = renderToStaticMarkup(
+      <TrustStatusBar
+        isLocked={true}
+        poolStatus="live"
+        freshness="stale"
+        refreshedAt="2026-04-29T10:00:00Z"
+        lastRefreshError={null}
+        onRefresh={() => {}}
+      />
+    )
+    expect(html).toContain('animate-pulse')
+    expect(html).toContain('bg-amber')
+  })
+
+  it('does not show pulsing indicator when freshness is current', () => {
+    const html = renderToStaticMarkup(
+      <TrustStatusBar
+        isLocked={true}
+        poolStatus="live"
+        freshness="current"
+        refreshedAt="2026-04-29T10:00:00Z"
+        lastRefreshError={null}
+        onRefresh={() => {}}
+      />
+    )
+    expect(html).not.toContain('animate-pulse')
+  })
+
+  it('shows refresh button when pool is live and stale', () => {
+    const html = renderToStaticMarkup(
+      <TrustStatusBar
+        isLocked={true}
+        poolStatus="live"
+        freshness="stale"
+        refreshedAt="2026-04-29T10:00:00Z"
+        lastRefreshError={null}
+        onRefresh={() => {}}
+      />
+    )
+    expect(html).toContain('Refresh now')
+  })
+
+  it('does not show refresh button when freshness is current', () => {
+    const html = renderToStaticMarkup(
+      <TrustStatusBar
+        isLocked={true}
+        poolStatus="live"
+        freshness="current"
+        refreshedAt="2026-04-29T10:00:00Z"
+        lastRefreshError={null}
+        onRefresh={() => {}}
+      />
+    )
+    expect(html).not.toContain('Refresh now')
+  })
+})
+
 describe('TrustStatusBar token migration', () => {
   it('uses green/stone tokens for info tone (not emerald/slate)', () => {
     const markup = renderToStaticMarkup(
