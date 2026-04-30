@@ -183,6 +183,7 @@ export async function refreshScoresForPool(
     }
     golferRoundScoresMap.get(round.golfer_id)!.push({
       roundId: round.round_id,
+      holeId: 1,
       scoreToPar: round.score_to_par ?? null,
       status: round.status,
       isComplete: round.strokes !== null,

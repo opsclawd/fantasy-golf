@@ -1,6 +1,7 @@
 import type { GolferStatus, Entry } from '@/lib/supabase/types'
 
 export interface PlayerHoleScore {
+  holeId: number
   roundId: number
   scoreToPar: number | null
   status: GolferStatus
@@ -8,6 +9,7 @@ export interface PlayerHoleScore {
 }
 
 export interface EntryHoleResult {
+  holeId: number
   roundId: number
   bestBallScore: number | null
   isComplete: boolean
@@ -50,70 +52,53 @@ export function computeEntryScore(
 
   const activeSet = new Set(activeGolferIds)
 
-  const roundScoresByRound = new Map<number, { scoreToPar: number | null; isComplete: boolean; golferId: string }[]>()
+  const holesIndex = new Map<string, Array<{ golferId: string; scoreToPar: number | null; isComplete: boolean; status: GolferStatus }>>()
 
-  for (const [golferId, rounds] of golferRoundScores) {
-    if (!activeSet.has(golferId)) continue
-
-    for (const round of rounds) {
-      if (!roundScoresByRound.has(round.roundId)) {
-        roundScoresByRound.set(round.roundId, [])
+  for (const [golferId, rounds] of Array.from(golferRoundScores.entries())) {
+    for (const round of Array.from(rounds)) {
+      const holeKey = `${round.roundId}-${round.holeId}`
+      if (!holesIndex.has(holeKey)) {
+        holesIndex.set(holeKey, [])
       }
-      roundScoresByRound.get(round.roundId)!.push({
+      holesIndex.get(holeKey)!.push({
+        golferId,
         scoreToPar: round.scoreToPar,
         isComplete: round.isComplete,
-        golferId,
+        status: round.status,
       })
     }
   }
 
-  const sortedRoundIds = Array.from(roundScoresByRound.keys()).sort((a, b) => a - b)
-
-  const golfersActiveAtRound = new Map<number, Set<string>>()
-
-  for (const roundId of sortedRoundIds) {
-    const roundScores = roundScoresByRound.get(roundId)!
-    const activeInThisRound = new Set<string>()
-    for (const rs of roundScores) {
-      const status = golferRoundScores.get(rs.golferId)?.find(r => r.roundId === roundId)?.status
-      if (status === 'active') {
-        activeInThisRound.add(rs.golferId)
-      }
-    }
-    golfersActiveAtRound.set(roundId, activeInThisRound)
+  const roundCompleteness = new Map<number, boolean>()
+  for (const [holeKey, entries] of Array.from(holesIndex.entries())) {
+    const roundId = parseInt(holeKey.split('-')[0])
+    const allComplete = entries.every(e => e.isComplete)
+    const current = roundCompleteness.get(roundId)
+    roundCompleteness.set(roundId, current === undefined ? allComplete : current && allComplete)
   }
 
-  for (const roundId of sortedRoundIds) {
-    const roundScores = roundScoresByRound.get(roundId)!
-    const activeInThisRound = golfersActiveAtRound.get(roundId)!
+  for (const [holeKey, entries] of Array.from(holesIndex.entries())) {
+    const roundId = parseInt(holeKey.split('-')[0])
+    if (!roundCompleteness.get(roundId)) continue
 
-    const allComplete = roundScores.every(r => {
-      const golferRounds = golferRoundScores.get(r.golferId)
-      const golferRound = golferRounds?.find(gr => gr.roundId === roundId)
-      return golferRound?.isComplete ?? false
-    })
-    if (!allComplete) continue
+    const activeEntries = entries.filter(e => activeSet.has(e.golferId) && e.status === 'active')
+    if (activeEntries.length === 0) continue
 
-    const scores: number[] = []
-    for (const { scoreToPar, golferId } of roundScores) {
-      if (scoreToPar === null) continue
-      if (!activeInThisRound.has(golferId)) continue
-      scores.push(scoreToPar)
-    }
+    const validScores = activeEntries
+      .map(e => e.scoreToPar)
+      .filter((s): s is number => s !== null)
 
-    if (scores.length === 0) continue
+    if (validScores.length === 0) continue
 
-    const bestBall = Math.min(...scores)
+    const bestBall = Math.min(...validScores)
     totalScore = (totalScore !== null ? totalScore : 0) + bestBall
     completedHoles++
 
-    if (isBirdie(bestBall)) {
-      totalBirdies++
-    }
+    if (isBirdie(bestBall)) totalBirdies++
   }
 
   return {
-    totalScore,
+    totalScore: totalScore === 0 && completedHoles === 0 ? null : totalScore,
     totalBirdies,
     completedHoles,
     activeGolferIds,

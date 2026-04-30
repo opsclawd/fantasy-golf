@@ -1,17 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { TournamentScore, TournamentScoreRound } from './supabase/types'
+import type { TournamentScore, TournamentScoreRound, TournamentHole } from './supabase/types'
 import type { GolferScore, GolferScoreRound } from './slash-golf/types'
-
-export interface TournamentHole {
-  golfer_id: string
-  tournament_id: string
-  round_id: number
-  hole_id: number
-  strokes: number
-  par: number
-  score_to_par: number
-  updated_at?: string
-}
 
 export async function upsertTournamentScoreRound(
   supabase: SupabaseClient,

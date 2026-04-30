@@ -1,6 +1,6 @@
 import { rankEntries as domainRankEntries, deriveCompletedRounds as domainDeriveCompletedRounds } from './scoring/domain'
 import type { GolferRoundScoresMap } from './scoring/domain'
-import { TournamentScore, Entry } from './supabase/types'
+import { TournamentScore, TournamentHole, Entry, GolferStatus } from './supabase/types'
 
 export function getRoundScore(score: TournamentScore): number | null {
   if (typeof score.total_score === 'number') return score.total_score
@@ -59,16 +59,37 @@ export function deriveCompletedRounds(allScores: TournamentScore[]): number {
   return domainDeriveCompletedRounds(allScores)
 }
 
-function buildGolferRoundScoresMap(tournamentScores: Map<string, TournamentScore>): GolferRoundScoresMap {
+export function buildGolferRoundScoresMap(
+  holesByGolfer: Map<string, TournamentHole[]>,
+  golferStatuses: Map<string, GolferStatus>
+): GolferRoundScoresMap {
   const result: GolferRoundScoresMap = new Map()
-  for (const [golferId, score] of tournamentScores) {
+
+  Array.from(holesByGolfer.entries()).forEach(([golferId, holes]) => {
+    const rounds: { holeId: number; roundId: number; scoreToPar: number | null; status: GolferStatus; isComplete: boolean }[] = holes.map(hole => ({
+      roundId: hole.round_id,
+      holeId: hole.hole_id,
+      scoreToPar: hole.score_to_par,
+      status: golferStatuses.get(golferId) ?? 'active',
+      isComplete: true,
+    }))
+    result.set(golferId, rounds)
+  })
+
+  return result
+}
+
+function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, TournamentScore>): GolferRoundScoresMap {
+  const result: GolferRoundScoresMap = new Map()
+  Array.from(tournamentScores.entries()).forEach(([golferId, score]) => {
     result.set(golferId, [{
+      holeId: 1,
       roundId: score.round_id ?? 1,
       scoreToPar: score.total_score ?? null,
       status: score.status,
       isComplete: true,
     }])
-  }
+  })
   return result
 }
 
@@ -77,7 +98,7 @@ export function rankEntries(
   golferScores: Map<string, TournamentScore>,
   completedRounds: number
 ): (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[] {
-  const golferRoundScoresMap = buildGolferRoundScoresMap(golferScores)
+  const golferRoundScoresMap = buildGolferRoundScoresMapFromScores(golferScores)
   return domainRankEntries(entries, golferRoundScoresMap, completedRounds) as (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[]
 }
 
@@ -114,4 +135,14 @@ export function rankEntriesLegacy(
     ranked.push({ ...withScores[i], rank })
   }
   return ranked
+}
+
+export function rankEntriesWithHoles(
+  entries: Entry[],
+  holesByGolfer: Map<string, TournamentHole[]>,
+  golferStatuses: Map<string, GolferStatus>,
+  completedRounds: number
+): (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[] {
+  const golferRoundScoresMap = buildGolferRoundScoresMap(holesByGolfer, golferStatuses)
+  return domainRankEntries(entries, golferRoundScoresMap, completedRounds) as (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[]
 }

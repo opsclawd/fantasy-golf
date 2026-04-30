@@ -130,6 +130,18 @@ export interface TournamentScoreRound {
   updated_at?: string | null
 }
 
+export interface TournamentHole {
+  id?: string
+  golfer_id: string
+  tournament_id: string
+  round_id: number
+  hole_id: number
+  strokes: number
+  par: number
+  score_to_par: number
+  updated_at?: string
+}
+
 export interface AuditEvent {
   id: string
   pool_id: string
