@@ -83,6 +83,7 @@ function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, Tourn
   const result: GolferRoundScoresMap = new Map()
   Array.from(tournamentScores.entries()).forEach(([golferId, score]) => {
     result.set(golferId, [{
+      holeId: 1,
       roundId: score.round_id ?? 1,
       scoreToPar: score.total_score ?? null,
       status: score.status,
