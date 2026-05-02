@@ -1,8 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { TournamentHole } from '../supabase/types'
+import type { TournamentHole } from '../scoring-queries'
 
 import { upsertTournamentScore, upsertTournamentHoles } from '../scoring-queries'
-import type { TournamentHole } from '../scoring-queries'
 
 describe('tournament_holes queries', () => {
   it('getTournamentHolesForGolfers returns holes grouped by golfer', async () => {
