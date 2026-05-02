@@ -1,6 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { getTournamentScores } from '@/lib/slash-golf/client'
-import { rankEntries } from '@/lib/scoring/domain'
+import { getTournamentScores, getScorecard } from '@/lib/slash-golf/client'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getPoolsByTournament,
@@ -9,15 +8,16 @@ import {
   updatePoolRefreshTelemetry,
   insertAuditEvent,
 } from '@/lib/pool-queries'
-import type { Entry } from '@/lib/supabase/types'
+import type { Entry, TournamentHole, GolferStatus } from '@/lib/supabase/types'
 import {
   upsertTournamentScore,
   getScoresForTournament,
-  getTournamentScoreRounds,
+  upsertTournamentHoles,
+  getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
 import type { TournamentScore } from '@/lib/supabase/types'
-import type { GolferRoundScoresMap } from '@/lib/scoring/domain'
 import { deriveCompletedRounds } from '@/lib/scoring/domain'
+import { rankEntriesWithHoles } from '@/lib/scoring'
 
 interface RefreshablePool {
   id: string
@@ -34,6 +34,20 @@ export interface RefreshResult {
 export interface RefreshError {
   code: 'NO_SCORES' | 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR'
   message: string
+}
+
+function scorecardToTournamentHoles(
+  scorecard: { tournId: string; playerId: string; roundId: number; holes: Array<{ holeId: number; par: number; strokes: number; scoreToPar: number }> }
+): TournamentHole[] {
+  return scorecard.holes.map(h => ({
+    golfer_id: scorecard.playerId,
+    tournament_id: scorecard.tournId,
+    round_id: scorecard.roundId,
+    hole_id: h.holeId,
+    par: h.par,
+    strokes: h.strokes,
+    score_to_par: h.scoreToPar,
+  }))
 }
 
 /**
@@ -173,29 +187,30 @@ export async function refreshScoresForPool(
     }
   }
 
-  // Step 4: Build golfer round scores map from per-round archive
-  const scoreRounds = await getTournamentScoreRounds(supabase, pool.tournament_id)
-  const golferRoundScoresMap: GolferRoundScoresMap = new Map()
+  // Step 3: Fetch scorecards for all golfers in tournament and persist hole data
+  const allGolferIds = slashScores.map(s => s.golfer_id).filter(Boolean)
 
-  for (const round of scoreRounds) {
-    if (!golferRoundScoresMap.has(round.golfer_id)) {
-      golferRoundScoresMap.set(round.golfer_id, [])
+  for (const golferId of allGolferIds) {
+    try {
+      const scorecard = await getScorecard(pool.tournament_id, golferId, pool.year)
+      const holes = scorecardToTournamentHoles(scorecard)
+      if (holes.length > 0) {
+        await upsertTournamentHoles(supabase, holes)
+      }
+    } catch {
+      // Per-golfer scorecard errors are non-fatal; continue refresh cycle
     }
-    golferRoundScoresMap.get(round.golfer_id)!.push({
-      roundId: round.round_id,
-      holeId: 1,
-      scoreToPar: round.score_to_par ?? null,
-      status: round.status,
-      isComplete: round.strokes !== null,
-    })
   }
+
+  // Step 5: Build hole-level data from persisted tournament_holes
+  const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)
 
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)
   const completedRounds = deriveCompletedRounds(allScores)
 
-  const golferScoresMap = new Map<string, TournamentScore>()
+  const golferStatuses = new Map<string, GolferStatus>()
   for (const score of allScores) {
-    golferScoresMap.set(score.golfer_id, score)
+    golferStatuses.set(score.golfer_id, score.status)
   }
 
   const refreshDetails = buildRefreshAuditDetails(
@@ -207,7 +222,7 @@ export async function refreshScoresForPool(
 
   for (const tournamentPool of livePools) {
     const entries = await getEntriesForPool(supabase, tournamentPool.id) as Entry[]
-    const ranked = rankEntries(entries, golferRoundScoresMap, completedRounds)
+    const ranked = rankEntriesWithHoles(entries, holesByGolfer, golferStatuses, completedRounds)
 
     await supabase.channel('pool_updates').send({
       type: 'broadcast',

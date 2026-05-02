@@ -223,6 +223,7 @@ describe('getTournamentScores', () => {
       json: vi.fn().mockResolvedValue({
         tournId: '014',
         playerId: '22405',
+        roundId: 2,
         year: '2026',
         status: 'active',
         currentRound: 2,
@@ -236,9 +237,68 @@ describe('getTournamentScores', () => {
     const scorecard = await getScorecard('014', '22405', 2026)
     expect(scorecard.tournId).toBe('014')
     expect(scorecard.playerId).toBe('22405')
+    expect(scorecard.roundId).toBe(2)
     expect(scorecard.holes).toHaveLength(2)
     expect(scorecard.holes[0]).toMatchObject({ holeId: 1, par: 4, scoreToPar: 0 })
     expect(scorecard.holes[1]).toMatchObject({ holeId: 2, par: 5, scoreToPar: -1 })
+  })
+
+  it('getScorecard handles array response (per-round scorecards)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue([{
+        tournId: '014',
+        playerId: '22405',
+        roundId: 1,
+        year: '2026',
+        status: 'active',
+        currentRound: 1,
+        holes: [
+          { holeId: 1, par: 4, strokes: 4, scoreToPar: 0 },
+          { holeId: 2, par: 4, strokes: 3, scoreToPar: -1 },
+        ],
+      }, {
+        tournId: '014',
+        playerId: '22405',
+        roundId: 2,
+        year: '2026',
+        status: 'active',
+        currentRound: 2,
+        holes: [
+          { holeId: 1, par: 4, strokes: 5, scoreToPar: 1 },
+          { holeId: 2, par: 4, strokes: 4, scoreToPar: 0 },
+        ],
+      }]),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.tournId).toBe('014')
+    expect(scorecard.playerId).toBe('22405')
+    expect(scorecard.roundId).toBe(1)
+    expect(scorecard.holes).toHaveLength(4)
+    expect(scorecard.holes[0]).toMatchObject({ holeId: 1, scoreToPar: 0 })
+    expect(scorecard.holes[2]).toMatchObject({ holeId: 1, scoreToPar: 1 })
+  })
+
+  it('getScorecard handles wrapped { scorecards: [...] } response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        scorecards: [{
+          tournId: '014',
+          playerId: '22405',
+          roundId: 1,
+          year: '2026',
+          status: 'active',
+          currentRound: 1,
+          holes: [{ holeId: 1, par: 4, strokes: 4, scoreToPar: 0 }],
+        }],
+      }),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.tournId).toBe('014')
+    expect(scorecard.holes).toHaveLength(1)
   })
 
   it('getStats returns player ranking stats', async () => {

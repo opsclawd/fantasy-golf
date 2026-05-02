@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { refreshScoresForPool } from '../scoring-refresh'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getTournamentScores } from '@/lib/slash-golf/client'
-import { rankEntries, deriveCompletedRounds } from '@/lib/scoring/domain'
+import { getTournamentScores, getScorecard } from '@/lib/slash-golf/client'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getPoolsByTournament,
@@ -14,8 +13,10 @@ import {
 import {
   upsertTournamentScore,
   getScoresForTournament,
-  getTournamentScoreRounds,
+  upsertTournamentHoles,
+  getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
+import { rankEntriesWithHoles } from '@/lib/scoring'
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
@@ -23,11 +24,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/slash-golf/client', () => ({
   getTournamentScores: vi.fn(),
-}))
-
-vi.mock('@/lib/scoring/domain', () => ({
-  rankEntries: vi.fn(),
-  deriveCompletedRounds: vi.fn(),
+  getScorecard: vi.fn(),
 }))
 
 vi.mock('@/lib/audit', () => ({
@@ -45,7 +42,12 @@ vi.mock('@/lib/pool-queries', () => ({
 vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
-  getTournamentScoreRounds: vi.fn(),
+  upsertTournamentHoles: vi.fn(),
+  getTournamentHolesForGolfers: vi.fn(),
+}))
+
+vi.mock('@/lib/scoring', () => ({
+  rankEntriesWithHoles: vi.fn(),
 }))
 
 const originalEnv = { ...process.env }
@@ -88,7 +90,7 @@ describe('refreshScoresForPool', () => {
     vi.mocked(getScoresForTournament)
       .mockResolvedValueOnce([] as never)
       .mockResolvedValueOnce([
-        { golfer_id: 'g1', total_score: -2, total_birdies: 1, status: 'active' },
+        { golfer_id: 'g1', total_score: -2, total_birdies: 1, status: 'active', round_id: 1 },
       ] as never)
     vi.mocked(getTournamentScores).mockResolvedValue([
       { golfer_id: 'g1', total: -2, total_birdies: 1, status: 'active', current_round: 1 },
@@ -96,7 +98,12 @@ describe('refreshScoresForPool', () => {
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
-    vi.mocked(rankEntries).mockReturnValue([])
+    vi.mocked(getScorecard).mockResolvedValue({
+      tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1, holes: [],
+    } as never)
+    vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
+    vi.mocked(rankEntriesWithHoles).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 1,
       golferCount: 1,
@@ -106,8 +113,6 @@ describe('refreshScoresForPool', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
-    vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const result = await refreshScoresForPool(mockSupabase, pool)
 
@@ -185,7 +190,12 @@ describe('refreshScoresForPool', () => {
     vi.mocked(getEntriesForPool)
       .mockResolvedValueOnce([{ id: 'entry-1' }] as never)
       .mockResolvedValueOnce([{ id: 'entry-2' }] as never)
-    vi.mocked(rankEntries).mockReturnValue([])
+    vi.mocked(getScorecard).mockResolvedValue({
+      tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1, holes: [],
+    } as never)
+    vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
+    vi.mocked(rankEntriesWithHoles).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 1,
       golferCount: 1,
@@ -195,8 +205,6 @@ describe('refreshScoresForPool', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
-    vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     await refreshScoresForPool(mockSupabase, pool)
 

@@ -36,7 +36,7 @@ export interface GolferScore {
   rounds?: GolferScoreRound[]
   total?: number | null
   total_birdies?: number
-  status?: 'active' | 'withdrawn' | 'cut'
+  status?: 'active' | 'withdrawn' | 'cut' | 'dq' | 'complete'
 }
 
 export interface RapidApiPlayer {
@@ -110,6 +110,7 @@ export interface SlashHole {
 export interface SlashScorecard {
   tournId: string
   playerId: string
+  roundId: number
   year: string
   status: SlashGolferStatus
   currentRound: number

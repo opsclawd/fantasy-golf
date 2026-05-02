@@ -165,8 +165,10 @@ function parseHoleValue(value: unknown): number | null {
   return parseMongoNumber(value)
 }
 
-function normalizeGolferStatus(value: unknown): 'active' | 'withdrawn' | 'cut' {
+function normalizeGolferStatus(value: unknown): 'active' | 'withdrawn' | 'cut' | 'dq' | 'complete' {
   if (value === 'withdrawn' || value === 'cut') return value
+  if (value === 'dq') return 'dq'
+  if (value === 'complete') return 'complete'
   return 'active'
 }
 
@@ -328,23 +330,54 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
     throw new Error('Failed to fetch scorecard')
   }
   const raw = await res.json()
-  const holes = Array.isArray(raw.holes) ? raw.holes.map((h: Record<string, unknown>) => ({
-    holeId: parseMongoNumber(h.holeId) ?? 0,
-    par: parseMongoNumber(h.par) ?? 0,
-    strokes: parseMongoNumber(h.strokes) ?? 0,
-    scoreToPar: parseMongoNumber(h.scoreToPar) ?? 0,
-  })).filter((h: SlashHole) => h.holeId > 0) : []
+
+  const rawScorecards = normalizeScorecardResponse(raw)
+  if (!rawScorecards || rawScorecards.length === 0) {
+    throw new Error('No scorecard data returned')
+  }
+
+  const first = rawScorecards[0]!
+  const roundId = parseMongoNumber(rawScorecards.length > 1 ? (first as Record<string, unknown>).roundId : raw.roundId) ?? 1
+
+  const allHoles: SlashHole[] = []
+  for (const sc of rawScorecards) {
+    const holes = Array.isArray((sc as Record<string, unknown>).holes)
+      ? ((sc as Record<string, unknown>).holes as Record<string, unknown>[]).map((h) => ({
+          holeId: parseMongoNumber(h.holeId) ?? 0,
+          par: parseMongoNumber(h.par) ?? 0,
+          strokes: parseMongoNumber(h.strokes) ?? 0,
+          scoreToPar: parseMongoNumber(h.scoreToPar) ?? 0,
+        })).filter((h: SlashHole) => h.holeId > 0)
+      : []
+    allHoles.push(...holes)
+  }
 
   return {
-    tournId: typeof raw.tournId === 'string' ? raw.tournId : tournamentId,
-    playerId: typeof raw.playerId === 'string' ? raw.playerId : golferId,
-    year: typeof raw.year === 'string' ? raw.year : (year?.toString() ?? ''),
-    status: normalizeSlashStatus(raw.status),
-    currentRound: parseMongoNumber(raw.currentRound) ?? 1,
-    holes,
+    tournId: typeof first.tournId === 'string' ? first.tournId : tournamentId,
+    playerId: typeof first.playerId === 'string' ? first.playerId : golferId,
+    roundId,
+    year: typeof first.year === 'string' ? first.year : (year?.toString() ?? ''),
+    status: normalizeSlashStatus(first.status),
+    currentRound: parseMongoNumber(first.currentRound) ?? 1,
+    holes: allHoles,
   }
 }
 
+function normalizeScorecardResponse(raw: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(raw)) return raw as Array<Record<string, unknown>>
+  if (typeof raw === 'object' && raw !== null && Array.isArray((raw as Record<string, unknown>).scorecards)) {
+    return (raw as Record<string, unknown>).scorecards as Array<Record<string, unknown>>
+  }
+  if (typeof raw === 'object' && raw !== null) {
+    return [raw as Record<string, unknown>]
+  }
+  return []
+}
+
+/**
+ * @deprecated Out-of-scope for MVP. Slash Golf /stats endpoint contract is unused and unverified.
+ * Remove or reimplement once stats are actually needed.
+ */
 export async function getStats(tournamentId: string, golferId: string, year?: number): Promise<SlashStats> {
   const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, playerId: golferId, ...(year && { year: year.toString() }) })
   const res = await fetch(`${BASE_URL}/stats?${params}`, {

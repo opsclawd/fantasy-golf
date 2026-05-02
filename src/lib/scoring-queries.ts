@@ -129,3 +129,27 @@ export async function upsertTournamentHoles(
   if (error) return { error: error.message }
   return { error: null }
 }
+
+export async function getTournamentHolesForGolfers(
+  supabase: SupabaseClient,
+  tournamentId: string,
+  golferIds: string[]
+): Promise<Map<string, TournamentHole[]>> {
+  if (golferIds.length === 0) return new Map()
+  const { data } = await supabase
+    .from('tournament_holes')
+    .select('*')
+    .eq('tournament_id', tournamentId)
+    .in('golfer_id', golferIds)
+    .order('round_id', { ascending: true })
+    .order('hole_id', { ascending: true })
+  const result = new Map<string, TournamentHole[]>()
+  if (!data) return result
+  for (const hole of data as TournamentHole[]) {
+    if (!result.has(hole.golfer_id)) {
+      result.set(hole.golfer_id, [])
+    }
+    result.get(hole.golfer_id)!.push(hole)
+  }
+  return result
+}
