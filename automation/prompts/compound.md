@@ -1,21 +1,7 @@
-Run `ce:compound`.
+Run `ce:compound` in the current directory.
 
-Goal:
-Capture implementation learnings from this issue before review context dominates the session.
+Read: issue.md, implementation-plan.md, implementation-log.md, validation-initial.log.
 
-Input files:
-- `.ai-runs/issue-${ISSUE}/issue.md`
-- `.ai-runs/issue-${ISSUE}/implementation-plan.md`
-- `.ai-runs/issue-${ISSUE}/implementation-log.md`
-- `.ai-runs/issue-${ISSUE}/validation-initial.log`
+Capture implementation learnings to `./docs/solutions/` or similar.
 
-Rules:
-- Capture implementation findings.
-- Capture reusable repo patterns.
-- Capture file/module relationships.
-- Capture test strategy.
-- Mark the solution learning as pre-review / draft if appropriate.
-- Do not turn this into a review report.
-- Prefer creating/updating a relevant file under `docs/solutions/`.
-
-After compounding, stop.
+Stop after running ce:compound. Do not ask questions.

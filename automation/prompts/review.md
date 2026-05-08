@@ -1,18 +1,7 @@
-Run `ce:code-review`.
+You are reviewing code changes.
 
-Review the current branch against the base branch.
+Read the current branch diff against the base branch (main).
 
-Rules:
-- You did not write this code.
-- Find production defects.
-- Do not praise.
-- Return only blocking, high, and medium findings.
-- Every finding must include:
-  - severity
-  - file path
-  - evidence from diff or code
-  - failure mode
-  - required fix
-- Write the review output to `.ai-runs/issue-${ISSUE}/code-review.md`.
+Write a code review to `./code-review.md`. Include severity, file path, evidence, failure mode, and required fix for each finding.
 
-After review, stop.
+Stop after writing the review. Do not ask questions.

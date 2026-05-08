@@ -1,9 +1,15 @@
-You are writing an implementation plan.
+Read `issue.md` (contains the GitHub issue description) and `issue-comments.md` (contains issue comments) from the current directory.
 
-Read `.ai-runs/issue-48/issue.md` and `.ai-runs/issue-48/issue-comments.md`.
+Write a complete implementation plan to `./implementation-plan.md` in the current directory.
 
-Write the plan to `implementation-plan.md` (in the current directory, NOT in .ai-runs/).
+The plan must include:
+- goal
+- non-goals
+- affected files
+- ordered implementation tasks
+- tests to add/update
+- validation commands
+- risk areas
+- stop conditions
 
-Include: goal, non-goals, affected files, ordered tasks, tests to add/update, validation commands, risk areas, stop conditions.
-
-Write the file now. Stop after writing it.
+Write the file now. Stop after writing it. Do not ask questions.

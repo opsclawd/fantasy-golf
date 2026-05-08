@@ -1,7 +1,7 @@
 You are implementing code changes.
 
-Read `.ai-runs/issue-48/issue.md` and `.ai-runs/issue-48/implementation-plan.md`.
+Read `issue.md` and `implementation-plan.md` from the current directory.
 
-Implement the plan. Make the code changes described. Write a log to `.ai-runs/issue-48/implementation-log.md`.
+Make the code changes described in the plan. Write implementation notes to `./implementation-log.md`.
 
 Stop after implementing. Do not ask questions or for confirmation.
