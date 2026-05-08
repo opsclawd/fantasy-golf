@@ -1,20 +1,12 @@
-You are running the planning phase for an automated AI software pipeline.
+You are writing an implementation plan for the following GitHub issue.
 
-Use `superpowers:writing-plans`.
+Read these files:
+- `.ai-runs/issue-48/issue.md`
+- `.ai-runs/issue-48/issue-comments.md`
 
-Input files:
-- `.ai-runs/issue-${ISSUE}/issue.md`
-- `.ai-runs/issue-${ISSUE}/issue-comments.md`
+Then write a complete implementation plan to `.ai-runs/issue-48/implementation-plan.md`.
 
-Rules:
-- Do not brainstorm.
-- Assume the GitHub issue has already been brainstormed.
-- Do not ask for approval.
-- Do not ask questions — if the issue is ambiguous, make a reasonable assumption and document it in the plan.
-- If blocked, write `.ai-runs/issue-${ISSUE}/BLOCKED.md` and stop.
-- Otherwise write a complete implementation plan to `.ai-runs/issue-${ISSUE}/implementation-plan.md`.
-
-The implementation plan must include:
+The plan must include:
 - goal
 - non-goals
 - affected files
@@ -24,4 +16,4 @@ The implementation plan must include:
 - risk areas
 - stop conditions
 
-After writing the plan, stop.
+Write the plan now. Be specific about file paths and code changes needed.
