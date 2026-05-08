@@ -2,7 +2,7 @@ You are writing an implementation plan.
 
 Read `.ai-runs/issue-48/issue.md` and `.ai-runs/issue-48/issue-comments.md`.
 
-Then write the plan directly to `.ai-runs/issue-48/implementation-plan.md`.
+Write the plan to `implementation-plan.md` (in the current directory, NOT in .ai-runs/).
 
 Include: goal, non-goals, affected files, ordered tasks, tests to add/update, validation commands, risk areas, stop conditions.
 
