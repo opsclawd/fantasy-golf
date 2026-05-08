@@ -10,7 +10,7 @@ Rules:
 - Do not brainstorm.
 - Assume the GitHub issue has already been brainstormed.
 - Do not ask for approval.
-- Do not ask questions unless the issue is impossible to implement safely.
+- Do not ask questions — if the issue is ambiguous, make a reasonable assumption and document it in the plan.
 - If blocked, write `.ai-runs/issue-${ISSUE}/BLOCKED.md` and stop.
 - Otherwise write a complete implementation plan to `.ai-runs/issue-${ISSUE}/implementation-plan.md`.
 
