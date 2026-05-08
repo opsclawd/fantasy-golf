@@ -16,4 +16,4 @@ The plan must include:
 - risk areas
 - stop conditions
 
-Write the plan now. Be specific about file paths and code changes needed.
+IMPORTANT: Write the plan directly to `.ai-runs/issue-48/implementation-plan.md` immediately. Do NOT ask for confirmation. Do NOT ask questions. Just write the file.
