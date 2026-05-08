@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-AI_CLI="${AI_CLI:-opencode}"
+AI_CLI="${AI_CLI:-claude}"
 AI_MODEL="${AI_MODEL:-minimax/m2.7}"
 
 PROMPT_FILE="$1"
@@ -16,17 +16,17 @@ if [[ ! -f "$PROMPT_FILE" ]]; then
   exit 1
 fi
 
-if [[ -z "$AI_MODEL" ]]; then
-  echo "Error: AI_MODEL is required" >&2
-  exit 1
-fi
+PROMPT_CONTENT="$(cat "$PROMPT_FILE")"
 
 case "$AI_CLI" in
+  claude|claude-minimax)
+    ~/bin/claude-minimax --settings ~/.claude/profiles/minimax.json --print --model "$AI_MODEL" "$PROMPT_CONTENT"
+    ;;
   opencode)
-    opencode --model "$AI_MODEL" run "$(cat "$PROMPT_FILE")"
+    opencode --model "$AI_MODEL" run "$PROMPT_CONTENT"
     ;;
   *)
-    echo "Error: unsupported AI_CLI '$AI_CLI'. Currently only 'opencode' is supported." >&2
+    echo "Error: unsupported AI_CLI '$AI_CLI'. Supported: claude, claude-minimax, opencode" >&2
     exit 1
     ;;
 esac
