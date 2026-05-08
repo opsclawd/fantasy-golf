@@ -2,6 +2,7 @@
 set -euo pipefail
 
 PR="${1:-}"
+export PR
 if [[ -z "$PR" ]]; then
   echo "Usage: $0 <pr-number>" >&2
   exit 1

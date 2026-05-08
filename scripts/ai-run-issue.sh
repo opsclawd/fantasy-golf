@@ -3,6 +3,7 @@ set -euo pipefail
 
 # ── inputs ──────────────────────────────────────────────────────────────────
 ISSUE="${1:-}"
+export ISSUE
 if [[ -z "$ISSUE" ]]; then
   echo "Usage: $0 <issue-number>" >&2
   exit 1
@@ -114,6 +115,9 @@ git worktree add "$WORKTREE_DIR" -b "$BRANCH" "origin/${BASE_BRANCH}"
 # ── copy prompts into worktree ───────────────────────────────────────────────
 cp -r "$PROMPTS_DIR" "$WORKTREE_DIR/automation/prompts"
 cp -r scripts "$WORKTREE_DIR/scripts"
+
+# ── symlink .ai-runs so agent can access run artifacts from worktree ─────────
+ln -sfn "$(realpath "$RUNS_ROOT")" "$WORKTREE_DIR/.ai-runs"
 
 # ── run phases ───────────────────────────────────────────────────────────────
 cd "$WORKTREE_DIR"
