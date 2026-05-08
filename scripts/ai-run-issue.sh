@@ -116,8 +116,9 @@ git worktree add "$WORKTREE_DIR" -b "$BRANCH" "origin/${BASE_BRANCH}"
 cp -r "$PROMPTS_DIR" "$WORKTREE_DIR/automation/prompts"
 cp -r scripts "$WORKTREE_DIR/scripts"
 
-# ── symlink .ai-runs so agent can access run artifacts from worktree ─────────
-ln -sfn "$(realpath "$RUNS_ROOT")" "$WORKTREE_DIR/.ai-runs"
+# ── copy run artifacts into worktree so agent can access them ─────────────
+mkdir -p "$WORKTREE_DIR/.ai-runs"
+cp -r "$RUN_DIR/." "$WORKTREE_DIR/.ai-runs/issue-${ISSUE}/"
 
 # ── run phases ───────────────────────────────────────────────────────────────
 cd "$WORKTREE_DIR"
