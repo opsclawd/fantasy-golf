@@ -11,3 +11,5 @@ _bmad/
 .temp/
 .vercel
 .codex
+.ai-runs/
+.ai-worktrees/
