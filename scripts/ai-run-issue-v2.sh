@@ -26,7 +26,7 @@ ISSUES_DIR="ai/issues/${ISSUE_NUM}"
 BRANCH="ai/issue-${ISSUE_NUM}"
 PROMPTS_DIR="automation/prompts"
 AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
-AGENT_CLI="${AGENT_CLI:-claude-minimax}"
+AGENT_CLI="${AGENT_CLI:-opencode}"
 
 # Phase timeouts (seconds)
 TIMEOUT_PLAN=600
