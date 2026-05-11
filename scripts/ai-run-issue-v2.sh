@@ -182,9 +182,8 @@ if [[ "$PHASE" == "read_issue" ]]; then
   mkdir -p "${WORKTREE_DIR}/scripts"
   cp -r "${REPO_ROOT}/scripts/"*.sh "${WORKTREE_DIR}/scripts/" 2>/dev/null || true
 
-  # Copy run artifacts into worktree
-  mkdir -p "${WORKTREE_DIR}/.ai-runs/issue-${ISSUE_NUM}"
-  cp -r "${ISSUES_DIR}/." "${WORKTREE_DIR}/.ai-runs/issue-${ISSUE_NUM}/" 2>/dev/null || true
+  # Copy run artifacts into worktree root (issue.md, plan.md etc. for agent access)
+  cp -r "${ISSUES_DIR}/." "${WORKTREE_DIR}/" 2>/dev/null || true
 
   PHASE="plan"
 fi
