@@ -1,0 +1,5 @@
+
+[15:18:16] === Starting orchestrator for issue #48 ===
+[15:18:16] === Phase: read_issue ===
+[15:18:19] Issue #48: Fix live scoring to use true hole-by-hole scorecard best ball
+[15:18:19] INFO: Creating branch: ai/issue-48

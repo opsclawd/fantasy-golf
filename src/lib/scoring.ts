@@ -82,6 +82,7 @@ export function buildGolferRoundScoresMap(
 /**
  * @deprecated Non-production. Converts round-level aggregate scores (holeId: 1) into GolferRoundScoresMap.
  * For hole-by-hole best-ball scoring, use rankEntriesWithHoles with data from tournament_holes instead.
+ * This function is retained for the commissioner score-trace audit page only.
  */
 function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, TournamentScore>): GolferRoundScoresMap {
   const result: GolferRoundScoresMap = new Map()
@@ -97,6 +98,11 @@ function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, Tourn
   return result
 }
 
+/**
+ * @deprecated Non-production. Uses round-level aggregates (holeId: 1) instead of real hole-by-hole data.
+ * Scoring entries must go through rankEntriesWithHoles for correct best-ball hole-by-hole scoring.
+ * This function is retained for the commissioner score-trace audit page only.
+ */
 export function rankEntries(
   entries: Entry[],
   golferScores: Map<string, TournamentScore>,

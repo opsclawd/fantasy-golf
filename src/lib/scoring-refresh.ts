@@ -37,12 +37,13 @@ export interface RefreshError {
 }
 
 function scorecardToTournamentHoles(
-  scorecard: { tournId: string; playerId: string; roundId: number; holes: Array<{ holeId: number; par: number; strokes: number; scoreToPar: number }> }
+  scorecard: { tournId: string; playerId: string; holes: Array<{ holeId: number; par: number; strokes: number; scoreToPar: number }> },
+  roundId: number
 ): TournamentHole[] {
   return scorecard.holes.map(h => ({
     golfer_id: scorecard.playerId,
     tournament_id: scorecard.tournId,
-    round_id: scorecard.roundId,
+    round_id: roundId,
     hole_id: h.holeId,
     par: h.par,
     strokes: h.strokes,
@@ -193,7 +194,8 @@ export async function refreshScoresForPool(
   for (const golferId of allGolferIds) {
     try {
       const scorecard = await getScorecard(pool.tournament_id, golferId, pool.year)
-      const holes = scorecardToTournamentHoles(scorecard)
+      const roundId = scorecard.roundId
+      const holes = scorecardToTournamentHoles(scorecard, roundId)
       if (holes.length > 0) {
         await upsertTournamentHoles(supabase, holes)
       }
@@ -204,6 +206,10 @@ export async function refreshScoresForPool(
 
   // Step 5: Build hole-level data from persisted tournament_holes
   const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)
+
+  if (holesByGolfer.size === 0) {
+    console.warn('[scoring-refresh] holesByGolfer is empty — all scorecard fetches may have failed silently; ranking will be based on stale tournament_scores data')
+  }
 
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)
   const completedRounds = deriveCompletedRounds(allScores)

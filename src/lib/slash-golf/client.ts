@@ -1,4 +1,4 @@
-import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus, SlashScorecard, SlashHole, SlashStats } from './types'
+import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus, SlashScorecard, SlashHole } from './types'
 
 const BASE_URL = 'https://live-golf-data.p.rapidapi.com'
 
@@ -166,9 +166,7 @@ function parseHoleValue(value: unknown): number | null {
 }
 
 function normalizeGolferStatus(value: unknown): 'active' | 'withdrawn' | 'cut' | 'dq' | 'complete' {
-  if (value === 'withdrawn' || value === 'cut') return value
-  if (value === 'dq') return 'dq'
-  if (value === 'complete') return 'complete'
+  if (value === 'withdrawn' || value === 'cut' || value === 'dq' || value === 'complete') return value
   return 'active'
 }
 
@@ -336,13 +334,13 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
     throw new Error('No scorecard data returned')
   }
 
-  const first = rawScorecards[0]!
-  const roundId = parseMongoNumber(rawScorecards.length > 1 ? (first as Record<string, unknown>).roundId : raw.roundId) ?? 1
-
   const allHoles: SlashHole[] = []
+  let fallbackRoundId = parseMongoNumber(raw.roundId) ?? 1
+
   for (const sc of rawScorecards) {
-    const holes = Array.isArray((sc as Record<string, unknown>).holes)
-      ? ((sc as Record<string, unknown>).holes as Record<string, unknown>[]).map((h) => ({
+    const scRecord = sc as Record<string, unknown>
+    const holes = Array.isArray(scRecord.holes)
+      ? (scRecord.holes as Record<string, unknown>[]).map((h) => ({
           holeId: parseMongoNumber(h.holeId) ?? 0,
           par: parseMongoNumber(h.par) ?? 0,
           strokes: parseMongoNumber(h.strokes) ?? 0,
@@ -351,6 +349,9 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
       : []
     allHoles.push(...holes)
   }
+
+  const first = rawScorecards[0] as Record<string, unknown>
+  const roundId = parseMongoNumber(first.roundId) ?? fallbackRoundId
 
   return {
     tournId: typeof first.tournId === 'string' ? first.tournId : tournamentId,
@@ -372,24 +373,4 @@ function normalizeScorecardResponse(raw: unknown): Array<Record<string, unknown>
     return [raw as Record<string, unknown>]
   }
   return []
-}
-
-/**
- * @deprecated Out-of-scope for MVP. Slash Golf /stats endpoint contract is unused and unverified.
- * Remove or reimplement once stats are actually needed.
- */
-export async function getStats(tournamentId: string, golferId: string, year?: number): Promise<SlashStats> {
-  const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, playerId: golferId, ...(year && { year: year.toString() }) })
-  const res = await fetch(`${BASE_URL}/stats?${params}`, {
-    headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
-    cache: 'no-store'
-  })
-  if (!res.ok) throw new Error('Failed to fetch stats')
-  const raw = await res.json()
-  return {
-    tournId: typeof raw.tournId === 'string' ? raw.tournId : tournamentId,
-    playerId: typeof raw.playerId === 'string' ? raw.playerId : golferId,
-    worldRank: typeof raw.worldRank === 'number' ? raw.worldRank : null,
-    projectedOWGR: typeof raw.projectedOWGR === 'number' ? raw.projectedOWGR : null,
-  }
 }

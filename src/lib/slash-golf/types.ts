@@ -116,10 +116,3 @@ export interface SlashScorecard {
   currentRound: number
   holes: SlashHole[]
 }
-
-export interface SlashStats {
-  tournId: string
-  playerId: string
-  worldRank: number | null
-  projectedOWGR: number | null
-}

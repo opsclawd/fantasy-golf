@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getTournamentScores, getTournamentMeta, getLeaderboard, getScorecard, getStats } from '@/lib/slash-golf/client'
+import { getTournamentScores, getTournamentMeta, getLeaderboard, getScorecard } from '@/lib/slash-golf/client'
 
 describe('getTournamentScores', () => {
   afterEach(() => {
@@ -300,22 +300,6 @@ describe('getTournamentScores', () => {
     expect(scorecard.tournId).toBe('014')
     expect(scorecard.holes).toHaveLength(1)
   })
-
-  it('getStats returns player ranking stats', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({
-        tournId: '014',
-        playerId: '22405',
-        worldRank: 12,
-        projectedOWGR: 8.5,
-      }),
-    }))
-
-    const stats = await getStats('014', '22405', 2026)
-    expect(stats.playerId).toBe('22405')
-    expect(stats.worldRank).toBe(12)
-  })
 })
 
 describe('getTournamentMeta', () => {
@@ -408,27 +392,5 @@ describe('getScorecard', () => {
     expect(scorecard.holes).toHaveLength(2)
     expect(scorecard.holes[0]).toMatchObject({ holeId: 1, par: 4, scoreToPar: 0 })
     expect(scorecard.holes[1]).toMatchObject({ holeId: 2, par: 5, scoreToPar: -1 })
-  })
-})
-
-describe('getStats', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('returns player ranking stats', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({
-        tournId: '014',
-        playerId: '22405',
-        worldRank: 12,
-        projectedOWGR: 8.5,
-      }),
-    }))
-
-    const stats = await getStats('014', '22405', 2026)
-    expect(stats.playerId).toBe('22405')
-    expect(stats.worldRank).toBe(12)
   })
 })
