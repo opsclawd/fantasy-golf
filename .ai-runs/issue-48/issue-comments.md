@@ -16,3 +16,4 @@ Automation failed: Prompt file not found: automation/prompts/validate-initial.md
 Automation failed: Prompt file not found: automation/prompts/validate-initial.md
 Automation failed: Plan file not found after plan phase
 Automation failed: Plan file not found after plan phase
+Automation failed: Implementation blocked

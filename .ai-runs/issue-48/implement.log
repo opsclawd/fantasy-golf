@@ -1,0 +1,38 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m✗ [0mRead .ai-worktrees/issue-48/issue.md failed
+[91m[1mError: [0mFile not found: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-48/issue.md
+[0m→ [0mRead .ai-worktrees/issue-48/plan.md
+[0m✱ [0mGlob "**/*.md"[90m in .ai-worktrees/issue-48 · 100 matches[0m
+[0m→ [0mRead .ai-worktrees/issue-48/.ai-runs/issue-48/issue.md
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/slash-golf/client.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/slash-golf/types.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/scoring-refresh.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/scoring.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/scoring/domain.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/scoring-queries.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/supabase/types.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/app/api/leaderboard/[poolId]/route.ts
+[0m✱ [0mGlob "*.test.ts"[90m in .ai-worktrees/issue-48/src/lib/__tests__ · 23 matches[0m
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/__tests__/slash-golf-client.test.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/__tests__/slash-golf-client-edge-cases.test.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/__tests__/scoring-refresh.test.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/__tests__/scoring-refresh-edge-cases.test.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/__tests__/domain-scoring.test.ts
+[0m✱ [0mGrep "getStats"[90m in .ai-worktrees/issue-48/src · 0 matches[0m
+[0m→ [0mRead .ai-worktrees/issue-48/src/lib/__tests__/scoring.test.ts
+[0m→ [0mRead .ai-worktrees/issue-48/src/app/api/scoring/route.ts
+[0m
+[0m# [0mTodos
+[ ] Task 1: Fix getScorecard() parsing for roundId fallback
+[ ] Task 2: Add fixture-based tests for scorecard parsing
+[ ] Task 3: Normalize golfer statuses consistently (dq/complete)
+[ ] Task 4: Fix scorecardToTournamentHoles roundId for multi-round
+[ ] Task 5a: Add runtime guard for empty holesByGolfer
+[ ] Task 6: Remove deprecated scoring functions
+[ ] Task 7: Remove getStats() and SlashStats type
+[ ] Task 8: Add integration test for scorecard-driven ranking
+[ ] Update leaderboard route to use hole-level path
+[ ] Run tests and fix failures
+[0m

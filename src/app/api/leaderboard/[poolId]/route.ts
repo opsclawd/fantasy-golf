@@ -1,23 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { deriveCompletedRounds } from '@/lib/scoring'
-import { rankEntries } from '@/lib/scoring/domain'
+import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
 import { classifyFreshness } from '@/lib/freshness'
-import type { TournamentScore } from '@/lib/supabase/types'
-import type { GolferRoundScoresMap } from '@/lib/scoring/domain'
+import type { TournamentScore, GolferStatus } from '@/lib/supabase/types'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
-import { getTournamentScoreRounds } from '@/lib/scoring-queries'
+import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
 
-/**
- * Fire-and-forget: trigger a background scoring refresh for this pool.
- * Runs server-side using CRON_SECRET — the client never sees this call.
- * Errors are silently swallowed (stale data is shown with honest timestamp).
- */
-// Preserve any deployment path prefix while normalizing trailing slashes.
 function buildInternalApiUrl(path: string): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const normalizedBaseUrl = `${baseUrl.replace(/\/+$/, '')}/`
-
   return new URL(path.replace(/^\//, ''), normalizedBaseUrl).toString()
 }
 
@@ -95,37 +86,6 @@ export async function GET(
       .select('*')
       .eq('tournament_id', pool.tournament_id)
 
-    if (!allScores || allScores.length === 0) {
-      const rankedWithoutScores = rankEntries(entries as never[], new Map() as GolferRoundScoresMap, 0)
-
-      return NextResponse.json({
-        data: {
-          entries: rankedWithoutScores,
-          completedRounds: 0,
-          refreshedAt: pool.refreshed_at,
-          freshness,
-          isRefreshing,
-          poolStatus: pool.status,
-          lastRefreshError: pool.last_refresh_error,
-          golferStatuses: {},
-          golferNames: {},
-          golferCountries: {},
-          golferScores: {},
-        },
-        error: null,
-      })
-    }
-
-    const golferScoresMap = new Map<string, TournamentScore>()
-    const golferStatuses: Record<string, string> = {}
-    for (const score of allScores) {
-      const ts = score as TournamentScore
-      golferScoresMap.set(ts.golfer_id, ts)
-      if (ts.status !== 'active') {
-        golferStatuses[ts.golfer_id] = ts.status
-      }
-    }
-
     // Fetch golfer names for display
     const allGolferIds = new Set<string>()
     for (const entry of entries) {
@@ -143,24 +103,30 @@ export async function GET(
       golferCountries[g.id] = g.country ?? ''
     }
 
-    const completedRounds = deriveCompletedRounds(allScores as TournamentScore[])
+    const completedRounds = allScores ? deriveCompletedRounds(allScores as TournamentScore[]) : 0
 
-    const scoreRounds = await getTournamentScoreRounds(supabase, pool.tournament_id)
-    const golferRoundScoresMap: GolferRoundScoresMap = new Map()
-    for (const round of scoreRounds) {
-      if (!golferRoundScoresMap.has(round.golfer_id)) {
-        golferRoundScoresMap.set(round.golfer_id, [])
+    const golferScoresMap = new Map<string, TournamentScore>()
+    const golferStatusesMap = new Map<string, GolferStatus>()
+    for (const score of allScores ?? []) {
+      const ts = score as TournamentScore
+      golferScoresMap.set(ts.golfer_id, ts)
+      if (ts.status !== 'active') {
+        golferStatusesMap.set(ts.golfer_id, ts.status)
       }
-      golferRoundScoresMap.get(round.golfer_id)!.push({
-        roundId: round.round_id,
-        holeId: 1,
-        scoreToPar: round.score_to_par ?? null,
-        status: round.status as TournamentScore['status'],
-        isComplete: true,
-      })
     }
 
-    const ranked = rankEntries(entries as never[], golferRoundScoresMap, completedRounds)
+    const holesByGolfer = await getTournamentHolesForGolfers(
+      supabase,
+      pool.tournament_id,
+      Array.from(allGolferIds)
+    )
+
+    const ranked = rankEntriesWithHoles(
+      entries as never[],
+      holesByGolfer,
+      golferStatusesMap,
+      completedRounds
+    )
 
     return NextResponse.json({
       data: {
@@ -171,7 +137,7 @@ export async function GET(
         isRefreshing,
         poolStatus: pool.status,
         lastRefreshError: pool.last_refresh_error,
-        golferStatuses,
+        golferStatuses: Object.fromEntries(golferStatusesMap),
         golferNames,
         golferCountries,
         golferScores: Object.fromEntries(golferScoresMap),

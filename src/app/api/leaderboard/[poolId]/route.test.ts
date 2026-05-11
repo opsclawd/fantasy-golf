@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './route'
 import { createClient } from '@/lib/supabase/server'
 import { classifyFreshness } from '@/lib/freshness'
-import { deriveCompletedRounds } from '@/lib/scoring'
-import { rankEntries } from '@/lib/scoring/domain'
-import { getTournamentScoreRounds } from '@/lib/scoring-queries'
+import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
+import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
+import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
@@ -16,15 +16,16 @@ vi.mock('@/lib/freshness', () => ({
 }))
 
 vi.mock('@/lib/scoring', () => ({
-  deriveCompletedRounds: vi.fn(),
-}))
-
-vi.mock('@/lib/scoring/domain', () => ({
-  rankEntries: vi.fn(),
+  deriveCompletedRounds: vi.fn().mockReturnValue(0),
+  rankEntriesWithHoles: vi.fn(),
 }))
 
 vi.mock('@/lib/scoring-queries', () => ({
-  getTournamentScoreRounds: vi.fn(),
+  getTournamentHolesForGolfers: vi.fn(),
+}))
+
+vi.mock('@/lib/tournament-roster/queries', () => ({
+  getTournamentRosterGolfers: vi.fn(),
 }))
 
 const originalEnv = {
@@ -71,7 +72,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
         golfer_ids: ['g1'],
         user_id: 'u1',
         rank: 1,
-        totalScore: 0,
+        totalScore: null,
         totalBirdies: 0,
       },
     ]
@@ -108,8 +109,9 @@ describe('GET /api/leaderboard/[poolId]', () => {
       }),
     } as never)
 
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
+    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
 
     const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
       params: Promise.resolve({ poolId: 'pool-1' }),
@@ -117,7 +119,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
     const body = await response.json()
 
     expect(response.status).toBe(200)
-    expect(rankEntries).toHaveBeenCalledWith(entries, expect.any(Map), 0)
+    expect(rankEntriesWithHoles).toHaveBeenCalledWith(entries, expect.any(Map), expect.any(Map), 0)
     expect(body.data.entries).toEqual(rankedEntries)
     expect(body.data.completedRounds).toBe(0)
     expect(body.data.isRefreshing).toBe(false)
@@ -138,7 +140,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
         golfer_ids: ['g1'],
         user_id: 'u1',
         rank: 1,
-        totalScore: 0,
+        totalScore: null,
         totalBirdies: 0,
       },
     ]
@@ -177,7 +179,9 @@ describe('GET /api/leaderboard/[poolId]', () => {
       }),
     } as never)
 
-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
+    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
 
     process.env.NEXT_PUBLIC_APP_URL = 'https://example.com/app/'
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response())
@@ -214,7 +218,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
         golfer_ids: ['g1'],
         user_id: 'u1',
         rank: 1,
-        totalScore: 0,
+        totalScore: null,
         totalBirdies: 0,
       },
     ]
@@ -253,7 +257,9 @@ describe('GET /api/leaderboard/[poolId]', () => {
       }),
     } as never)
 
-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
+    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
 
     process.env.NEXT_PUBLIC_APP_URL = 'https://example.com/app/'
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response())
@@ -285,7 +291,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
     }
     const entries = [{ id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1' }]
     const rankedEntries = [
-      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: 0, totalBirdies: 0 },
+      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: null, totalBirdies: 0 },
     ]
 
     vi.mocked(classifyFreshness).mockReturnValue('stale')
@@ -303,7 +309,9 @@ describe('GET /api/leaderboard/[poolId]', () => {
         throw new Error(`Unexpected table ${table}`)
       }),
     } as never)
-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
+    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
 
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response())
 

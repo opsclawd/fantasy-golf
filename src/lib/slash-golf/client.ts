@@ -316,7 +316,7 @@ export async function getLeaderboard(tournamentId: string, year?: number): Promi
   }
 }
 
-export async function getScorecard(tournamentId: string, golferId: string, year?: number): Promise<SlashScorecard> {
+export async function getScorecards(tournamentId: string, golferId: string, year?: number): Promise<SlashScorecard[]> {
   const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, playerId: golferId, ...(year && { year: year.toString() }) })
   const res = await fetch(`${BASE_URL}/scorecard?${params}`, {
     headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
@@ -334,11 +334,11 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
     throw new Error('No scorecard data returned')
   }
 
-  const allHoles: SlashHole[] = []
-  let fallbackRoundId = parseMongoNumber(raw.roundId) ?? 1
+  const fallbackRoundId = parseMongoNumber(raw.roundId) ?? 1
 
-  for (const sc of rawScorecards) {
+  return rawScorecards.map((sc, idx) => {
     const scRecord = sc as Record<string, unknown>
+    const scRoundId = parseMongoNumber(scRecord.roundId) ?? (idx === 0 ? fallbackRoundId : 1)
     const holes = Array.isArray(scRecord.holes)
       ? (scRecord.holes as Record<string, unknown>[]).map((h) => ({
           holeId: parseMongoNumber(h.holeId) ?? 0,
@@ -347,21 +347,22 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
           scoreToPar: parseMongoNumber(h.scoreToPar) ?? 0,
         })).filter((h: SlashHole) => h.holeId > 0)
       : []
-    allHoles.push(...holes)
-  }
 
-  const first = rawScorecards[0] as Record<string, unknown>
-  const roundId = parseMongoNumber(first.roundId) ?? fallbackRoundId
+    return {
+      tournId: typeof scRecord.tournId === 'string' ? scRecord.tournId : tournamentId,
+      playerId: typeof scRecord.playerId === 'string' ? scRecord.playerId : golferId,
+      roundId: scRoundId,
+      year: typeof scRecord.year === 'string' ? scRecord.year : (year?.toString() ?? ''),
+      status: normalizeSlashStatus(scRecord.status),
+      currentRound: parseMongoNumber(scRecord.currentRound) ?? 1,
+      holes,
+    }
+  })
+}
 
-  return {
-    tournId: typeof first.tournId === 'string' ? first.tournId : tournamentId,
-    playerId: typeof first.playerId === 'string' ? first.playerId : golferId,
-    roundId,
-    year: typeof first.year === 'string' ? first.year : (year?.toString() ?? ''),
-    status: normalizeSlashStatus(first.status),
-    currentRound: parseMongoNumber(first.currentRound) ?? 1,
-    holes: allHoles,
-  }
+export async function getScorecard(tournamentId: string, golferId: string, year?: number): Promise<SlashScorecard> {
+  const scorecards = await getScorecards(tournamentId, golferId, year)
+  return scorecards[0]
 }
 
 function normalizeScorecardResponse(raw: unknown): Array<Record<string, unknown>> {

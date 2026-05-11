@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from './route'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getTournamentScores } from '@/lib/slash-golf/client'
+import { getTournamentScores, getScorecards } from '@/lib/slash-golf/client'
 import { rankEntries, deriveCompletedRounds } from '@/lib/scoring/domain'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
@@ -20,7 +20,10 @@ import {
   getScoresForTournament,
   upsertTournamentScore,
   getTournamentScoreRounds,
+  getTournamentHolesForGolfers,
+  upsertTournamentHoles,
 } from '@/lib/scoring-queries'
+import { rankEntriesWithHoles } from '@/lib/scoring'
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
@@ -32,6 +35,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/slash-golf/client', () => ({
   getTournamentScores: vi.fn(),
+  getScorecards: vi.fn(),
 }))
 
 vi.mock('@/lib/scoring/domain', () => ({
@@ -60,6 +64,12 @@ vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
   getTournamentScoreRounds: vi.fn(),
+  getTournamentHolesForGolfers: vi.fn(),
+  upsertTournamentHoles: vi.fn(),
+}))
+
+vi.mock('@/lib/scoring', () => ({
+  rankEntriesWithHoles: vi.fn(),
 }))
 
 const originalEnv = { ...process.env }
@@ -131,7 +141,7 @@ describe('POST /api/scoring', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
-    vi.mocked(rankEntries).mockReturnValue([])
+    vi.mocked(rankEntriesWithHoles).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 2,
       golferCount: 2,
@@ -143,6 +153,9 @@ describe('POST /api/scoring', () => {
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
     vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
     vi.mocked(deriveCompletedRounds).mockReturnValue(1)
+    vi.mocked(getScorecards).mockResolvedValue([] as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
+    vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
 
     const request = new Request('http://localhost/api/scoring', {
       method: 'POST',
@@ -213,7 +226,7 @@ describe('POST /api/scoring', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
-    vi.mocked(rankEntries).mockReturnValue([])
+    vi.mocked(rankEntriesWithHoles).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 2,
       golferCount: 1,
@@ -225,6 +238,9 @@ describe('POST /api/scoring', () => {
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
     vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
     vi.mocked(deriveCompletedRounds).mockReturnValue(1)
+    vi.mocked(getScorecards).mockResolvedValue([] as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
+    vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
 
     const request = new Request('http://localhost/api/scoring', {
       method: 'POST',

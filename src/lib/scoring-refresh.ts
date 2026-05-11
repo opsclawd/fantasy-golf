@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { getTournamentScores, getScorecard } from '@/lib/slash-golf/client'
+import { getTournamentScores, getScorecards } from '@/lib/slash-golf/client'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getPoolsByTournament,
@@ -193,11 +193,13 @@ export async function refreshScoresForPool(
 
   for (const golferId of allGolferIds) {
     try {
-      const scorecard = await getScorecard(pool.tournament_id, golferId, pool.year)
-      const roundId = scorecard.roundId
-      const holes = scorecardToTournamentHoles(scorecard, roundId)
-      if (holes.length > 0) {
-        await upsertTournamentHoles(supabase, holes)
+      const scorecards = await getScorecards(pool.tournament_id, golferId, pool.year)
+      for (const scorecard of scorecards) {
+        const roundId = scorecard.roundId
+        const holes = scorecardToTournamentHoles(scorecard, roundId)
+        if (holes.length > 0) {
+          await upsertTournamentHoles(supabase, holes)
+        }
       }
     } catch {
       // Per-golfer scorecard errors are non-fatal; continue refresh cycle
@@ -209,6 +211,12 @@ export async function refreshScoresForPool(
 
   if (holesByGolfer.size === 0) {
     console.warn('[scoring-refresh] holesByGolfer is empty — all scorecard fetches may have failed silently; ranking will be based on stale tournament_scores data')
+  }
+
+  // Step 6: Ensure at least one scorecard was persisted before ranking from holes
+  const holesPersisted = Array.from(holesByGolfer.values()).some(holes => holes.length > 0)
+  if (!holesPersisted) {
+    console.warn('[scoring-refresh] no hole data persisted — scorecards may have failed; ranking will be based on stale tournament_scores data')
   }
 
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)

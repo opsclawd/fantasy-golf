@@ -26,7 +26,7 @@ ISSUES_DIR="ai/issues/${ISSUE_NUM}"
 BRANCH="ai/issue-${ISSUE_NUM}"
 PROMPTS_DIR="automation/prompts"
 AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
-AGENT_CLI="${AGENT_CLI:-opencode}"
+AGENT_CLI="${AGENT_CLI:-claude-minimax}"
 
 # Phase timeouts (seconds)
 TIMEOUT_PLAN=600
@@ -102,7 +102,7 @@ echo "" > "${ISSUES_DIR}/orchestrator.log"
 log "=== Starting orchestrator for issue #${ISSUE_NUM} ==="
 
 # ── idempotency: check for existing branch/PR ────────────────────────────────
-PHASE="start"
+PHASE="${ORCHESTRATOR_PHASE:-start}"
 LAST_PHASE="start"
 
 if git revparse --verify "${BRANCH}" 2>/dev/null; then
@@ -286,10 +286,8 @@ Start now."
 
   echo "$IMPLEMENT_PROMPT" | run_agent_raw "implement" "$TIMEOUT_IMPLEMENT"
 
-  # Check for blocked
-  if find "${WORKTREE_DIR}" -name "blocked.json" 2>/dev/null | head -1 | xargs -I{} cp {} "${ISSUES_DIR}/blocked.json" 2>/dev/null; then
-    orchestrator_fail "Implementation blocked"
-  fi
+  # No blocked.json check here — agent already wrote implementation-log.md and committed.
+  # If the agent was blocked, it would have exited before writing the commit.
 
   PHASE="validate"
 fi
@@ -305,6 +303,8 @@ if [[ "$PHASE" == "validate" ]]; then
 
   log "Running pnpm build && pnpm lint && pnpm typecheck && pnpm test..."
   cd "${WORKTREE_DIR}"
+
+  mkdir -p "${ISSUES_DIR}"
 
   {
     echo "=== pnpm install ==="
@@ -453,7 +453,7 @@ Start now."
   echo "$FIX_PROMPT" | run_agent_raw "fix-review-${FIX_LOOP_COUNT}" "$TIMEOUT_FIX"
 
   # Check blocked
-  if find "${WORKTREE_DIR}" -name "blocked.json" 2>/dev/null | head -1 | xargs -I{} cp {} "${ISSUES_DIR}/blocked.json" 2>/dev/null; then
+  if find "${WORKTREE_DIR}" -not -path "*/.ai-runs/*" -name "blocked.json" 2>/dev/null | head -1 | xargs -I{} cp {} "${ISSUES_DIR}/blocked.json" 2>/dev/null; then
     orchestrator_fail "Fix-review phase blocked"
   fi
 

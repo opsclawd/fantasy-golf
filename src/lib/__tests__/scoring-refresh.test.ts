@@ -24,6 +24,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/slash-golf/client', () => ({
   getTournamentScores: vi.fn(),
+  getScorecards: vi.fn(),
   getScorecard: vi.fn(),
 }))
 
@@ -98,9 +99,9 @@ describe('refreshScoresForPool', () => {
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
-    vi.mocked(getScorecard).mockResolvedValue({
+    vi.mocked(getScorecards).mockResolvedValue([{
       tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1, holes: [],
-    } as never)
+    }] as never)
     vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
     vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(rankEntriesWithHoles).mockReturnValue([])
@@ -190,9 +191,9 @@ describe('refreshScoresForPool', () => {
     vi.mocked(getEntriesForPool)
       .mockResolvedValueOnce([{ id: 'entry-1' }] as never)
       .mockResolvedValueOnce([{ id: 'entry-2' }] as never)
-    vi.mocked(getScorecard).mockResolvedValue({
+    vi.mocked(getScorecards).mockResolvedValue([{
       tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1, holes: [],
-    } as never)
+    }] as never)
     vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
     vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(rankEntriesWithHoles).mockReturnValue([])
