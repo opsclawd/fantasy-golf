@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "ai:run-issue": "bash scripts/ai-run-issue-v2.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
