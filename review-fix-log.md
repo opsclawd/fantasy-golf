@@ -1,4 +1,4 @@
-# Review Fix Log — issue #51 (loop 8)
+# Review Fix Log — issue #51 (loop 9)
 
 ## Disposition
 
@@ -10,7 +10,7 @@ All original acceptance criteria verified FIXED in prior loops. No new issues fo
 
 **Finding:** Deprecated function at `src/lib/scoring.ts:88` remains exported. Review stated only test imports exist.
 
-**Action:** Not fixed — premise invalid. Production import exists at `src/app/(app)/commissioner/pools/[poolId]/audit/score-trace/page.tsx:108`. The reviewer's own grep found this import but the finding incorrectly stated "only test file imports remain." Since production code uses it, removal is not appropriate without a migration plan.
+**Action:** Not fixed — premise invalid. Production import exists at `src/app/(app)/commissioner/pools/[poolId]/audit/score-trace/page.tsx:108`. Since production code uses it, removal is not appropriate without a migration plan. Documented in loop 8.
 
 ### 2. typecheck failures in design-tokens.test.ts (Minor)
 
@@ -20,4 +20,4 @@ All original acceptance criteria verified FIXED in prior loops. No new issues fo
 
 ## Conclusion
 
-**Ready to merge.** All original acceptance criteria verified fixed in prior validation. Minor item #1 had an incorrect premise (production import exists). Minor item #2 is pre-existing and not a blocker. Build, lint, and all 468 tests pass.
+**Ready to merge.** All original acceptance criteria verified fixed. Minor item #1 had an incorrect premise (production import exists). Minor item #2 is pre-existing and not a blocker. Build, lint, and all 468 tests pass.

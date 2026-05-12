@@ -13,3 +13,14 @@ All findings are either fixed or invalid. I'll document and commit.
 [0m← [0mWrite review-fix-log.md
 Wrote file successfully.
 [0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && git add -A && git commit -m 'fix: review findings for issue #51 (loop 8)'
+[ai/issue-51 da8f574] fix: review findings for issue #51 (loop 8)
+ 9 files changed, 542 insertions(+), 19 deletions(-)
+ create mode 100644 fix-review-8.log
+ create mode 100644 re-review-7.log
+ create mode 100644 revalidate-7.log
+ create mode 100644 validation-7.md
+[0m
+All findings are from prior loops — all original acceptance criteria were already fixed. The only action taken was correcting the review-fix-log: minor item #1 (`rankEntriesLegacy`) had an incorrect premise — production code at `score-trace/page.tsx:108` imports it, so removal is not appropriate without a migration plan. Minor item #2 (typecheck in test files) remains pre-existing and not a blocker.
+
+Committed as `da8f574`.

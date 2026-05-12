@@ -1,11 +1,11 @@
-# Code Review: ai/issue-51 — Seventh Revalidation
+# Code Review: ai/issue-51 — Eighth Revalidation
 
 ## Review Basis
 
 - **Branch:** ai/issue-51
 - **Base:** origin/main
 - **Issue:** #51 — Align leaderboard GET with hole-by-hole best-ball
-- **Revalidation of:** ./review.md (sixth revalidation), ./revalidate-7.log
+- **Revalidation of:** ./review.md (seventh revalidation), ./revalidate-8.log
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### typecheck Errors
 
-64 errors, **all** in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues unrelated to this PR. No implementation files have type errors.
+64 errors, **all** in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues unrelated to this PR. No implementation files have type errors. Same as prior review — no regression.
 
 ---
 
@@ -32,7 +32,7 @@
 | `GET /api/leaderboard/[poolId]` no longer builds fake `holeId: 1` records | **FIXED** | `getTournamentScoreRounds` absent from scoring-queries.ts (file ends at line 143) |
 | Normal page load and realtime paths use same scoring model | **FIXED** | Both paths at `route.ts:105` (empty scores) and `route.ts:148` (with scores) use `rankEntriesWithHoles` |
 | README no longer says round-based best-ball | **FIXED** | README.md line 3: "hole-by-hole scoring" |
-| `docs/rules-spec.md` no longer defines scoring as round-level | **FIXED** | Section 2.1 describes per-hole algorithm |
+| `docs/rules-spec.md` no longer defines scoring as round-level | **FIXED** | Section 2.1 describes per-hole algorithm (lines 25–37) |
 | Tests cover the corrected leaderboard GET path | **FIXED** | Three tests at `route.test.ts:329, 398, 438` confirmed by direct file read |
 
 ---
@@ -41,7 +41,7 @@
 
 ### route.ts — `GET /api/leaderboard/[poolId]`
 
-All original findings verified against current source at line references from the previous review:
+All original findings verified against current source at line references:
 
 | Line | Finding | Status |
 |------|---------|--------|

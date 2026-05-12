@@ -1,0 +1,31 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m→ [0mRead review.md
+[0m→ [0mRead revalidate-8.log
+Now let me verify the current source files at the reported line references to confirm each fix.
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [offset=320, limit=130][0m
+[0m→ [0mRead src/lib/scoring-queries.ts
+[0m→ [0mRead README.md[90m [limit=20][0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=50][0m
+[0m→ [0mRead src/lib/scoring.ts[90m [offset=85, limit=40][0m
+Now I'll write the updated review:
+[0m
+[0m← [0mWrite code-review.md
+Wrote file successfully.
+[0m
+Written `./code-review.md`. Summary:
+
+- **Build**: PASS | **Lint**: PASS | **typecheck**: FAIL (64 pre-existing errors in design-tokens.test.ts) | **Tests**: PASS (468 passed)
+- All 6 acceptance criteria: **FIXED** (verified against actual source)
+- All route.ts line references: **FIXED**
+- All route.test.ts tests (lines 329, 398, 438): **FIXED**
+- `getTournamentScoreRounds` removed from scoring-queries.ts: **FIXED**
+
+Carried-forward minor issues unchanged:
+1. `rankEntriesLegacy` still exported (low risk, deprecated, test-only usage)
+2. typecheck failures in design-tokens.test.ts (pre-existing, not a regression)
+
+New issues: **None**
