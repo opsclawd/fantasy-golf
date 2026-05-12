@@ -286,10 +286,20 @@ if [[ "$PHASE" == "read_issue" ]]; then
   git fetch origin "$BASE_BRANCH" 2>/dev/null || true
 
   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
-  if ! git revparse --verify "${BRANCH}" 2>/dev/null; then
-    if [[ ! -d "$WORKTREE_DIR" ]]; then
-      git worktree add "$WORKTREE_DIR" -b "$BRANCH" "origin/${BASE_BRANCH}" 2>/dev/null \
-        || git branch "$BRANCH" "origin/${BASE_BRANCH}"
+
+  # Delete remote branch if it exists (fresh start)
+  if git fetch origin "${BRANCH}" 2>/dev/null; then
+    warn "Remote branch ${BRANCH} exists — deleting for fresh start"
+    git push origin --delete "${BRANCH}" 2>/dev/null || true
+  fi
+
+  # Prune stale worktree admin refs, then create fresh worktree
+  git worktree prune 2>/dev/null || true
+  if ! git rev-parse --verify "${BRANCH}" 2>/dev/null; then
+    rm -rf "$WORKTREE_DIR"
+    git worktree add "$WORKTREE_DIR" -b "$BRANCH" "origin/${BASE_BRANCH}"
+    if [[ ! -f "${WORKTREE_DIR}/.git" ]]; then
+      orchestrator_fail "Worktree creation failed — ${WORKTREE_DIR} is not a git worktree"
     fi
   fi
 
@@ -324,7 +334,20 @@ node_modules/
 .next/
 EOF
 
-  PHASE="plan-design"
+  # Archive pre-seeding: skip phases that already have outputs from a prior run
+  ARCHIVE_DIR="${REPO_ROOT}/ai/issues/${ISSUE_NUM}"
+  if [[ -f "${ARCHIVE_DIR}/plan.md" ]]; then
+    info "Archive has plan.md — pre-seeding to skip plan-design and plan-write"
+    cp "${ARCHIVE_DIR}/plan.md" "${WORKTREE_DIR}/plan.md"
+    cp "${ARCHIVE_DIR}/design.md" "${WORKTREE_DIR}/design.md" 2>/dev/null || true
+    PHASE="implement"
+  elif [[ -f "${ARCHIVE_DIR}/design.md" ]]; then
+    info "Archive has design.md — pre-seeding to skip plan-design"
+    cp "${ARCHIVE_DIR}/design.md" "${WORKTREE_DIR}/design.md"
+    PHASE="plan-write"
+  else
+    PHASE="plan-design"
+  fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -745,14 +768,17 @@ Stop after writing your review to ./quality-review-task-${task_n}.md."
         SPEC_LOOP=$((SPEC_LOOP + 1))
         warn "  Spec review failures detected, re-running implementer (loop ${SPEC_LOOP})..."
 
+        SPEC_FINDINGS=$(cat "./spec-review-task-${TASK_NUM}.md" 2>/dev/null || echo "See spec review log for details")
         FIX_PROMPT="You are fixing spec compliance issues for Task ${TASK_NUM}.
 
 ## Task: ${task_title}
 ## Original task text:
 ${TASK_TEXT}
 
-## Previous implementation had spec compliance issues.
-Fix ONLY the issues identified. Do not expand scope.
+## Spec Review Findings:
+${SPEC_FINDINGS}
+
+Fix ONLY the issues identified above. Do not expand scope.
 
 Run: git add -A && git commit -m 'fix: task ${TASK_NUM} spec compliance'
 Report status: DONE | BLOCKED"
@@ -779,11 +805,15 @@ Report status: DONE | BLOCKED"
         QUALITY_LOOP=$((QUALITY_LOOP + 1))
         warn "  Quality issues detected, re-running implementer (loop ${QUALITY_LOOP})..."
 
+        QUALITY_FINDINGS=$(cat "./quality-review-task-${TASK_NUM}.md" 2>/dev/null || echo "See quality review log for details")
         FIX_PROMPT="You are fixing code quality issues for Task ${TASK_NUM}.
 
 ## Task: ${task_title}
 
-Address the quality issues raised by the reviewer. Do not expand scope.
+## Quality Review Findings:
+${QUALITY_FINDINGS}
+
+Address the quality issues raised above. Do not expand scope.
 
 Run: git add -A && git commit -m 'fix: task ${TASK_NUM} quality'
 Report status: DONE | BLOCKED"
@@ -1105,7 +1135,7 @@ if [[ "$PHASE" == "create-pr" ]]; then
   # Push branch
   log "Pushing branch..."
   cd "${WORKTREE_DIR}"
-  git push -u origin "$BRANCH" 2>&1 | tee -a "${ISSUES_DIR}/orchestrator.log" || \
+  git push --force-with-lease -u origin "$BRANCH" 2>&1 | tee -a "${ISSUES_DIR}/orchestrator.log" || \
     warn "Branch push had issues (may already be pushed)"
 
   # Build pr-summary.md
