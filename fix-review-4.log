@@ -90,3 +90,8 @@ Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review
  - **File:** `src/app/api/leaderboard/[poolId]/route.test.ts:5`
 
 [0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && git add -A && git commit -m 'fix: review findings for issue #51 (loop 4)'
+[ai/issue-51 115cd25] fix: review findings for issue #51 (loop 4)
+ 9 files changed, 487 insertions(+), 232 deletions(-)
+[0m
+Done. All legitimate review findings are fixed. The minor pre-existing issues (`rankEntriesLegacy` used by audit tooling, typecheck errors in `design-tokens.test.ts`) are documented as not fixed - they're pre-existing and not merge blockers per the review.

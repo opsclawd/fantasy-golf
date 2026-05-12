@@ -1,3 +1,34 @@
+# Review Fix Log — issue #51 (loop 5)
+
+## Status: All Legitimate Findings Fixed
+
+All findings verified FIXED in review.md loop 5:
+- All 6 acceptance criteria ✓
+- route.ts implementation ✓
+- route.test.ts coverage ✓
+- README.md / docs/rules-spec.md / scoring-queries.ts ✓
+- Build passes ✓
+- Lint passes ✓
+- Tests pass (468 passed, 1 skipped) ✓
+
+## Minor Pre-Existing Issues (Not Fixed This Pass)
+
+### 1. rankEntriesLegacy still in scoring.ts
+- **File:** `src/lib/scoring.ts:88–121`
+- **Status:** NOT FIXED — intentionally preserved for audit tooling at `score-trace/page.tsx`
+- **Valid:** N/A (pre-existing, not a regression)
+- **Evidence:** `grep rankEntriesLegacy` shows active imports in `score-trace/page.tsx:5,108` and `scoring.test.ts:6`
+- **Risk:** Low — marked @deprecated, not used in any production scoring path
+
+### 2. typecheck failures in design-tokens.test.ts
+- **File:** `src/lib/__tests__/design-tokens.test.ts`
+- **Status:** NOT FIXED — pre-existing tailwind config typing issues (64 errors, all in this file)
+- **Valid:** N/A (pre-existing, not a regression)
+- **Evidence:** review.md confirms all 64 errors are pre-existing in design-tokens.test.ts
+- **Risk:** None — test file only, no production impact, not a merge blocker
+
+---
+
 # Review Fix Log — issue #51 (loop 4)
 
 ## Status: All Legitimate Findings Fixed

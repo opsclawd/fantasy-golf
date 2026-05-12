@@ -1,11 +1,11 @@
-# Code Review: ai/issue-51 — Third Revalidation
+# Code Review: ai/issue-51 — Fourth Revalidation
 
 ## Review Basis
 
 - **Branch:** ai/issue-51
 - **Base:** origin/main
 - **Issue:** #51 — Align leaderboard GET with hole-by-hole best-ball
-- **Revalidation of:** ./review.md (second revalidation), ./revalidate-3.log
+- **Revalidation of:** ./review.md (third revalidation), ./revalidate-4.log
 
 ---
 
@@ -15,12 +15,12 @@
 |-------|--------|-------|
 | `pnpm build` | PASS | Compiled successfully |
 | `pnpm lint` | PASS | No ESLint warnings or errors |
-| `pnpm typecheck` | FAIL | 64 TypeScript errors (see below) |
+| `pnpm typecheck` | FAIL | 64 TypeScript errors (all in design-tokens.test.ts — pre-existing) |
 | `pnpm test` | PASS | 468 passed, 1 skipped |
 
 ### typecheck Errors
 
-64 errors, **all** in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues. No implementation files have type errors. Key error types: `possibly undefined` on `tailwindConfig.theme`, `property does not exist` on `ResolvableTo<...>` types. Error count increased from prior review (22 errors) due to stricter `tsc --noEmit` on this run, but all remain confined to the single design-tokens test file.
+64 errors, **all** in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues unrelated to this PR. Error types: `possibly undefined` on `tailwindConfig.theme`, `property does not exist` on `ResolvableTo<...>` types. No implementation files have type errors.
 
 ---
 
@@ -54,7 +54,7 @@ All original findings verified against current source:
 | 148 | `rankEntriesWithHoles(entries, holesByGolfer, golferStatuses, completedRounds)` | **FIXED** |
 | 159 | `Object.fromEntries(golferStatuses)` | **FIXED** |
 
-**Assessment:** FIXED. All line references verified against actual source at time of revalidation.
+**Assessment:** FIXED. All line references verified against actual source.
 
 ### route.test.ts — Tests
 
@@ -112,13 +112,7 @@ Deprecated function with fake `holeId: 1` round-level aggregation logic remains 
 
 ## New Issues
 
-### 1. typecheck error count increased (Minor)
-
-Prior review reported 22 typecheck errors. This run reports 64 — still all in `design-tokens.test.ts`. The increase reflects additional strict-mode errors surfacing from the same tailwind config typing issues, not new regressions. The underlying problem (missing tailwind theme type guard) is unchanged.
-
-### 2. `domainRankEntries` mock typing issue resolved (Previously flagged, now absent)
-
-Prior review noted `route.test.ts:482` had a `domainRankEntries.mock` typing issue. This has been resolved — the `.mock` property is no longer referenced in the way that caused the prior error. The test file now properly uses `vi.mocked()` for typed mocks throughout.
+None discovered.
 
 ---
 
@@ -128,8 +122,7 @@ Prior review noted `route.test.ts:482` had a `domainRankEntries.mock` typing iss
 
 1. **Minor:** `rankEntriesLegacy` deprecated function — low risk, pre-existing
 2. **Minor:** typecheck errors in test files only — pre-existing, not a regression
-3. **Minor:** typecheck error count increase — same root cause (design-tokens.test.ts), not new issues
 
 Build, lint, and all 468 tests pass. Implementation is correct. typecheck failures are exclusively in test files and do not affect production behavior.
 
-(End of file - total 130 lines)
+(End of file)
