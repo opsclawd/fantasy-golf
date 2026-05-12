@@ -403,6 +403,10 @@ FIX_LOOP_COUNT=0
 
 while [[ "$PHASE" == "fix-review" ]]; do
   FIX_LOOP_COUNT=$((FIX_LOOP_COUNT + 1))
+  if [[ $FIX_LOOP_COUNT -gt 10 ]]; then
+    info "Fix loop limit (10) reached. Moving on."
+    break
+  fi
   log "=== Phase: fix-review (loop $FIX_LOOP_COUNT) ==="
   LAST_PHASE="fix-review"
 
