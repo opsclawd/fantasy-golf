@@ -15,12 +15,12 @@ export function GolferContribution({ summary, onSelect }: GolferContributionProp
     <button
       type="button"
       onClick={() => onSelect?.(summary.golferId)}
-      className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors text-left"
+      className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-stone-50 transition-colors text-left"
       aria-label={`View ${summary.name} details`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${isInactive ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+          <span className={`text-sm font-medium ${isInactive ? 'line-through text-stone-400' : 'text-stone-900'}`}>
             {summary.name}
           </span>
           {isInactive && (
@@ -29,7 +29,7 @@ export function GolferContribution({ summary, onSelect }: GolferContributionProp
             </span>
           )}
         </div>
-        <div className="text-xs text-gray-500 mt-0.5">
+        <div className="text-xs text-stone-500 mt-0.5">
           {summary.country}
           {summary.completedRounds > 0 && (
             <span className="ml-2">Round {summary.completedRounds}</span>
@@ -46,11 +46,11 @@ export function GolferContribution({ summary, onSelect }: GolferContributionProp
           <div className="font-mono text-sm font-semibold">
             <ScoreDisplay score={summary.totalScore} />
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-stone-400">
             {summary.totalBirdies} birdie{summary.totalBirdies !== 1 ? 's' : ''}
           </div>
         </div>
-        <span className="text-gray-300 text-sm" aria-hidden="true">&rsaquo;</span>
+        <span className="text-stone-300 text-sm" aria-hidden="true">&rsaquo;</span>
       </div>
     </button>
   )

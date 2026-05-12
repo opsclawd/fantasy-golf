@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { LockBanner } from '../LockBanner'
 
@@ -73,25 +73,37 @@ describe('LockBanner token migration', () => {
 
 describe('LockBanner warning tone near deadline', () => {
   it('renders with warning tone when pool is open and deadline is within 24 hours', () => {
+    const lockAt = new Date('2026-05-13T00:00:00+00:00')
+    const before = new Date(lockAt.getTime() - 12 * 60 * 60 * 1000)
+    vi.setSystemTime(before)
     const html = renderToStaticMarkup(
-      <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
+      <LockBanner isLocked={false} deadline="2026-05-13T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
     )
     expect(html).toContain('border-amber')
     expect(html).toContain('bg-amber')
+    vi.useRealTimers()
   })
 
   it('renders with info tone when pool is open and deadline is more than 24 hours away', () => {
+    const lockAt = new Date('2026-05-13T00:00:00+00:00')
+    const before = new Date(lockAt.getTime() - 48 * 60 * 60 * 1000)
+    vi.setSystemTime(before)
     const html = renderToStaticMarkup(
-      <LockBanner isLocked={false} deadline="2026-05-01T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
+      <LockBanner isLocked={false} deadline="2026-05-13T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
     )
     expect(html).toContain('border-green')
     expect(html).toContain('bg-green')
+    vi.useRealTimers()
   })
 
   it('shows secondary line with timezone when within 24 hours', () => {
+    const lockAt = new Date('2026-05-13T00:00:00+00:00')
+    const before = new Date(lockAt.getTime() - 12 * 60 * 60 * 1000)
+    vi.setSystemTime(before)
     const html = renderToStaticMarkup(
-      <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
+      <LockBanner isLocked={false} deadline="2026-05-13T00:00:00+00:00" poolStatus="open" timezone="America/New_York" />
     )
     expect(html).toContain('America/New_York')
+    vi.useRealTimers()
   })
 })

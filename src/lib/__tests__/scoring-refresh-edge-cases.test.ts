@@ -2,17 +2,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { refreshScoresForPool } from '../scoring-refresh'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTournamentScores } from '@/lib/slash-golf/client'
-import { rankEntries, deriveCompletedRounds } from '@/lib/scoring/domain'
+import { rankEntries, rankEntriesWithHoles, deriveCompletedRounds } from '@/lib/scoring/domain'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getPoolsByTournament,
   getEntriesForPool,
   updatePoolRefreshMetadata,
+  updatePoolRefreshTelemetry,
   insertAuditEvent,
 } from '@/lib/pool-queries'
 import {
   upsertTournamentScore,
   getScoresForTournament,
+  getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -25,6 +27,7 @@ vi.mock('@/lib/slash-golf/client', () => ({
 
 vi.mock('@/lib/scoring/domain', () => ({
   rankEntries: vi.fn(),
+  rankEntriesWithHoles: vi.fn(),
   deriveCompletedRounds: vi.fn(),
 }))
 
@@ -36,12 +39,14 @@ vi.mock('@/lib/pool-queries', () => ({
   getPoolsByTournament: vi.fn(),
   getEntriesForPool: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
+  updatePoolRefreshTelemetry: vi.fn(),
   insertAuditEvent: vi.fn(),
 }))
 
 vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
+  getTournamentHolesForGolfers: vi.fn(),
 }))
 
 describe('scoring refresh edge cases', () => {
@@ -160,6 +165,7 @@ describe('scoring refresh edge cases', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: 'insert failed' })
     
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
@@ -195,6 +201,7 @@ describe('scoring refresh edge cases', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(getEntriesForPool).mockResolvedValue([])
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -230,6 +237,7 @@ describe('scoring refresh edge cases', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({

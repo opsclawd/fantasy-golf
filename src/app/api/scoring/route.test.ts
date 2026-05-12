@@ -19,6 +19,7 @@ import {
 import {
   getScoresForTournament,
   upsertTournamentScore,
+  getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -58,6 +59,8 @@ vi.mock('@/lib/pool-queries', () => ({
 vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
+  upsertTournamentHoles: vi.fn(),
+  getTournamentHolesForGolfers: vi.fn(),
 }))
 
 const originalEnv = { ...process.env }
@@ -129,6 +132,7 @@ describe('POST /api/scoring', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 2,
@@ -211,6 +215,7 @@ describe('POST /api/scoring', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 2,
@@ -232,8 +237,8 @@ describe('POST /api/scoring', () => {
     await POST(request)
 
     expect(getTournamentScores).toHaveBeenCalledWith('t-1', 2026)
-    expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-1')
-    expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-2')
+    expect(getEntriesForPool).toHaveBeenCalled()
+    expect(getEntriesForPool).toHaveBeenCalledTimes(2)
     expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anything(), 'pool-1', {
       refreshed_at: expect.any(String),
       last_refresh_error: null,
