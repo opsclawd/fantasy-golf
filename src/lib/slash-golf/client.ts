@@ -355,12 +355,15 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
     allHoles.push(...holes)
   }
 
+  const hasCut = rawScorecards.some(sc => normalizeSlashStatus(sc.status) === 'cut')
+  const overallStatus: SlashGolferStatus = hasCut ? 'cut' : normalizeSlashStatus(first.status)
+
   return {
     tournId: typeof first.tournId === 'string' ? first.tournId : tournamentId,
     playerId: typeof first.playerId === 'string' ? first.playerId : golferId,
     roundId,
     year: typeof first.year === 'string' ? first.year : (year?.toString() ?? ''),
-    status: normalizeSlashStatus(first.status),
+    status: overallStatus,
     currentRound: parseMongoNumber(first.currentRound) ?? 1,
     holes: allHoles,
   }

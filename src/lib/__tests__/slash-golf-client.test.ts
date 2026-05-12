@@ -397,7 +397,7 @@ describe('getScorecard', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue([
-        { tournId: '014', playerId: '22405', roundId: 1, status: 'cut', holes: [{ holeId: 1, par: 4, strokes: 5, scoreToPar: 1 }] },
+        { tournId: '014', playerId: '22405', roundId: 1, status: 'complete', holes: [{ holeId: 1, par: 4, strokes: 4, scoreToPar: 0 }] },
         { tournId: '014', playerId: '22405', roundId: 2, status: 'cut', holes: [{ holeId: 1, par: 4, strokes: 5, scoreToPar: 1 }] },
       ]),
     }))
