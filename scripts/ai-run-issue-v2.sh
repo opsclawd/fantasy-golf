@@ -34,9 +34,9 @@ TIMEOUT_IMPLEMENT=1800
 TIMEOUT_VALIDATE=300
 TIMEOUT_REVIEW=600
 TIMEOUT_FIX=900
+TIMEOUT_COMPOUND=600
 
 # Max fix loops
-MAX_FIX_LOOPS=2
 
 # ── helpers (functions) ───────────────────────────────────────────────────────
 log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "${ISSUES_DIR}/orchestrator.log"; }
@@ -401,9 +401,9 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════
 FIX_LOOP_COUNT=0
 
-while [[ "$PHASE" == "fix-review" && $FIX_LOOP_COUNT -lt $MAX_FIX_LOOPS ]]; do
+while [[ "$PHASE" == "fix-review" ]]; do
   FIX_LOOP_COUNT=$((FIX_LOOP_COUNT + 1))
-  log "=== Phase: fix-review (loop $FIX_LOOP_COUNT/$MAX_FIX_LOOPS) ==="
+  log "=== Phase: fix-review (loop $FIX_LOOP_COUNT) ==="
   LAST_PHASE="fix-review"
 
   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
@@ -443,18 +443,12 @@ Rules:
 - Do NOT ask questions.
 - Do NOT rely on agent memory.
 - Do NOT create a PR.
-- Do NOT compound.
 - After fixing, run: git add -A && git commit -m 'fix: review findings for issue #${ISSUE_NUM} (loop ${FIX_LOOP_COUNT})'
 - Stop after fixing and committing.
 
 Start now."
 
   echo "$FIX_PROMPT" | run_agent_raw "fix-review-${FIX_LOOP_COUNT}" "$TIMEOUT_FIX"
-
-  # Check blocked
-  if find "${WORKTREE_DIR}" -not -path "*/.ai-runs/*" -name "blocked.json" 2>/dev/null | head -1 | xargs -I{} cp {} "${ISSUES_DIR}/blocked.json" 2>/dev/null; then
-    orchestrator_fail "Fix-review phase blocked"
-  fi
 
   # ── re-validate ────────────────────────────────────────────────────────────
   log "=== Re-validating after fix (loop $FIX_LOOP_COUNT) ==="
@@ -511,7 +505,60 @@ Write code-review.md now."
   # Loop will re-evaluate critical_high_count and either break or continue
 done
 
-PHASE="create-pr"
+PHASE="compound"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PHASE: compound
+# ═══════════════════════════════════════════════════════════════════════════
+if [[ "$PHASE" == "compound" ]]; then
+  log "=== Phase: compound ==="
+  LAST_PHASE="compound"
+
+  WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
+
+  if [[ ! -f "${WORKTREE_DIR}/implementation-log.md" ]]; then
+    info "No implementation-log.md found. Skipping compound."
+    PHASE="create-pr"
+  else
+    COMPOUND_PROMPT="You are writing a compound engineering document.
+
+## CONTEXT
+You are working in: ${WORKTREE_DIR}
+Issue: issue.md
+Plan: plan.md
+Implementation: implementation-log.md
+
+## TASK
+Read implementation-log.md and write a solution document to:
+  docs/solutions/issue-${ISSUE_NUM}.md
+
+This document should capture:
+- The problem and context
+- What was decided and why (with trade-offs considered)
+- Key implementation decisions and their reasoning
+- Gotchas, pitfalls, and lessons learned
+- What someone should know if they need to modify this code
+
+Format: markdown with clear sections. Be specific. Include actual code paths, not generic descriptions.
+
+Rules:
+- Do NOT ask questions.
+- Write the document yourself. Do not delegate.
+- Do NOT create a PR or commit anything.
+
+Start now."
+
+    echo "$COMPOUND_PROMPT" | run_agent_raw "compound" "$TIMEOUT_COMPOUND"
+
+    # Copy the generated doc back to issues dir
+    if [[ -f "${WORKTREE_DIR}/docs/solutions/issue-${ISSUE_NUM}.md" ]]; then
+      cp "${WORKTREE_DIR}/docs/solutions/issue-${ISSUE_NUM}.md" "${ISSUES_DIR}/compound.md"
+      info "Compound doc saved to ${ISSUES_DIR}/compound.md"
+    fi
+  fi
+
+  PHASE="create-pr"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════
 # PHASE: create-pr
@@ -555,7 +602,7 @@ else
 fi)
 
 ## Fix Loops
-$FIX_LOOP_COUNT / $MAX_FIX_LOOPS
+$FIX_LOOP_COUNT
 
 ## Branch
 \`${BRANCH}\`
