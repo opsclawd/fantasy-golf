@@ -276,3 +276,21 @@ npm warn Unknown env config "_jsr-registry". This will stop working in the next 
    Start at  13:29:58
    Duration  7.28s (transform 3.36s, setup 8.35s, import 9.47s, tests 5.15s, environment 8.84s)
 [0m
+[0m$ [0mgit add -A && git commit -m 'fix: review findings for issue #51 (loop 2)'
+[ai/issue-51 b8b77ff] fix: review findings for issue #51 (loop 2)
+ 9 files changed, 1493 insertions(+), 198 deletions(-)
+ create mode 100644 fix-review-2.log
+ create mode 100644 re-review-1.log
+ create mode 100644 revalidate-1.log
+ create mode 100644 validation-1.md
+[0m
+Done. All 468 tests pass (1 skipped). The critical/high review findings from `review.md` were verified as already fixed by loop 1:
+
+- **scoring-refresh-edge-cases.test.ts** — `getTournamentHolesForGolfers` and `updatePoolRefreshTelemetry` mocks properly configured
+- **scoring-edge-cases.test.ts** — `totalScore: null` assertions match actual scoring behavior  
+- **route.test.ts** — `getTournamentHolesForGolfers` mock return value provided; no 500 errors
+- **JoinPoolForm.test.tsx** — `useFormState`/`useFormStatus` mocks working
+- **SpectatorLeaderboard.test.tsx** — no `gray-*` tokens in source files
+- **LockBanner.test.tsx** — `isWithin24Hours()` amber/green warning tone implemented and tested
+
+The loop 2 review-fix-log entry documents that no additional fixes were required.

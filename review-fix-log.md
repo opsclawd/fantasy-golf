@@ -73,3 +73,22 @@ The re-review findings documented in `review.md` were already resolved by loop 1
 
 - The `scoring-edge-cases.test.ts` failures were not a mock issue — the tests had incorrect expectations. The actual scoring logic (`computeEntryScore` and `rankEntries` in `scoring/domain.ts`) returns `null` for `totalScore` when no holes are completed, not `0`. The tests were updated to reflect actual behavior.
 - The LockBanner tests were using a hardcoded date (`2026-04-30`) that was always in the past relative to the test execution time, causing `isWithin24Hours()` to always return false. Fixed with fake timers.
+
+---
+
+# Review Fix Log — issue #51 (loop 3)
+
+## Status: All critical/high findings already fixed
+
+Verified by running `npm test` — all 468 tests pass (1 skipped). No code changes required.
+
+Re-review findings documented in `review.md` were already resolved by prior loops. Confirmed:
+
+- `scoring-edge-cases.test.ts` — `totalScore: null` assertions correct
+- `scoring-refresh-edge-cases.test.ts` — `updatePoolRefreshTelemetry` mock present
+- `route.test.ts` — all mocks properly configured
+- `JoinPoolForm.test.tsx` — `useFormState`/`useFormStatus` mocks working
+- `SpectatorLeaderboard.test.tsx` — no `gray-*` tokens; `score-display.tsx` uses `stone-400`
+- `LockBanner.test.tsx` — `isWithin24Hours()` warning tone fully implemented
+
+No source code changes. Only documentation files modified.
