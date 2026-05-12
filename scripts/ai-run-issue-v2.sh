@@ -301,6 +301,29 @@ if [[ "$PHASE" == "read_issue" ]]; then
 
   # Run artifacts (issue.json, issue.md, issue-comments.md) are written directly to worktree
 
+  # Write .gitignore to keep artifact files out of git commits
+  cat > "${WORKTREE_DIR}/.gitignore" << 'EOF'
+*.log
+code-review.md
+review.md
+design.md
+plan.md
+compound.md
+implementation-log.md
+review-fix-log.md
+validation*.md
+issue*.json
+issue*.md
+pr-summary.md
+pr-*.txt
+MEMORY.md
+AGENTS.md
+CLAUDE.md
+tsconfig.tsbuildinfo
+node_modules/
+.next/
+EOF
+
   PHASE="plan-design"
 fi
 
@@ -915,22 +938,10 @@ while [[ "$PHASE" == "fix-review" ]]; do
 
   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
 
-  # Check if review has critical or high findings
-  CRITICAL_HIGH_COUNT=0
-  if [[ -f "${ISSUES_DIR}/review.md" ]]; then
-    CRITICAL_HIGH_COUNT=$(grep -cE "^## Severity: (critical|high)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)
-  fi
-
-  if [[ $FIX_LOOP_COUNT -gt 10 && $CRITICAL_HIGH_COUNT -eq 0 ]]; then
-    info "Fix loop limit (10) reached with no critical/high findings. Moving on."
+  if [[ ! -f "${ISSUES_DIR}/review.md" ]]; then
+    info "No review.md found. Skipping fix loop."
     break
   fi
-  if [[ $CRITICAL_HIGH_COUNT -eq 0 ]]; then
-    info "No critical/high findings in review. Skipping fix loop."
-    break
-  fi
-
-  info "Found $CRITICAL_HIGH_COUNT critical/high finding(s). Running fix..."
 
   FIX_PROMPT="You are fixing code review findings.
 
@@ -942,7 +953,7 @@ Review findings: ./review.md
 
 ## TASK
 Read the code review findings.
-Fix ONLY legitimate review findings with severity: critical | high.
+Fix ALL legitimate review findings across all severities.
 
 Rules:
 - Fix only what the review asks for. Do not expand scope.
@@ -954,6 +965,7 @@ Rules:
 - Do NOT ask questions.
 - Do NOT rely on agent memory.
 - Do NOT create a PR.
+- Load the requesting-code-review skill first.
 - After fixing, run: git add -A && git commit -m 'fix: review findings for issue #${ISSUE_NUM} (loop ${FIX_LOOP_COUNT})'
 - Stop after fixing and committing.
 
@@ -990,18 +1002,21 @@ Start now."
 You are reviewing branch: ${BRANCH} against base: ${BASE_BRANCH}
 Your working directory: ${WORKTREE_DIR}
 Original review: ./review.md
+Revalidation log: ./revalidate-${FIX_LOOP_COUNT}.log
 
 ## TASK
-Run: git diff origin/${BASE_BRANCH}...HEAD
-Check if the critical/high findings from the original review have been fixed.
-
+Load the requesting-code-review skill first.
+Read the actual source files that had findings. Verify each finding by reading the file on disk.
+Check the revalidation log for build/lint/test results.
+For each original finding, note whether it is: **fixed** | **partially fixed** | **not fixed** | **invalid**
+If a finding was pre-existing (not introduced by this branch), note it as **CARRIED FORWARD** (pre-existing).
 Write an updated review to ./code-review.md.
-For each original finding, note whether it is: fixed | partially fixed | not fixed | invalid
+Verify your assertions by reading actual file contents.
 
 ## CRITICAL RULES
 - Do NOT ask questions.
 - Do NOT expand scope.
-- Do NOT request new changes beyond what was in the original review.
+- Do not flag new issues beyond the original review.
 - Stop after writing updated code-review.md.
 
 Write code-review.md now."
@@ -1012,6 +1027,14 @@ Write code-review.md now."
   if [[ -f "${WORKTREE_DIR}/code-review.md" ]]; then
     cp "${WORKTREE_DIR}/code-review.md" "${ISSUES_DIR}/review.md"
   fi
+
+  # Check if all findings are resolved (exit loop)
+  UNRESOLVED_COUNT=$(grep -iE "\*\*(not fixed|partially fixed)\*\*" "${ISSUES_DIR}/review.md" 2>/dev/null | grep -vi "pre-existing" | wc -l || true)
+  if [[ $UNRESOLVED_COUNT -eq 0 ]]; then
+    info "All findings resolved. Exiting fix loop."
+    break
+  fi
+  info "$UNRESOLVED_COUNT finding(s) still unresolved. Continuing fix loop."
 done
 
 PHASE="compound"
@@ -1086,7 +1109,9 @@ if [[ "$PHASE" == "create-pr" ]]; then
     warn "Branch push had issues (may already be pushed)"
 
   # Build pr-summary.md
-  ISSUE_URL=$(gh issue view "$ISSUE_NUM" --json url --jq '.url')
+  ISSUE_META=$(gh issue view "$ISSUE_NUM" --json title,url)
+  ISSUE_TITLE=$(echo "$ISSUE_META" | jq -r '.title')
+  ISSUE_URL=$(echo "$ISSUE_META" | jq -r '.url')
 
   cat > "${ISSUES_DIR}/pr-summary.md" << EOF
 # PR Summary — Issue #${ISSUE_NUM}
@@ -1105,8 +1130,8 @@ $(grep -E "build|lint|typecheck|test|ERROR|fail" "${ISSUES_DIR}/validate.log" 2>
 
 ## Review Findings
 $(if [[ -f "${ISSUES_DIR}/review.md" ]]; then
-  echo "Critical/high: $(grep -cE "^## Severity: (critical|high)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)"
-  echo "Medium/low: $(grep -cE "^## Severity: (medium|low)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)"
+  echo "Critical/high: $(grep -ciE "severity.*(critical|high)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)"
+  echo "Medium/low: $(grep -ciE "severity.*(medium|low)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)"
 else
   echo "No review.md found"
 fi)
@@ -1127,8 +1152,7 @@ EOF
     --base "$BASE_BRANCH" \
     --head "$BRANCH" \
     --title "Issue #${ISSUE_NUM}: automated implementation" \
-    --body "$PR_BODY" \
-    --json url --jq '.url' 2>&1) || {
+    --body "$PR_BODY" 2>/dev/null) || {
     # PR may already exist
     PR_URL=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url' 2>/dev/null || echo "")
     if [[ -z "$PR_URL" || "$PR_URL" == "null" ]]; then
