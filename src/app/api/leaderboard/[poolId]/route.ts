@@ -167,7 +167,7 @@ export async function GET(
         isRefreshing,
         poolStatus: pool.status,
         lastRefreshError: pool.last_refresh_error,
-        golferStatuses,
+golferStatuses: Object.fromEntries(golferStatuses),
         golferNames,
         golferCountries,
         golferScores: Object.fromEntries(golferScoresMap),
