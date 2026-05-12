@@ -1,28 +1,24 @@
 # spec-review-task-2.md
 
-## Summary
+## Review: issue #51 task 2 — leaderboard route test updates
 
-✅ Spec compliant. All required changes implemented correctly.
+## Verdict: ✅ Spec compliant
 
-## Verification
+## Step-by-step verification
 
-**Step 1 (Update existing mocks):** ✅
-- Line 6: Import uses `rankEntriesWithHoles` from `@/lib/scoring`
-- Line 7: Import uses `getTournamentHolesForGolfers` from `@/lib/scoring-queries`
-- Lines 18-21: `@/lib/scoring` mock includes `rankEntriesWithHoles`
-- Lines 23-25: `@/lib/scoring-queries` mock includes `getTournamentHolesForGolfers`
+| Requirement | Status | Evidence |
+|---|---|---|
+| Replace `@/lib/scoring-queries` mock with `getTournamentHolesForGolfers` | ✅ | line 23-25 |
+| Add `rankEntriesWithHoles` to `@/lib/scoring` mock | ✅ | line 18-21 |
+| Update imports to use new paths | ✅ | lines 6-7 |
+| New test for hole-by-hole ranking | ✅ | lines 322-389 |
+| New test calls `getTournamentHolesForGolfers` with correct args | ✅ | line 386 |
+| New test calls `rankEntriesWithHoles` with `(entries, holesByGolfer, expect.any(Map), 2)` | ✅ | line 387 |
+| Four existing tests updated to new mock path | ✅ | lines 112-113, 181-182, 258-259, 309-310 |
+| `getTournamentScoreRounds` mock removed from existing tests | ✅ | not present anywhere |
+| Tests pass (5/5) | ✅ | vitest output |
 
-**Step 2 (New test added):** ✅
-- Lines 322-389: New test `ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds` present
-- Test uses `getTournamentHolesForGolfers` mock and `rankEntriesWithHoles` mock correctly
-- Assertions verify correct call signatures (line 386-388)
-
-**Step 3 (Existing tests updated):** ✅
-- All 4 existing tests use `getTournamentHolesForGolfers` (lines 112, 181, 258, 309)
-- All 4 existing tests use `rankEntriesWithHoles` (lines 113, 182, 259, 310)
-- No tests reference old `getTournamentScoreRounds` or `rankEntries`
-
-**Step 4 (Tests pass):** ✅
-- 5/5 tests passing
-
-**Note:** Extra mock for `@/lib/tournament-roster/queries` (lines 27-29) was not in the spec but is necessary — the route itself calls `getTournamentRosterGolfers` (route.ts:137). This is correct, not extra work.
+## Notes
+- No extra work detected.
+- All 4 existing tests now use `getTournamentHolesForGolfers.mockResolvedValue(new Map())` and `rankEntriesWithHoles.mockReturnValue(...)` pattern.
+- New test verifies correct function call signatures and response shape.

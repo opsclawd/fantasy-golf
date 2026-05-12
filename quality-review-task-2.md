@@ -1,35 +1,26 @@
 # Quality Review: Regression Test for Hole-Level Scoring Path
 
-## Assessment: APPROVED
-
----
+## Test Results
+- **Command:** `npm test -- src/app/api/leaderboard/[poolId]/route.test.ts`
+- **Status:** All 5 tests pass
 
 ## Strengths
-
-- **Task requirements fully implemented**: All 4 steps completed correctly
-- **Correct mock migration**: `getTournamentScoreRounds` replaced with `getTournamentHolesForGolfers`, `rankEntries` replaced with `rankEntriesWithHoles`
-- **Correct imports**: Line 6 imports `rankEntriesWithHoles` from `@/lib/scoring` and `getTournamentHolesForGolfers` from `@/lib/scoring-queries`
-- **Mock layers correct**: `@/lib/scoring` mock includes `rankEntriesWithHoles`, `@/lib/scoring-queries` mock includes `getTournamentHolesForGolfers`
-- **New test comprehensive**: The new hole-by-hole test covers realistic multi-golfer, multi-round data with proper `TournamentHole[]` structure
-- **Existing tests updated**: All 4 prior tests updated to use new mock path with `getTournamentHolesForGolfers.mockResolvedValue(new Map())` and `rankEntriesWithHoles.mockReturnValue`
-- **Tests pass**: All 5 tests pass
-
----
+- Clean migration from `getTournamentScoreRounds` to `getTournamentHolesForGolfers` mock
+- Clean migration from `rankEntries` to `rankEntriesWithHoles` mock
+- New test (lines 322-389) properly validates hole-level scoring path with realistic data:
+  - Multiple rounds (round 1 and 2) for golfers g1 and g2
+  - Correct scoring data (strokes, par, score_to_par)
+  - Verification that `getTournamentHolesForGolfers` is called with correct golfer IDs
+  - Verification that `rankEntriesWithHoles` is called with expected arguments
+- All 4 existing tests correctly updated with new mocks
+- No残留 `getTournamentScoreRounds` references in mocks or imports
+- Consistent mock setup pattern across all tests
 
 ## Issues
+None critical or important. Minor observations:
 
-None identified.
+- **Minor:** Line 121 and 387 use `expect.any(Map)` for round derivation map - loose but consistent with existing pattern in the test
+- **Minor:** `holesByGolfer` type annotation uses inline import (`import('@/lib/supabase/types').TournamentHole[])` at line 335 - could be moved to top-level import but works correctly
 
----
-
-## Verification
-
-| Check | Result |
-|-------|--------|
-| `npm test -- src/app/api/leaderboard/[poolId]/route.test.ts` | 5/5 PASS |
-| Step 1: Mock updated from `getTournamentScoreRounds` to `getTournamentHolesForGolfers` | ✅ Lines 23-25 |
-| Step 1: Import updated from `rankEntries` (domain) to `rankEntriesWithHoles` (scoring) | ✅ Lines 6-7 |
-| Step 2: New test `rankEntriesWithHoles` added with hole-level data | ✅ Lines 322-389 |
-| Step 3: All 4 existing tests updated to new mock path | ✅ Lines 112-113, 181-182, 258-259, 309-310 |
-| `rankEntriesWithHoles` added to `@/lib/scoring` mock | ✅ Line 20 |
-| `getTournamentRosterGolfers` mock added (extra, not in spec) | ✅ Line 27-29 |
+## Assessment
+**APPROVED** - Implementation correctly migrates the test suite to use hole-level scoring path. All requirements met: mocks updated, new test added with proper assertions, existing tests updated.

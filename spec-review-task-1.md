@@ -1,22 +1,21 @@
-# Spec Review: Leaderboard API Migration
+# Spec Review: Task 1 Implementation
 
-## Verdict: ✅ Spec compliant
+## Result: ✅ Spec Compliant
 
-## Step-by-step verification
+All 7 steps verified against actual code:
 
 | Step | Requirement | Status |
 |------|-------------|--------|
-| 1 | Imports: remove `rankEntries` from `@/lib/scoring/domain`, remove `getTournamentScoreRounds` from `@/lib/scoring-queries`; add `rankEntriesWithHoles` from `@/lib/scoring`, add `getTournamentHolesForGolfers` from `@/lib/scoring-queries` | ✅ Line 3, 7 |
-| 2 | Remove `getTournamentScoreRounds` call and fake hole building | ✅ Not present |
-| 3 | Add `getTournamentHolesForGolfers` after `allGolferIds` collection | ✅ Line 146 |
-| 4 | `golferStatuses` as `Map<string, 'active' \| 'cut' \| 'withdrawn'>` | ✅ Line 126 |
-| 5 | Replace `rankEntries` with `rankEntriesWithHoles` | ✅ Line 148 |
-| 6 | Early-return path uses `rankEntriesWithHoles` with empty maps | ✅ Line 105 |
-| 7 | Lint passes | ✅ |
-| 7 | Build passes | ✅ |
+| 1 | Update imports | ✅ Line 3: `rankEntriesWithHoles` from `@/lib/scoring`; Line 7: `getTournamentHolesForGolfers` from `@/lib/scoring-queries`; `deriveCompletedRounds` retained from `@/lib/scoring`; `createClient` retained from `@/lib/supabase/server` |
+| 2 | Remove `getTournamentScoreRounds` call and fake hole building | ✅ No trace of `getTournamentScoreRounds` or `GolferRoundScoresMap` in file |
+| 3 | Add `getTournamentHolesForGolfers` call after `allGolferIds` | ✅ Line 146: call is placed after `allGolferIds` population (line 102) |
+| 4 | Build `golferStatuses` as `Map<string, 'active'\|'cut'\|'withdrawn'>` | ✅ Line 126: correct Map type; Lines 130-132: uses `.set()` for non-active |
+| 5 | Replace `rankEntries` with `rankEntriesWithHoles` | ✅ Line 148: correct call signature |
+| 6 | Handle empty tournament_scores early-return with `rankEntriesWithHoles` | ✅ Line 105: uses `rankEntriesWithHoles` with empty maps |
+| 7 | Run lint and build | ✅ Both pass with no errors |
 
-## Notes
+**Verification commands:**
+- `npm run lint` — ✔ No ESLint warnings or errors
+- `npm run build` — ✔ Build completes successfully
 
-- `GolferRoundScoresMap` type import correctly removed — not present in file
-- Active golfers are absent from `golferStatuses` map, relying on `golferStatuses.get(golferId) ?? 'active'` default as specified
-- `golferStatuses` correctly passed as `Map` to `rankEntriesWithHoles` (not `Object.fromEntries`)
+No extra work detected. No missing pieces. Implementation matches specification exactly.

@@ -1,19 +1,17 @@
-# Spec Review: Task 3 — README Best-Ball Line
+# Spec Review: Task 3 — README best-ball description
 
-## Review Result: ✅ Spec compliant
+## Verdict: ✅ Spec compliant
 
-## Verification
+## Step 1: README line 80
+- **Required:** `Hole-by-hole best-ball (lowest score-to-par per hole among active golfers)`
+- **Actual (README:80):** `- **Hole-by-hole** best-ball (lowest score-to-par per hole among active golfers)`
+- ✅ Match
 
-**Step 1: README line 80**
-- Required: `Hole-by-hole best-ball (lowest score-to-par per hole among active golfers)`
-- Actual (README:80): `- **Hole-by-hole** best-ball (lowest score-to-par per hole among active golfers)`
-- Status: ✅ Matches exactly
-
-**Step 2: No "Round-based" references in README**
+## Step 2: No "Round-based" references in README
 - Command: `rg "Round-based" README.md`
-- Result: No matches
-- Status: ✅ Clean
+- Expected: No matches
+- Actual: No matches
+- ✅ Pass
 
-## Conclusion
-
-The README.md was already updated in a prior commit. No changes were needed for this task.
+## Files changed
+None — README.md was already correct prior to this task.
