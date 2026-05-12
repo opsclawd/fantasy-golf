@@ -31,6 +31,9 @@ Entry round score = min(scoreToPar of active golfers)
 Entry total score = sum(Entry round score for each completed round)
 ```
 
+**Source Table:** Live scoring reads from `tournament_holes` via `getTournamentHolesForGolfers()`.
+The `tournament_score_rounds` table is an immutable archive (populated by the refresh path) and is NOT used for live leaderboard ranking.
+
 **Source:** `src/lib/scoring/domain.ts:computeEntryScore`
 
 ### 2.2 Golfer Status Filtering
