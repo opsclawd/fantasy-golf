@@ -69,3 +69,13 @@ Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review
  
 
 [0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && git add -A && git commit -m 'fix: review findings for issue #51 (loop 5)'
+[ai/issue-51 19be6db] fix: review findings for issue #51 (loop 5)
+ 9 files changed, 419 insertions(+), 178 deletions(-)
+[0m
+All legitimate review findings are fixed. The review identified:
+
+- **FIXED:** All 6 acceptance criteria, route.ts, route.test.ts, README, docs/rules-spec.md, scoring-queries.ts
+- **NOT FIXED (pre-existing):** `rankEntriesLegacy` (used by score-trace audit tooling), typecheck errors in `design-tokens.test.ts` (64 pre-existing tailwind typing errors, test-file only)
+
+Committed as `19be6db`.

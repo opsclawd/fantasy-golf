@@ -1,11 +1,11 @@
-# Code Review: ai/issue-51 — Fourth Revalidation
+# Code Review: ai/issue-51 — Fifth Revalidation
 
 ## Review Basis
 
 - **Branch:** ai/issue-51
 - **Base:** origin/main
 - **Issue:** #51 — Align leaderboard GET with hole-by-hole best-ball
-- **Revalidation of:** ./review.md (third revalidation), ./revalidate-4.log
+- **Revalidation of:** ./review.md (fourth revalidation), ./revalidate-5.log
 
 ---
 
@@ -66,9 +66,15 @@ All original findings verified against current source:
 
 **Assessment:** FIXED. All three tests confirmed in source.
 
-### README.md / docs/rules-spec.md / scoring-queries.ts
+### scoring-queries.ts
 
-All original findings **FIXED**.
+| Finding | Status |
+|---------|--------|
+| `getTournamentScoreRounds` removed (was round-level aggregation) | **FIXED** — file ends at line 143, function not present |
+
+### README.md
+
+README.md line 3 reads "hole-by-hole scoring" — correctly updated from round-based description.
 
 ---
 
@@ -100,7 +106,9 @@ Deprecated function with fake `holeId: 1` round-level aggregation logic remains 
 
 **Risk:** Low — correctly guarded with deprecation comment, leaderboard GET no longer calls it.
 
-**Recommendation:** Consider removing if no other imports exist (`grep rankEntriesLegacy`).
+**Current usage:** Only imported in `src/lib/__tests__/scoring.test.ts:6` for backward-compatibility test coverage.
+
+**Recommendation:** Consider removing if no production imports exist. Verify with `grep` confirms only test file imports remain.
 
 ### 2. `pnpm typecheck` failures in test files (Minor)
 
@@ -120,7 +128,7 @@ None discovered.
 
 **Ready to merge.** All original acceptance criteria verified fixed. Minor issues remain, none blocking:
 
-1. **Minor:** `rankEntriesLegacy` deprecated function — low risk, pre-existing
+1. **Minor:** `rankEntriesLegacy` deprecated function — low risk, only test coverage remains
 2. **Minor:** typecheck errors in test files only — pre-existing, not a regression
 
 Build, lint, and all 468 tests pass. Implementation is correct. typecheck failures are exclusively in test files and do not affect production behavior.
