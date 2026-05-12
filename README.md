@@ -1,6 +1,6 @@
 # Fantasy Golf Pool
 
-A commissioner-first web app for running private golf pools with live round-by-round scoring.
+A commissioner-first web app for running private golf pools with live hole-by-hole scoring.
 
 ## Features
 

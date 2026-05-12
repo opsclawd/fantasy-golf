@@ -674,3 +674,25 @@ index 0000000..05fc568
 Wrote file successfully.
 [0m
 Written `./code-review.md`. The re-review finds **16 tests still failing** — the same count as the original review. Mock exports remain missing, `gray-*` tokens still present in some files, and `LockBanner` deadline warning logic was never implemented. Build and lint pass, but tests must be fixed before merge.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m→ [0mRead review.md
+[0m→ [0mRead revalidate-1.log
+Build passes, lint passes, tests pass (468 passed, 1 skipped). `typecheck` command doesn't exist in package.json. Now let me verify each original finding by reading the actual source files.
+[0m→ [0mRead src/lib/__tests__/scoring-edge-cases.test.ts[90m [offset=25, limit=60][0m
+[0m→ [0mRead src/lib/__tests__/scoring-refresh-edge-cases.test.ts[90m [offset=25, limit=30][0m
+[0m→ [0mRead src/app/api/scoring/route.test.ts[90m [offset=60, limit=25][0m
+[0m→ [0mRead src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[90m [offset=1, limit=30][0m
+[0m→ [0mRead src/components/score-display.tsx[90m [offset=1, limit=20][0m
+[0m→ [0mRead src/components/LockBanner.tsx
+Now let me check issue #7 and verify the high findings.
+[0m→ [0mRead src/app/api/scoring/route.test.ts[90m [limit=60, offset=85][0m
+[0m✗ [0mRead src/lib/__tests__/scoring-refresh-edge-cases.test.ts failed[90m [limit=15, offset=580][0m
+[91m[1mError: [0mOffset 580 is out of range for this file (260 lines)
+[0m
+[0m← [0mWrite code-review.md
+Wrote file successfully.
+[0m
+Written `./code-review.md`. All 6 critical findings are **fixed**, the test suite is fully green (468 passed), and build/lint pass. Issue #8 (`rankEntriesWithHoles` mock) was a false positive — the mock was already present. Issue #7 (`golferNames`/`golferCountries`) had no failing-test evidence and is marked **invalid**.

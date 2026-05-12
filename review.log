@@ -1496,3 +1496,2015 @@ Now I have a clear picture of the diff. Let me write the code review.
 Wrote file successfully.
 [0m
 Written `code-review.md` — 16 tests failing across 6 files. The branch correctly updates documentation but introduces no test fixes. All Critical findings are pre-existing failures: wrong assertions (`scoring-edge-cases.test.ts`), mock gaps (`scoring-refresh-edge-cases.test.ts`, `route.test.ts`), broken `useFormState` mock (`JoinPoolForm.test.tsx`), stale `gray-400` token (`score-display.tsx`), and unimplemented deadline warning logic (`LockBanner`).
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m
+[0m$ [0mgit diff origin/main...HEAD
+...output truncated...
+
+Full output saved to: /home/gary/.local/share/opencode/tool-output/tool_e1dc6bb54001xrB9sjRShQb8wg
+
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignUp (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-up/page.tsx:17:62)
++
++ [32m✓[39m src/app/(auth)/sign-up/__tests__/SignUp.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 44[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/CommissionerErrorBanner.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 68[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/slash-golf-client.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 70[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TrustStatusBar.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[32m 31[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 35[2mms[22m[39m
++[90mstderr[2m | src/app/(auth)/sign-in/__tests__/SignIn.test.tsx[2m > [22m[2mSignIn page[2m > [22m[2mrenders Card container with green left-border accent
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at div
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignInForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-in/page.tsx:38:62)
++    at Suspense
++    at SignIn
++
++ [32m✓[39m src/app/(auth)/sign-in/__tests__/SignIn.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/SpectatorLeaderboard.test.tsx [2m([22m[2m30 tests[22m[2m)[22m[32m 39[2mms[22m[39m
++ [32m✓[39m src/app/api/scoring/refresh/route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 60[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/domain-scoring.test.ts [2m([22m[2m18 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/app/api/leaderboard/[poolId]/route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 133[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-refresh.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/StatusComponentsA11y.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 41[2mms[22m[39m
++ [32m✓[39m src/components/ui/__tests__/Button.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 26[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 19[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-lock.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 26[2mms[22m[39m
++[90mstderr[2m | src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22m[2mJoinPoolForm[2m > [22m[2mrenders a Button component with primary variant
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at JoinPoolForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/join/[inviteCode]/JoinPoolForm.tsx:13:25)
++
++ [32m✓[39m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 25[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/golfer-detail.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 29[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardRow.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 22[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/PicksFlowPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 28[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-refresh-edge-cases.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/audit.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/app/api/cron/scoring/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 18[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TieExplanationBadge.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
++ [32m✓[39m src/app/__tests__/globals-css.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 11[2mms[22m[39m
++ [32m✓[39m src/components/ui/__tests__/Card.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-state-transitions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/refresh-telemetry.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 28[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/freshness.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 20[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/design-tokens.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 12[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-edge-cases.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/entry-queries.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/uiStyles.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/tournament-roster.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/data-alert-a11y.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 8[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/leaderboard.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-dispatch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/app/join/[inviteCode]/__tests__/page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
++
++[2m Test Files [22m [1m[32m65 passed[39m[22m[90m (65)[39m
++[2m      Tests [22m [1m[32m468 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (469)[39m
++[2m   Start at [22m 13:35:28
++[2m   Duration [22m 8.18s[2m (transform 4.06s, setup 9.11s, import 11.08s, tests 5.56s, environment 9.76s)[22m
++
+diff --git a/validation.md b/validation.md
+new file mode 100644
+index 0000000..05fc568
+--- /dev/null
++++ b/validation.md
+@@ -0,0 +1,561 @@
++=== pnpm install ===
++│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
++│   to run scripts.                                                            │
++│                                                                              │
++╰──────────────────────────────────────────────────────────────────────────────╯
++Done in 703ms using pnpm v10.33.0
++
++=== pnpm build ===
++
++> fantasy-golf@0.1.0 build /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
++> next build
++
++  ▲ Next.js 14.2.0
++
++   Creating an optimized production build ...
++ ✓ Compiled successfully
++   Linting and checking validity of types ...
++   Collecting page data ...
++   Generating static pages (0/12) ...
++   Generating static pages (3/12) 
++   Generating static pages (6/12) 
++   Generating static pages (9/12) 
++ ✓ Generating static pages (12/12)
++   Finalizing page optimization ...
++   Collecting build traces ...
++
++Route (app)                                         Size     First Load JS
++┌ ƒ /                                               140 B          87.1 kB
++├ ○ /_not-found                                     873 B          87.8 kB
++├ ƒ /api/cron/scoring                               0 B                0 B
++├ ƒ /api/leaderboard/[poolId]                       0 B                0 B
++├ ƒ /api/scoring                                    0 B                0 B
++├ ƒ /api/scoring/refresh                            0 B                0 B
++├ ƒ /api/tournaments                                0 B                0 B
++├ ƒ /commissioner                                   2.54 kB        96.3 kB
++├ ƒ /commissioner/pools/[poolId]                    7.07 kB         104 kB
++├ ƒ /commissioner/pools/[poolId]/audit              185 B          93.9 kB
++├ ƒ /commissioner/pools/[poolId]/audit/score-trace  185 B          93.9 kB
++├ ƒ /join/[inviteCode]                              671 B          94.4 kB
++├ ƒ /participant/picks/[poolId]                     4.37 kB        94.2 kB
++├ ƒ /participant/pools                              184 B          93.9 kB
++├ ○ /sign-in                                        1.69 kB        88.6 kB
++├ ○ /sign-up                                        1.55 kB        88.5 kB
++└ ƒ /spectator/pools/[poolId]                       67 kB           157 kB
+++ First Load JS shared by all                       87 kB
++  ├ chunks/622-526daf1dfe90626d.js                  31.4 kB
++  ├ chunks/8bfccd77-1c7bbfeb48f48591.js             53.7 kB
++  └ other shared chunks (total)                     1.94 kB
++
++
++○  (Static)   prerendered as static content
++ƒ  (Dynamic)  server-rendered on demand
++
++
++=== pnpm lint ===
++
++> fantasy-golf@0.1.0 lint /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
++> next lint
++
++✔ No ESLint warnings or errors
++
++=== pnpm typecheck ===
++undefined
++ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "typecheck" not found
++[typecheck failed]
++
++=== pnpm test ===
++
++> fantasy-golf@0.1.0 test /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
++> vitest run
++
++
++[1m[30m[46m RUN [49m[39m[22m [36mv4.1.4 [39m[90m/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51[39m
++
++ [31m❯[39m src/lib/__tests__/scoring-edge-cases.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 16[2mms[22m[39m
++[31m       [31m×[31m all golfers have every round incomplete → totalScore 0, completedHoles 0[39m[32m 9[2mms[22m[39m
++       [32m✓[39m entry contains golfer ID not in score map → silently skipped[32m 1[2mms[22m[39m
++       [32m✓[39m entry has fewer than 4 golfers → computes valid score from available[32m 1[2mms[22m[39m
++       [32m✓[39m empty entries array → returns empty array without crash[32m 1[2mms[22m[39m
++[31m       [31m×[31m empty golferRoundScores map → all entries get totalScore 0[39m[32m 2[2mms[22m[39m
++ [31m❯[39m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 18[2mms[22m[39m
++[31m     [31m×[31m renders a Button component with primary variant[39m[32m 10[2mms[22m[39m
++[31m     [31m×[31m renders the submit button with w-full class[39m[32m 1[2mms[22m[39m
++[31m     [31m×[31m renders error text in red-600 when error is present[39m[32m 1[2mms[22m[39m
++[90mstderr[2m | src/app/api/scoring/route.test.ts[2m > [22m[2mPOST /api/scoring[2m > [22m[2muses golfer dataset size for audit details and preserves entryCount compatibility
++[22m[39mScoring update failed: Error: [vitest] No "getTournamentHolesForGolfers" export is defined on the "@/lib/scoring-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++
++    at VitestMocker.createError [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:62:17[90m)[39m
++    at Object.get [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:324:16[90m)[39m
++    at refreshScoresForPool [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/lib/scoring-refresh.ts:206:31[90m)[39m
++[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
++    at Module.POST [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.ts:57:20[90m)[39m
++    at [90m/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.test.ts:150:22
++    at [90mfile:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.1.4/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20 {
++  codeFrame: [32m'vi.mock(import("@/lib/scoring-queries"), async (importOriginal) => {\n'[39m +
++    [32m'  const actual = await importOriginal()\n'[39m +
++    [32m'  return {\n'[39m +
++    [32m'    ...actual,\n'[39m +
++    [32m'    // your mocked methods\n'[39m +
++    [32m'  }\n'[39m +
++    [32m'})'[39m
++}
++
++[90mstderr[2m | src/app/api/scoring/route.test.ts[2m > [22m[2mPOST /api/scoring[2m > [22m[2mfans out scoring metadata to every live pool on the same tournament
++[22m[39mScoring update failed: Error: [vitest] No "getTournamentHolesForGolfers" export is defined on the "@/lib/scoring-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++
++    at VitestMocker.createError [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:62:17[90m)[39m
++    at Object.get [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:324:16[90m)[39m
++    at refreshScoresForPool [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/lib/scoring-refresh.ts:206:31[90m)[39m
++[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
++    at Module.POST [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.ts:57:20[90m)[39m
++    at [90m/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.test.ts:232:5
++    at [90mfile:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.1.4/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20 {
++  codeFrame: [32m'vi.mock(import("@/lib/scoring-queries"), async (importOriginal) => {\n'[39m +
++    [32m'  const actual = await importOriginal()\n'[39m +
++    [32m'  return {\n'[39m +
++    [32m'    ...actual,\n'[39m +
++    [32m'    // your mocked methods\n'[39m +
++    [32m'  }\n'[39m +
++    [32m'})'[39m
++}
++
++ [31m❯[39m src/app/api/scoring/route.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 42[2mms[22m[39m
++[31m     [31m×[31m uses golfer dataset size for audit details and preserves entryCount compatibility[39m[32m 28[2mms[22m[39m
++[31m     [31m×[31m fans out scoring metadata to every live pool on the same tournament[39m[32m 6[2mms[22m[39m
++     [32m✓[39m fails refresh when any score upsert fails and records failure audit metadata[32m 6[2mms[22m[39m
++ [31m❯[39m src/lib/__tests__/scoring-refresh-edge-cases.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 22[2mms[22m[39m
++[31m     [31m×[31m API returns empty slashScores → NO_SCORES error[39m[32m 10[2mms[22m[39m
++[31m     [31m×[31m partial upsert failure: 3 golfers, 2 OK, 1 fails → UPSERT_FAILED[39m[32m 3[2mms[22m[39m
++[31m     [31m×[31m updatePoolRefreshMetadata fails on success path → INTERNAL_ERROR[39m[32m 2[2mms[22m[39m
++[31m     [31m×[31m insertAuditEvent fails on success path → INTERNAL_ERROR[39m[32m 1[2mms[22m[39m
++[31m     [31m×[31m getEntriesForPool returns empty array → broadcast sends with empty ranked array[39m[32m 1[2mms[22m[39m
++[31m     [31m×[31m deriveCompletedRounds === 0 (tournament not started) → returns success with completedRounds 0[39m[32m 3[2mms[22m[39m
++ [31m❯[39m src/components/__tests__/SpectatorLeaderboard.test.tsx [2m([22m[2m30 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 57[2mms[22m[39m
++       [32m✓[39m renders even par with stone-600[32m 9[2mms[22m[39m
++       [32m✓[39m renders over par with text-red-600[32m 1[2mms[22m[39m
++       [32m✓[39m renders under par with text-green-700[32m 6[2mms[22m[39m
++       [32m✓[39m applies font-mono tabular-nums to all score variants[32m 2[2mms[22m[39m
++[31m       [31m×[31m does not use gray-* tokens in source file[39m[32m 17[2mms[22m[39m
++       [32m✓[39m uses green-* tokens for current status (not emerald)[32m 1[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens for unknown status (not slate)[32m 1[2mms[22m[39m
++       [32m✓[39m replaces text-green-800/70 (not text-green-700/70) in sectionHeadingClasses call[32m 1[2mms[22m[39m
++       [32m✓[39m uses green-700 for eyebrow (not emerald-700)[32m 2[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens (not slate-*)[32m 2[2mms[22m[39m
++       [32m✓[39m uses stone border (not slate border)[32m 1[2mms[22m[39m
++       [32m✓[39m does not use emerald-* tokens in source[32m 1[2mms[22m[39m
++       [32m✓[39m does not use slate-* tokens in source[32m 1[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens for rank badge and entry name[32m 1[2mms[22m[39m
++       [32m✓[39m uses green-* tokens for active golfer pills[32m 1[2mms[22m[39m
++       [32m✓[39m uses amber-50/amber-800 for withdrawn golfer pills[32m 0[2mms[22m[39m
++       [32m✓[39m accepts rowIndex prop for alternating rows[32m 0[2mms[22m[39m
++       [32m✓[39m applies bg-stone-50/60 on odd rows[32m 0[2mms[22m[39m
++       [32m✓[39m applies bg-white on even rows[32m 0[2mms[22m[39m
++       [32m✓[39m does not use slate-* tokens in source[32m 0[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens for table header[32m 0[2mms[22m[39m
++       [32m✓[39m uses text-stone-500 for loading state[32m 0[2mms[22m[39m
++       [32m✓[39m uses min-w-[28rem] for mobile optimization[32m 0[2mms[22m[39m
++       [32m✓[39m uses rounded-3xl for table border radius[32m 0[2mms[22m[39m
++       [32m✓[39m hides Birdies column on mobile with hidden sm:table-cell[32m 0[2mms[22m[39m
++       [32m✓[39m passes index as rowIndex to LeaderboardRow[32m 1[2mms[22m[39m
++       [32m✓[39m does not use slate-* tokens in source[32m 0[2mms[22m[39m
++       [32m✓[39m uses bg-primary-900 for dark green header[32m 0[2mms[22m[39m
++       [32m✓[39m uses text-white for pool name heading[32m 1[2mms[22m[39m
++       [32m✓[39m uses text-green-200 for secondary header text[32m 0[2mms[22m[39m
++ [31m❯[39m src/components/__tests__/LockBanner.test.tsx [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 72[2mms[22m[39m
++     [32m✓[39m renders the normalized lock instant for open pools[32m 44[2mms[22m[39m
++     [32m✓[39m renders archived lock message[32m 2[2mms[22m[39m
++     [32m✓[39m uses stone tokens for locked state (not slate)[32m 1[2mms[22m[39m
++     [32m✓[39m uses green tokens for open state (not emerald)[32m 2[2mms[22m[39m
++[31m     [31m×[31m renders with warning tone when pool is open and deadline is within 24 hours[39m[32m 13[2mms[22m[39m
++     [32m✓[39m renders with info tone when pool is open and deadline is more than 24 hours away[32m 2[2mms[22m[39m
++[31m     [31m×[31m shows secondary line with timezone when within 24 hours[39m[32m 6[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferStatesPresentation.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 189[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/ErrorStateBanner.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 163[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/DataAlert.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 211[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/ConfirmModal.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1301[2mms[22m[39m
++     [33m[2m✓[22m[39m confirm button activates after delay when confirmDelaySeconds is set [33m 1022[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferCatalogPanel.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 363[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferPickerTokenMigration.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 292[2mms[22m[39m
++[90mstderr[2m | src/app/(app)/participant/picks/[poolId]/PicksForm.test.tsx[2m > [22m[2mPicksForm[2m > [22m[2mrenders the edit flow and updates the saved picks summary in the client
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at PicksForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(app)/participant/picks/[poolId]/PicksForm.tsx:34:22)
++
++ [32m✓[39m src/app/(app)/participant/picks/[poolId]/PicksForm.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 288[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/tournament-roster-actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 57[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/golfer-catalog-actions.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 101[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/pool-lock-actions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 122[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 61[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/FreshnessChip.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 191[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardEmptyState.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 98[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferPickerTournamentRoster.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 120[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/AdminButtonsModal.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 181[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/golfer-catalog.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 69[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/picks.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 57[2mms[22m[39m
++ [32m✓[39m src/app/(app)/participant/picks/[poolId]/actions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 71[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/StatusChip.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 55[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/slash-golf-client.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 39[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/pool-delete-actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 64[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-queries.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 46[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/domain-scoring.test.ts [2m([22m[2m18 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 19[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/CommissionerErrorBanner.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 49[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-queries.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/app/api/scoring/refresh/route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 48[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TrustStatusBar.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/app/join/[inviteCode]/actions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 55[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardRow.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 19[2mms[22m[39m
++[90mstderr[2m | src/lib/__tests__/slash-golf-client-edge-cases.test.ts[2m > [22m[2mslash-golf client edge cases[2m > [22m[2mgetTournamentScores[2m > [22m[2mAPI returns non-200 with JSON error body → throws Error with status
++[22m[39m[slash-golf] tournament score fetch failed {
++  status: [33m429[39m,
++  statusText: [32m'Too Many Requests'[39m,
++  body: [32m'{"message":"Rate limit exceeded"}'[39m
++}
++
++ [32m✓[39m src/lib/__tests__/slash-golf-client-edge-cases.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/components/ui/__tests__/Button.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-refresh.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/CommissionerCommandCenter.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 68[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/StatusComponentsA11y.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 33[2mms[22m[39m
++[90mstderr[2m | src/app/(auth)/sign-up/__tests__/SignUp.test.tsx[2m > [22m[2mSignUp page[2m > [22m[2mrenders Card container with green left-border accent
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at div
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignUp (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-up/page.tsx:17:62)
++
++ [32m✓[39m src/components/ui/__tests__/Card.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 18[2mms[22m[39m
++ [32m✓[39m src/app/(auth)/sign-up/__tests__/SignUp.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/golfer-detail.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-state-transitions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
++[90mstderr[2m | src/app/(auth)/sign-in/__tests__/SignIn.test.tsx[2m > [22m[2mSignIn page[2m > [22m[2mrenders Card container with green left-border accent
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at div
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignInForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-in/page.tsx:38:62)
++    at Suspense
++    at SignIn
++
++ [32m✓[39m src/app/(auth)/sign-in/__tests__/SignIn.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 27[2mms[22m[39m
++ [32m✓[39m src/app/api/cron/scoring/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/app/api/leaderboard/[poolId]/route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 45[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TieExplanationBadge.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/PicksFlowPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
++ [32m✓[39m src/app/__tests__/globals-css.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/audit.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 19[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/design-tokens.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 16[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-lock.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/refresh-telemetry.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/tournament-roster.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/freshness.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/entry-queries.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/uiStyles.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/leaderboard.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/data-alert-a11y.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-dispatch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/app/join/[inviteCode]/__tests__/page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
++
++[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 16 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-edge-cases.test.ts[2m > [22mscoring edge cases[2m > [22mcomputeEntryScore[2m > [22mall golfers have every round incomplete → totalScore 0, completedHoles 0
++[31m[1mAssertionError[22m: expected null to be +0 // Object.is equality[39m
++
++[32m- Expected:[39m
++0
++
++[31m+ Received:[39m
++null
++
++[36m [2m❯[22m src/lib/__tests__/scoring-edge-cases.test.ts:[2m31:33[22m[39m
++    [90m 29|[39m       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'…
++    [90m 30|[39m
++    [90m 31|[39m       [34mexpect[39m(result[33m.[39mtotalScore)[33m.[39m[34mtoBe[39m([34m0[39m)
++    [90m   |[39m                                 [31m^[39m
++    [90m 32|[39m       [34mexpect[39m(result[33m.[39mcompletedHoles)[33m.[39m[34mtoBe[39m([34m0[39m)
++    [90m 33|[39m       [34mexpect[39m(result[33m.[39mtotalBirdies)[33m.[39m[34mtoBe[39m([34m0[39m)
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-edge-cases.test.ts[2m > [22mscoring edge cases[2m > [22mrankEntries[2m > [22mempty golferRoundScores map → all entries get totalScore 0
++[31m[1mAssertionError[22m: expected null to be +0 // Object.is equality[39m
++
++[32m- Expected:[39m
++0
++
++[31m+ Received:[39m
++null
++
++[36m [2m❯[22m src/lib/__tests__/scoring-edge-cases.test.ts:[2m81:36[22m[39m
++    [90m 79|[39m
++    [90m 80|[39m       [34mexpect[39m(ranked)[33m.[39m[34mtoHaveLength[39m([34m1[39m)
++    [90m 81|[39m       [34mexpect[39m(ranked[[34m0[39m][33m.[39mtotalScore)[33m.[39m[34mtoBe[39m([34m0[39m)
++    [90m   |[39m                                    [31m^[39m
++    [90m 82|[39m       [34mexpect[39m(ranked[[34m0[39m][33m.[39mrank)[33m.[39m[34mtoBe[39m([34m1[39m)
++    [90m 83|[39m     })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mAPI returns empty slashScores → NO_SCORES error
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m78:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mpartial upsert failure: 3 golfers, 2 OK, 1 fails → UPSERT_FAILED
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m108:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mupdatePoolRefreshMetadata fails on success path → INTERNAL_ERROR
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m143:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22minsertAuditEvent fails on success path → INTERNAL_ERROR
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m176:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mgetEntriesForPool returns empty array → broadcast sends with empty ranked array
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m212:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mderiveCompletedRounds === 0 (tournament not started) → returns success with completedRounds 0
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m247:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/components/__tests__/LockBanner.test.tsx[2m > [22mLockBanner warning tone near deadline[2m > [22mrenders with warning tone when pool is open and deadline is within 24 hours
++[31m[1mAssertionError[22m: expected '<div class="rounded-3xl border border…' to contain 'border-amber'[39m
++
++Expected: [32m"border-amber"[39m
++Received: [31m"<div class="rounded-3xl border border-white/60 bg-white/90 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4" role="status" aria-live="polite"><span aria-hidden="true" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg">🔓</span><div><p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-green-700/70 text-green-900">Tournament lock</p><p class="text-base font-semibold text-green-950">Picks are open</p><p class="text-sm text-green-800">Deadline: Thu, Apr 30, 12:00 AM EDT</p></div></div>"[39m
++
++[36m [2m❯[22m src/components/__tests__/LockBanner.test.tsx:[2m79:18[22m[39m
++    [90m 77|[39m       <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00…
++    [90m 78|[39m     )
++    [90m 79|[39m     [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'border-amber'[39m)
++    [90m   |[39m                  [31m^[39m
++    [90m 80|[39m     [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'bg-amber'[39m)
++    [90m 81|[39m   })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/components/__tests__/LockBanner.test.tsx[2m > [22mLockBanner warning tone near deadline[2m > [22mshows secondary line with timezone when within 24 hours
++[31m[1mAssertionError[22m: expected '<div class="rounded-3xl border border…' to contain 'America/New_York'[39m
++
++Expected: [32m"America/New_York"[39m
++Received: [31m"<div class="rounded-3xl border border-white/60 bg-white/90 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4" role="status" aria-live="polite"><span aria-hidden="true" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg">🔓</span><div><p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-green-700/70 text-green-900">Tournament lock</p><p class="text-base font-semibold text-green-950">Picks are open</p><p class="text-sm text-green-800">Deadline: Thu, Apr 30, 12:00 AM EDT</p></div></div>"[39m
++
++[36m [2m❯[22m src/components/__tests__/LockBanner.test.tsx:[2m95:18[22m[39m
++    [90m 93|[39m       <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00…
++    [90m 94|[39m     )
++    [90m 95|[39m     [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'America/New_York'[39m)
++    [90m   |[39m                  [31m^[39m
++    [90m 96|[39m   })
++    [90m 97|[39m })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/components/__tests__/SpectatorLeaderboard.test.tsx[2m > [22mSpectator leaderboard token migration (OPS-23)[2m > [22mScoreDisplay[2m > [22mdoes not use gray-* tokens in source file
++[31m[1mAssertionError[22m: expected [ 'gray-400' ] to be null[39m
++
++[32m- Expected:[39m
++null
++
++[31m+ Received:[39m
++[
++  "gray-400",
++]
++
++[36m [2m❯[22m src/components/__tests__/SpectatorLeaderboard.test.tsx:[2m51:27[22m[39m
++    [90m 49|[39m       [35mconst[39m source [33m=[39m fs[33m.[39m[34mreadFileSync[39m([33mSCORE_DISPLAY_PATH[39m[33m,[39m [32m'utf-8'[39m)
++    [90m 50|[39m       [35mconst[39m grayMatches [33m=[39m source[33m.[39m[34mmatch[39m([36m/gray-\d{2,3}/g[39m)
++    [90m 51|[39m       [34mexpect[39m(grayMatches)[33m.[39m[34mtoBeNull[39m()
++    [90m   |[39m                           [31m^[39m
++    [90m 52|[39m     })
++    [90m 53|[39m   })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/app/api/scoring/route.test.ts[2m > [22mPOST /api/scoring[2m > [22muses golfer dataset size for audit details and preserves entryCount compatibility
++[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
++
++[32m- Expected[39m
++[31m+ Received[39m
++
++[32m- 200[39m
++[31m+ 500[39m
++
++[36m [2m❯[22m src/app/api/scoring/route.test.ts:[2m152:29[22m[39m
++    [90m150|[39m     [35mconst[39m response [33m=[39m [35mawait[39m [33mPOST[39m(request)
++    [90m151|[39m
++    [90m152|[39m     [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m200[39m)
++    [90m   |[39m                             [31m^[39m
++    [90m153|[39m     [34mexpect[39m(createAdminClient)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)
++    [90m154|[39m     [34mexpect[39m(buildRefreshAuditDetails)[33m.[39m[34mtoHaveBeenCalledWith[39m(
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/app/api/scoring/route.test.ts[2m > [22mPOST /api/scoring[2m > [22mfans out scoring metadata to every live pool on the same tournament
++[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ Anything, 'pool-1' ][90m
++
++Number of calls: [1m0[22m
++[31m[39m
++[36m [2m❯[22m src/app/api/scoring/route.test.ts:[2m235:31[22m[39m
++    [90m233|[39m
++    [90m234|[39m     [34mexpect[39m(getTournamentScores)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m't-1'[39m[33m,[39m [34m2026[39m)
++    [90m235|[39m     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), …
++    [90m   |[39m                               [31m^[39m
++    [90m236|[39m     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), …
++    [90m237|[39m     expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anyt…
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22mJoinPoolForm[2m > [22mrenders a Button component with primary variant
++[41m[1m FAIL [22m[49m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22mJoinPoolForm[2m > [22mrenders the submit button with w-full class
++[41m[1m FAIL [22m[49m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22mJoinPoolForm[2m > [22mrenders error text in red-600 when error is present
++[31m[1mTypeError[22m: useFormState is not a function or its return value is not iterable[39m
++[36m [2m❯[22m JoinPoolForm src/app/join/[inviteCode]/JoinPoolForm.tsx:[2m14:31[22m[39m
++    [90m 12|[39m
++    [90m 13|[39m export default function JoinPoolForm({ inviteCode }: JoinPoolFormProps…
++    [90m 14|[39m   [35mconst[39m [state[33m,[39m formAction] [33m=[39m [34museFormState[39m(joinPool[33m,[39m initialState)
++    [90m   |[39m                               [31m^[39m
++    [90m 15|[39m
++    [90m 16|[39m   [35mreturn[39m (
++[90m [2m❯[22m renderWithHooks node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5662:16[22m[39m
++[90m [2m❯[22m renderIndeterminateComponent node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5736:15[22m[39m
++[90m [2m❯[22m renderElement node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5961:7[22m[39m
++[90m [2m❯[22m renderNodeDestructiveImpl node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6119:11[22m[39m
++[90m [2m❯[22m renderNodeDestructive node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6091:14[22m[39m
++[90m [2m❯[22m retryTask node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6543:5[22m[39m
++[90m [2m❯[22m performWork node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6591:7[22m[39m
++[90m [2m❯[22m node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6915:12[22m[39m
++[90m [2m❯[22m scheduleWork node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m78:3[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯[22m[39m
++
++
++[2m Test Files [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m59 passed[39m[22m[90m (65)[39m
++[2m      Tests [22m [1m[31m16 failed[39m[22m[2m | [22m[1m[32m452 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (469)[39m
++[2m   Start at [22m 13:18:15
++[2m   Duration [22m 7.61s[2m (transform 4.04s, setup 8.26s, import 10.03s, tests 5.21s, environment 8.40s)[22m
++
++ ELIFECYCLE  Test failed. See above for more details.
++[test failed]
+[0m
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/plan.md
+[0m→ [0mRead /home/gary/.local/share/opencode/tool-output/tool_e1dc6bb54001xrB9sjRShQb8wg
+Let me now look at the actual changed files in the worktree to verify the current state:
+[0m
+[0m$ [0mgit diff origin/main...HEAD --stat
+README.md                                          |    2 +-
+ code-review.md                                     |  174 ++
+ compound.log                                       |   26 +
+ design.md                                          |  199 ++
+ docs/rules-spec.md                                 |    7 +-
+ fix-review-1.log                                   | 1211 ++++++++++++
+ fix-review-2.log                                   |  296 +++
+ fix-review-3.log                                   |  123 ++
+ fix-review-4.log                                   |   38 +
+ fix-review-5.log                                   |   11 +
+ implement-task-1.log                               | 2045 ++++++++++++++++++++
+ implement-task-2.log                               |   53 +
+ implement-task-3.log                               |   74 +
+ implement-task-4.log                               |   70 +
+ implementation-log.md                              |  996 ++++++++++
+ install-worktree.log                               |   55 +
+ issue-comments.md                                  |    2 +
+ issue.json                                         |    1 +
+ issue.md                                           |  130 ++
+ orchestrator.log                                   |    9 +
+ plan-design.log                                    |  687 +++++++
+ plan-write.log                                     |  124 ++
+ plan.md                                            |  178 ++
+ pr-summary.md                                      |    0
+ quality-review-task-1.log                          |  734 +++++++
+ quality-review-task-1.md                           |   55 +
+ quality-review-task-2.log                          |   43 +
+ quality-review-task-2.md                           |   45 +
+ quality-review-task-3.log                          |   48 +
+ quality-review-task-3.md                           |  101 +
+ quality-review-task-4.log                          |  786 ++++++++
+ quality-review-task-4.md                           |   80 +
+ re-review-1.log                                    |  676 +++++++
+ re-review-2.log                                    | 1592 +++++++++++++++
+ re-review-3.log                                    |  721 +++++++
+ re-review-4.log                                    |  645 ++++++
+ revalidate-1.log                                   |  174 ++
+ revalidate-2.log                                   |  174 ++
+ revalidate-3.log                                   |  176 ++
+ revalidate-4.log                                   |  174 ++
+ revalidate-5.log                                   |   46 +
+ review-fix-log.md                                  |  132 ++
+ review.log                                         | 1498 ++++++++++++++
+ review.md                                          |  174 ++
+ scripts/ai-run-issue-v2.sh                         |  659 ++++++-
+ scripts/brainstorm-issue.sh                        |   89 +
+ spec-review-task-1.log                             |   52 +
+ spec-review-task-1.md                              |   41 +
+ spec-review-task-2.log                             |   33 +
+ spec-review-task-2.md                              |   66 +
+ spec-review-task-3.log                             |   14 +
+ spec-review-task-3.md                              |   53 +
+ spec-review-task-4.log                             |   18 +
+ spec-review-task-4.md                              |   51 +
+ .../pools/[poolId]/audit/score-trace/page.tsx      |    4 +-
+ src/app/api/leaderboard/[poolId]/route.test.ts     |  203 +-
+ src/app/api/leaderboard/[poolId]/route.ts          |   47 +-
+ src/app/api/scoring/route.test.ts                  |   15 +-
+ .../[inviteCode]/__tests__/JoinPoolForm.test.tsx   |   13 +-
+ src/components/GolferContribution.tsx              |   10 +-
+ src/components/__tests__/LockBanner.test.tsx       |   20 +-
+ src/components/score-display.tsx                   |    2 +-
+ src/lib/__tests__/scoring-edge-cases.test.ts       |    8 +-
+ .../__tests__/scoring-refresh-edge-cases.test.ts   |   20 +-
+ src/lib/__tests__/scoring.test.ts                  |   56 +
+ src/lib/scoring-queries.ts                         |   12 -
+ src/lib/scoring.ts                                 |   28 -
+ tsconfig.tsbuildinfo                               |    2 +-
+ validate.log                                       |  561 ++++++
+ validation-1.md                                    |  174 ++
+ validation-2.md                                    |  174 ++
+ validation-3.md                                    |  176 ++
+ validation-4.md                                    |  174 ++
+ validation.md                                      |  561 ++++++
+ 74 files changed, 17722 insertions(+), 199 deletions(-)
+[0m
+[0m$ [0mgit status
+On branch ai/issue-51
+Your branch is up to date with 'origin/ai/issue-51'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   code-review.md
+	modified:   compound.log
+	modified:   fix-review-1.log
+	modified:   orchestrator.log
+	modified:   re-review-1.log
+	modified:   revalidate-1.log
+	modified:   review.log
+	modified:   review.md
+	modified:   validation-1.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	compound.md
+	docs/solutions/issue-51.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[0m
+[0m$ [0mgit diff origin/main...HEAD -- README.md docs/rules-spec.md src/app/api/leaderboard/
+diff --git a/README.md b/README.md
+index 69fa5ad..ddd89d6 100644
+--- a/README.md
++++ b/README.md
+@@ -77,7 +77,7 @@ pnpm start
+ 
+ ### Scoring Model
+ 
+-- **Round-based** best-ball (lowest score among 4 golfers per completed round)
++- **Hole-by-hole** best-ball (lowest score-to-par per hole among active golfers)
+ - Lower total score is better
+ - Tiebreaker: total birdies across all 4 golfers (higher is better)
+ - Cut and withdrawn golfers excluded after they occur
+diff --git a/docs/rules-spec.md b/docs/rules-spec.md
+index 768c95e..3ae5d85 100644
+--- a/docs/rules-spec.md
++++ b/docs/rules-spec.md
+@@ -27,8 +27,11 @@
+ For each round, the entry's score is the **lowest `scoreToPar`** among all **active** golfers in the entry.
+ 
+ ```
+-Entry round score = min(scoreToPar of active golfers)
+-Entry total score = sum(Entry round score for each completed round)
++For each regulation hole in each counted round:
++  1. Look at the selected golfers in the entry who are active.
++  2. Use the lowest score-to-par among golfers with a valid score for that hole.
++  3. Add that best hole score to the entry total.
++  4. Count birdies/eagles as scoreToPar < 0 for the best-ball hole result.
+ ```
+ 
+ **Source:** `src/lib/scoring/domain.ts:computeEntryScore`
+diff --git a/src/app/api/leaderboard/[poolId]/route.test.ts b/src/app/api/leaderboard/[poolId]/route.test.ts
+index 21b5c7b..08d7572 100644
+--- a/src/app/api/leaderboard/[poolId]/route.test.ts
++++ b/src/app/api/leaderboard/[poolId]/route.test.ts
+@@ -3,9 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ import { GET } from './route'
+ import { createClient } from '@/lib/supabase/server'
+ import { classifyFreshness } from '@/lib/freshness'
+-import { deriveCompletedRounds } from '@/lib/scoring'
+-import { rankEntries } from '@/lib/scoring/domain'
+-import { getTournamentScoreRounds } from '@/lib/scoring-queries'
++import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
++import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
++import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
++import { rankEntries as domainRankEntries } from '@/lib/scoring/domain'
+ 
+ vi.mock('@/lib/supabase/server', () => ({
+   createClient: vi.fn(),
+@@ -17,14 +18,20 @@ vi.mock('@/lib/freshness', () => ({
+ 
+ vi.mock('@/lib/scoring', () => ({
+   deriveCompletedRounds: vi.fn(),
++  rankEntriesWithHoles: vi.fn(),
+ }))
+ 
+-vi.mock('@/lib/scoring/domain', () => ({
+-  rankEntries: vi.fn(),
++vi.mock('@/lib/scoring-queries', () => ({
++  getTournamentHolesForGolfers: vi.fn(),
+ }))
+ 
+-vi.mock('@/lib/scoring-queries', () => ({
+-  getTournamentScoreRounds: vi.fn(),
++vi.mock('@/lib/tournament-roster/queries', () => ({
++  getTournamentRosterGolfers: vi.fn(),
++}))
++
++vi.mock('@/lib/scoring/domain', () => ({
++  rankEntries: vi.fn(),
++  deriveCompletedRounds: vi.fn(),
+ }))
+ 
+ const originalEnv = {
+@@ -108,8 +115,8 @@ describe('GET /api/leaderboard/[poolId]', () => {
+       }),
+     } as never)
+ 
+-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+ 
+     const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
+       params: Promise.resolve({ poolId: 'pool-1' }),
+@@ -117,7 +124,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
+     const body = await response.json()
+ 
+     expect(response.status).toBe(200)
+-    expect(rankEntries).toHaveBeenCalledWith(entries, expect.any(Map), 0)
++    expect(rankEntriesWithHoles).toHaveBeenCalledWith(entries, expect.any(Map), expect.any(Map), 0)
+     expect(body.data.entries).toEqual(rankedEntries)
+     expect(body.data.completedRounds).toBe(0)
+     expect(body.data.isRefreshing).toBe(false)
+@@ -177,7 +184,8 @@ describe('GET /api/leaderboard/[poolId]', () => {
+       }),
+     } as never)
+ 
+-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+ 
+     process.env.NEXT_PUBLIC_APP_URL = 'https://example.com/app/'
+     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response())
+@@ -253,7 +261,8 @@ describe('GET /api/leaderboard/[poolId]', () => {
+       }),
+     } as never)
+ 
+-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+ 
+     process.env.NEXT_PUBLIC_APP_URL = 'https://example.com/app/'
+     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response())
+@@ -303,7 +312,8 @@ describe('GET /api/leaderboard/[poolId]', () => {
+         throw new Error(`Unexpected table ${table}`)
+       }),
+     } as never)
+-    vi.mocked(rankEntries).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+ 
+     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(new Response())
+ 
+@@ -314,4 +324,171 @@ describe('GET /api/leaderboard/[poolId]', () => {
+     expect(response.status).toBe(200)
+     expect(fetchSpy).not.toHaveBeenCalled()
+   })
++
++  it('ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds', async () => {
++    const pool = {
++      id: 'pool-1',
++      status: 'live',
++      refreshed_at: '2026-03-29T00:00:00.000Z',
++      last_refresh_error: null,
++      tournament_id: 't-1',
++    }
++    const entries = [
++      { id: 'entry-1', golfer_ids: ['g1', 'g2'], user_id: 'u1' },
++      { id: 'entry-2', golfer_ids: ['g3', 'g4'], user_id: 'u2' },
++    ]
++
++    const holesByGolfer = new Map<string, import('@/lib/supabase/types').TournamentHole[]>()
++    holesByGolfer.set('g1', [
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 2, strokes: 3, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++    ])
++    holesByGolfer.set('g2', [
++      { golfer_id: 'g2', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 5, par: 4, score_to_par: 1, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g2', tournament_id: 't-1', round_id: 1, hole_id: 2, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g2', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 5, par: 4, score_to_par: 1, updated_at: '2026-03-29T00:00:00.000Z' },
++    ])
++    holesByGolfer.set('g3', [
++      { golfer_id: 'g3', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g3', tournament_id: 't-1', round_id: 1, hole_id: 2, strokes: 5, par: 4, score_to_par: 1, updated_at: '2026-03-29T00:00:00.000Z' },
++    ])
++    holesByGolfer.set('g4', [
++      { golfer_id: 'g4', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 3, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g4', tournament_id: 't-1', round_id: 1, hole_id: 2, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++    ])
++
++    const rankedEntries = [
++      { id: 'entry-1', golfer_ids: ['g1', 'g2'], user_id: 'u1', rank: 1, totalScore: -1, totalBirdies: 1, isTied: false },
++      { id: 'entry-2', golfer_ids: ['g3', 'g4'], user_id: 'u2', rank: 2, totalScore: 0, totalBirdies: 1, isTied: false },
++    ]
++
++    vi.mocked(createClient).mockResolvedValue({
++      from: vi.fn().mockImplementation((table: string) => {
++        if (table === 'pools') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: pool, error: null }) }) }) }
++        }
++        if (table === 'entries') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: entries }) }) }
++        }
++        if (table === 'tournament_scores') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [{ golfer_id: 'g1', tournament_id: 't-1', status: 'active', total_score: 0, position: 1, total_birdies: 0, updated_at: '2026-03-29T00:00:00.000Z' }] }) }) }
++        }
++        throw new Error(`Unexpected table ${table}`)
++      }),
++    } as never)
++
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(holesByGolfer)
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
++    vi.mocked(deriveCompletedRounds).mockReturnValue(2)
++
++    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
++      params: Promise.resolve({ poolId: 'pool-1' }),
++    })
++    const body = await response.json()
++
++    expect(response.status).toBe(200)
++    expect(getTournamentHolesForGolfers).toHaveBeenCalledWith(expect.any(Object), 't-1', expect.arrayContaining(['g1', 'g2', 'g3', 'g4']))
++    expect(rankEntriesWithHoles).toHaveBeenCalledWith(entries, holesByGolfer, expect.any(Map), 2)
++    expect(body.data.entries).toEqual(rankedEntries)
++  })
++
++  it('does NOT call rankEntries (round-level) from scoring domain — only rankEntriesWithHoles (hole-level)', async () => {
++    const pool = {
++      id: 'pool-1',
++      status: 'live',
++      refreshed_at: '2026-03-29T00:00:00.000Z',
++      last_refresh_error: null,
++      tournament_id: 't-1',
++    }
++    const entries = [{ id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1' }]
++    const rankedEntries = [
++      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: 0, totalBirdies: 0, isTied: false },
++    ]
++
++    vi.mocked(createClient).mockResolvedValue({
++      from: vi.fn().mockImplementation((table: string) => {
++        if (table === 'pools') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: pool, error: null }) }) }) }
++        }
++        if (table === 'entries') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: entries }) }) }
++        }
++        if (table === 'tournament_scores') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [] }) }) }
++        }
++        throw new Error(`Unexpected table ${table}`)
++      }),
++    } as never)
++
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
++
++    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
++      params: Promise.resolve({ poolId: 'pool-1' }),
++    })
++
++    expect(response.status).toBe(200)
++    expect(rankEntriesWithHoles).toHaveBeenCalled()
++    expect(domainRankEntries).not.toHaveBeenCalled()
++  })
++
++  it('does not collapse hole IDs across different rounds', async () => {
++    const pool = {
++      id: 'pool-1',
++      status: 'live',
++      refreshed_at: '2026-03-29T00:00:00.000Z',
++      last_refresh_error: null,
++      tournament_id: 't-1',
++    }
++    const entries = [{ id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1' }]
++    const rankedEntries = [
++      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: -1, totalBirdies: 1, isTied: false },
++    ]
++
++    vi.mocked(createClient).mockResolvedValue({
++      from: vi.fn().mockImplementation((table: string) => {
++        if (table === 'pools') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: pool, error: null }) }) }) }
++        }
++        if (table === 'entries') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: entries }) }) }
++        }
++        if (table === 'tournament_scores') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [{ golfer_id: 'g1', tournament_id: 't-1', status: 'active', total_score: 0, position: 1, total_birdies: 0, updated_at: '2026-03-29T00:00:00.000Z' }] }) }) }
++        }
++        throw new Error(`Unexpected table ${table}`)
++      }),
++    } as never)
++
++    const holesByGolfer = new Map<string, import('@/lib/supabase/types').TournamentHole[]>()
++    holesByGolfer.set('g1', [
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 3, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++    ])
++
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(holesByGolfer)
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
++    vi.mocked(deriveCompletedRounds).mockReturnValue(2)
++
++    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
++      params: Promise.resolve({ poolId: 'pool-1' }),
++    })
++
++    expect(response.status).toBe(200)
++    expect(rankEntriesWithHoles).toHaveBeenCalled()
++    const callArg = rankEntriesWithHoles.mock.calls[0]?.[1]
++    expect(callArg).toBeInstanceOf(Map)
++    const holesFromCall = callArg as Map<string, TournamentHole[]>
++    expect(holesFromCall.size).toBe(1)
++    const golferHoles = holesFromCall.get('g1')
++    expect(golferHoles).toBeDefined()
++    expect(golferHoles?.length).toBe(2)
++    const round1 = golferHoles?.find(h => h.round_id === 1)
++    const round2 = golferHoles?.find(h => h.round_id === 2)
++    expect(round1?.hole_id).toBe(1)
++    expect(round2?.hole_id).toBe(1)
++  })
+ })
+diff --git a/src/app/api/leaderboard/[poolId]/route.ts b/src/app/api/leaderboard/[poolId]/route.ts
+index f582ca8..8b9e543 100644
+--- a/src/app/api/leaderboard/[poolId]/route.ts
++++ b/src/app/api/leaderboard/[poolId]/route.ts
+@@ -1,12 +1,10 @@
+ import { NextResponse } from 'next/server'
+ import { createClient } from '@/lib/supabase/server'
+-import { deriveCompletedRounds } from '@/lib/scoring'
+-import { rankEntries } from '@/lib/scoring/domain'
++import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
+ import { classifyFreshness } from '@/lib/freshness'
+ import type { TournamentScore } from '@/lib/supabase/types'
+-import type { GolferRoundScoresMap } from '@/lib/scoring/domain'
+ import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
+-import { getTournamentScoreRounds } from '@/lib/scoring-queries'
++import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
+ 
+ /**
+  * Fire-and-forget: trigger a background scoring refresh for this pool.
+@@ -95,8 +93,16 @@ export async function GET(
+       .select('*')
+       .eq('tournament_id', pool.tournament_id)
+ 
++    // Collect all golfer IDs from entries first (needed for holes query)
++    const allGolferIds = new Set<string>()
++    for (const entry of entries) {
++      for (const id of (entry as { golfer_ids: string[] }).golfer_ids) {
++        allGolferIds.add(id)
++      }
++    }
++
+     if (!allScores || allScores.length === 0) {
+-      const rankedWithoutScores = rankEntries(entries as never[], new Map() as GolferRoundScoresMap, 0)
++      const rankedWithoutScores = rankEntriesWithHoles(entries as never[], new Map(), new Map(), 0)
+ 
+       return NextResponse.json({
+         data: {
+@@ -117,20 +123,12 @@ export async function GET(
+     }
+ 
+     const golferScoresMap = new Map<string, TournamentScore>()
+-    const golferStatuses: Record<string, string> = {}
++    const golferStatuses: Map<string, 'active' | 'cut' | 'withdrawn'> = new Map()
+     for (const score of allScores) {
+       const ts = score as TournamentScore
+       golferScoresMap.set(ts.golfer_id, ts)
+       if (ts.status !== 'active') {
+-        golferStatuses[ts.golfer_id] = ts.status
+-      }
+-    }
+-
+-    // Fetch golfer names for display
+-    const allGolferIds = new Set<string>()
+-    for (const entry of entries) {
+-      for (const id of (entry as { golfer_ids: string[] }).golfer_ids) {
+-        allGolferIds.add(id)
++        golferStatuses.set(ts.golfer_id, ts.status as 'active' | 'cut' | 'withdrawn')
+       }
+     }
+ 
+@@ -145,22 +143,9 @@ export async function GET(
+ 
+     const completedRounds = deriveCompletedRounds(allScores as TournamentScore[])
+ 
+-    const scoreRounds = await getTournamentScoreRounds(supabase, pool.tournament_id)
+-    const golferRoundScoresMap: GolferRoundScoresMap = new Map()
+-    for (const round of scoreRounds) {
+-      if (!golferRoundScoresMap.has(round.golfer_id)) {
+-        golferRoundScoresMap.set(round.golfer_id, [])
+-      }
+-      golferRoundScoresMap.get(round.golfer_id)!.push({
+-        roundId: round.round_id,
+-        holeId: 1,
+-        scoreToPar: round.score_to_par ?? null,
+-        status: round.status as TournamentScore['status'],
+-        isComplete: true,
+-      })
+-    }
++    const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, Array.from(allGolferIds))
+ 
+-    const ranked = rankEntries(entries as never[], golferRoundScoresMap, completedRounds)
++    const ranked = rankEntriesWithHoles(entries as never[], holesByGolfer, golferStatuses, completedRounds)
+ 
+     return NextResponse.json({
+       data: {
+@@ -171,7 +156,7 @@ export async function GET(
+         isRefreshing,
+         poolStatus: pool.status,
+         lastRefreshError: pool.last_refresh_error,
+-        golferStatuses,
++        golferStatuses: Object.fromEntries(golferStatuses),
+         golferNames,
+         golferCountries,
+         golferScores: Object.fromEntries(golferScoresMap),
+[0m
+[0m$ [0mnpm test 2>&1 | tail -40
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+
+ Test Files  65 passed (65)
+      Tests  468 passed | 1 skipped (469)
+   Start at  14:00:37
+   Duration  7.28s (transform 3.43s, setup 8.12s, import 9.57s, tests 5.16s, environment 9.19s)
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/code-review.md
+Wrote file successfully.
+[0m
+Written to `code-review.md`. All 468 tests pass — the branch correctly implements the hole-by-hole scoring model migration per issue #51.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m
+[0m$ [0mgit diff origin/main...HEAD
+diff --git a/scripts/ai-run-issue-v2.sh b/scripts/ai-run-issue-v2.sh
+index 8aec678..d9781eb 100755
+--- a/scripts/ai-run-issue-v2.sh
++++ b/scripts/ai-run-issue-v2.sh
+@@ -22,21 +22,23 @@ REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+ cd "$REPO_ROOT"
+ 
+ BASE_BRANCH="${BASE_BRANCH:-main}"
+-ISSUES_DIR="ai/issues/${ISSUE_NUM}"
+ BRANCH="ai/issue-${ISSUE_NUM}"
+ PROMPTS_DIR="automation/prompts"
+ AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
+ AGENT_CLI="${AGENT_CLI:-opencode}"
+ 
+ # Phase timeouts (seconds)
+-TIMEOUT_PLAN=600
++TIMEOUT_BRAINSTORM=600
++TIMEOUT_PLAN_WRITE=600
+ TIMEOUT_IMPLEMENT=1800
+ TIMEOUT_VALIDATE=300
+ TIMEOUT_REVIEW=600
+ TIMEOUT_FIX=900
+ TIMEOUT_COMPOUND=600
+ 
+-# Max fix loops
++# All artifacts live in the worktree (no cross-directory permission needed for sub-agents)
++WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
++ISSUES_DIR="${WORKTREE_DIR}"
+ 
+ # ── helpers (functions) ───────────────────────────────────────────────────────
+ log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "${ISSUES_DIR}/orchestrator.log"; }
+@@ -78,10 +80,19 @@ run_agent_raw() {
+ 
+   log "Running agent for phase '$phase' (timeout=${timeout_sec}s)..."
+ 
+-  # Read prompt from stdin, run with timeout
++  # Write prompt to temp file to avoid pipeline issues with SIGPIPE/tee
++  local prompt_file
++  prompt_file=$(mktemp)
++  cat > "$prompt_file"
++
++  # Run agent: stdin from prompt file, stdout+stderr to log file AND console
+   local ec=0
+-  timeout "$timeout_sec" bash -c "$agent_cmd" \
+-    > >(tee "$output_log") 2>&1 || ec=$?
++  timeout "$timeout_sec" bash -c "$agent_cmd" < "$prompt_file" 2>&1 \
++    | tee -a "$output_log" \
++    | grep -v "^\[0m$" | grep -v "^$" || true
++  ec=${PIPESTATUS[0]}
++
++  rm -f "$prompt_file"
+ 
+   if [[ $ec -eq 124 ]]; then
+     orchestrator_fail "Phase '$phase' timed out after ${timeout_sec}s"
+@@ -101,25 +112,131 @@ echo "" > "${ISSUES_DIR}/orchestrator.log"
+ 
+ log "=== Starting orchestrator for issue #${ISSUE_NUM} ==="
+ 
+-# ── idempotency: check for existing branch/PR ────────────────────────────────
+-PHASE="${ORCHESTRATOR_PHASE:-start}"
++# ── auto-resume: task-level checkpoint detection ─────────────────────────────
+ LAST_PHASE="start"
+ 
+-if git revparse --verify "${BRANCH}" 2>/dev/null; then
+-  EXISTING_PR_NUM=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
+-  if [[ -n "$EXISTING_PR_NUM" && "$EXISTING_PR_NUM" != "null" ]]; then
+-    info "Branch '$BRANCH}' already exists with PR #$EXISTING_PR_NUM. Resuming..."
+-    if [[ -f "${ISSUES_DIR}/pr-number.txt" ]]; then
+-      log "Orchestrator already completed. See PR #$EXISTING_PR_NUM."
+-      exit 0
++get_task_completion_status() {
++  local task_n="$1"
++  local spec_log="${ISSUES_DIR}/spec-review-task-${task_n}.log"
++  local quality_log="${ISSUES_DIR}/quality-review-task-${task_n}.log"
++
++  if [[ ! -f "$spec_log" || ! -f "$quality_log" ]]; then
++    if [[ -f "${ISSUES_DIR}/implement-task-${task_n}.log" ]]; then
++      echo "implementing"
++    else
++      echo "pending"
+     fi
+-    PHASE="create-pr"
++    return
++  fi
++
++  local spec_failed=false quality_failed=false
++  if grep -q "❌ Issues found" "$spec_log" 2>/dev/null; then
++    spec_failed=true
++  fi
++  if grep -qi "Assessment:.*NEEDS_WORK" "$quality_log" 2>/dev/null; then
++    quality_failed=true
++  fi
++
++  if $spec_failed; then
++    echo "spec-failed"
++  elif $quality_failed; then
++    echo "quality-failed"
+   else
+-    info "Branch '$BRANCH}' exists, no PR yet. Resuming from PR creation."
+-    PHASE="create-pr"
++    echo "complete"
+   fi
+-else
+-  PHASE="read_issue"
++}
++
++find_first_incomplete_task() {
++  local plan_file="plan.md"
++  if [[ ! -f "$plan_file" ]]; then
++    echo "0"
++    return
++  fi
++
++  local task_count
++  task_count=$(awk '/^#{2,3} Task [0-9]+:/ {n++} END{print n+0}' "$plan_file")
++
++  if [[ "$task_count" -eq 0 ]]; then
++    echo "0"
++    return
++  fi
++
++  local n=1
++  while [[ $n -le "$task_count" ]]; do
++    local status
++    status=$(get_task_completion_status "$n")
++    if [[ "$status" != "complete" ]]; then
++      echo "$n"
++      return
++    fi
++    n=$((n + 1))
++  done
++
++  echo "$((task_count + 1))"
++}
++
++detect_resume_point() {
++  local first_incomplete
++  first_incomplete=$(find_first_incomplete_task)
++
++  if [[ "$first_incomplete" -eq 0 ]]; then
++    echo "read_issue"
++    return
++  fi
++
++  local status
++  status=$(get_task_completion_status "$first_incomplete")
++
++  case "$status" in
++    complete)
++      local task_count
++      task_count=$(awk '/^#{2,3} Task [0-9]+:/ {n++} END{print n+0}' "plan.md")
++      if [[ $first_incomplete -gt $task_count ]]; then
++        echo "validate"
++      else
++        echo "implement"
++      fi
++      ;;
++    implementing)  echo "implement" ;;
++    pending)        echo "implement" ;;
++    spec-failed)    echo "spec-review" ;;
++    quality-failed) echo "quality-review" ;;
++    *)              echo "implement" ;;
++  esac
++}
++
++detect_phase() {
++  if [[ -n "${ORCHESTRATOR_PHASE:-}" ]]; then
++    echo "$ORCHESTRATOR_PHASE"
++    return
++  fi
++
++  if [[ -f "${ISSUES_DIR}/pr-url.txt" ]]; then
++    echo "done"
++  elif [[ -f "${ISSUES_DIR}/compound.md" ]]; then
++    echo "create-pr"
++  elif [[ -f "${ISSUES_DIR}/review.md" ]]; then
++    echo "fix-review"
++  elif [[ -f "${ISSUES_DIR}/validate.log" ]]; then
++    echo "review"
++  elif [[ -f "${ISSUES_DIR}/plan.md" ]]; then
++    detect_resume_point
++  elif [[ -f "${ISSUES_DIR}/design.md" ]]; then
++    echo "plan-write"
++  elif [[ -f "${ISSUES_DIR}/issue.json" ]]; then
++    echo "plan-design"
++  else
++    echo "read_issue"
++  fi
++}
++
++PHASE="$(detect_phase)"
++
++log "Auto-resume: detected phase='${PHASE}'"
++
++if [[ "$PHASE" == "done" ]]; then
++  log "Orchestrator already completed. See $(cat "${ISSUES_DIR}/pr-url.txt" 2>/dev/null || echo 'PR')."
++  exit 0
+ fi
+ 
+ # ═══════════════════════════════════════════════════════════════════════════
+@@ -182,32 +299,79 @@ if [[ "$PHASE" == "read_issue" ]]; then
+   mkdir -p "${WORKTREE_DIR}/scripts"
+   cp -r "${REPO_ROOT}/scripts/"*.sh "${WORKTREE_DIR}/scripts/" 2>/dev/null || true
+ 
+-  # Copy run artifacts into worktree root (issue.md, plan.md etc. for agent access)
+-  cp -r "${ISSUES_DIR}/." "${WORKTREE_DIR}/" 2>/dev/null || true
++  # Run artifacts (issue.json, issue.md, issue-comments.md) are written directly to worktree
+ 
+-  PHASE="plan"
++  PHASE="plan-design"
+ fi
+ 
+ # ═══════════════════════════════════════════════════════════════════════════
+-# PHASE: plan
++# PHASE: plan-design — brainstorm using the brainstorming skill
+ # ═══════════════════════════════════════════════════════════════════════════
+-if [[ "$PHASE" == "plan" ]]; then
+-  log "=== Phase: plan ==="
+-  LAST_PHASE="plan"
++if [[ "$PHASE" == "plan-design" ]]; then
++  log "=== Phase: plan-design (brainstorm) ==="
++  LAST_PHASE="plan-design"
+ 
+   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
+ 
+-  PLAN_PROMPT="You are writing an implementation plan.
++  BRAINSTORM_PROMPT="You are analyzing a GitHub issue to produce a design document.
+ 
+ ## CONTEXT
+ You are working in: ${WORKTREE_DIR}
+ Issue file: issue.md (contains the GitHub issue description)
+ Comments file: issue-comments.md (contains issue comments)
+-You are on branch: ${BRANCH}
+ 
+ ## TASK
+-Read issue.md and issue-comments.md.
+-Write a complete implementation plan to ./plan.md.
++1. Load the brainstorming skill: say exactly '/skill brainstorming' to activate it.
++2. Read issue.md and issue-comments.md thoroughly.
++3. Analyze the codebase to understand the existing patterns, types, and architecture relevant to this issue.
++4. Using the brainstorming skill guidance, produce a design document at ./design.md covering:
++   - The problem being solved and why it matters
++   - Key design decisions and trade-offs considered
++   - Proposed approach with rationale
++   - Assumptions made (do not ask questions — state assumptions explicitly)
++   - What is in scope and what is explicitly out of scope
++   - Any risks or concerns identified from code analysis
++
++## CRITICAL RULES
++- Do NOT ask questions. Make reasonable assumptions and document them explicitly.
++- Do NOT rely on agent memory. Write everything to design.md.
++- Stop after writing design.md. Do not implement anything.
++
++Write design.md now."
++
++  echo "$BRAINSTORM_PROMPT" | run_agent_raw "plan-design" "$TIMEOUT_BRAINSTORM"
++
++  if [[ ! -f "${WORKTREE_DIR}/design.md" ]]; then
++    orchestrator_fail "Design doc not found after plan-design phase"
++  fi
++  info "Design doc saved to ${WORKTREE_DIR}/design.md"
++
++  PHASE="plan-write"
++fi
++
++# ═══════════════════════════════════════════════════════════════════════════
++# PHASE: plan-write — write implementation plan using writing-plans skill
++# ═══════════════════════════════════════════════════════════════════════════
++if [[ "$PHASE" == "plan-write" ]]; then
++  log "=== Phase: plan-write (implementation plan) ==="
++  LAST_PHASE="plan-write"
++
++  WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
++
++  # design.md lives in the worktree (written by plan-design agent) — no action needed
++
++  PLAN_WRITE_PROMPT="You are writing an implementation plan.
++
++## CONTEXT
++You are working in: ${WORKTREE_DIR}
++Design doc: design.md (produced in the previous brainstorming step)
++Issue file: issue.md
++Comments file: issue-comments.md
++
++## TASK
++1. Load the writing-plans skill: say exactly '/skill writing-plans' to activate it.
++2. Read design.md, issue.md, and issue-comments.md.
++3. Using the writing-plans skill guidance, produce a complete implementation plan at ./plan.md.
+ 
+ The plan MUST include:
+ - goal
+@@ -220,36 +384,24 @@ The plan MUST include:
+ - stop conditions (what would cause you to abort instead of continue)
+ 
+ ## CRITICAL RULES
+-- Do NOT ask questions. If anything is unclear, make a reasonable assumption and document it.
++- Do NOT ask questions. Make reasonable assumptions and document them.
+ - Do NOT rely on agent memory. Write everything to plan.md.
+-- Write the plan file directly. Do NOT run any code yet.
+-- Stop after writing plan.md.
++- Stop after writing plan.md. Do not implement anything.
+ 
+ Write plan.md now."
+ 
+-  echo "$PLAN_PROMPT" | run_agent_raw "plan" "$TIMEOUT_PLAN"
+-
+-  # Copy plan from worktree back to issues dir
+-  if [[ -f "${WORKTREE_DIR}/plan.md" ]]; then
+-    cp "${WORKTREE_DIR}/plan.md" "${ISSUES_DIR}/plan.md"
+-    info "Plan saved to ${ISSUES_DIR}/plan.md"
+-  elif [[ -f "${ISSUES_DIR}/plan.log" ]] && grep -l "plan.md" "${ISSUES_DIR}/plan.log" 2>/dev/null; then
+-    # Agent may have written it elsewhere
+-    PLAN_FILE=$(find "${WORKTREE_DIR}" -name "plan.md" 2>/dev/null | head -1)
+-    if [[ -n "$PLAN_FILE" && -f "$PLAN_FILE" ]]; then
+-      cp "$PLAN_FILE" "${ISSUES_DIR}/plan.md"
+-    fi
+-  fi
++  echo "$PLAN_WRITE_PROMPT" | run_agent_raw "plan-write" "$TIMEOUT_PLAN_WRITE"
+ 
+-  if [[ ! -f "${ISSUES_DIR}/plan.md" ]]; then
+-    orchestrator_fail "Plan file not found after plan phase"
++  if [[ ! -f "${WORKTREE_DIR}/plan.md" ]]; then
++    orchestrator_fail "Plan file not found after plan-write phase"
+   fi
++  info "Plan saved to ${WORKTREE_DIR}/plan.md"
+ 
+   PHASE="implement"
+ fi
+ 
+ # ═══════════════════════════════════════════════════════════════════════════
+-# PHASE: implement
++# PHASE: implement — subagent-driven development per task
+ # ═══════════════════════════════════════════════════════════════════════════
+ if [[ "$PHASE" == "implement" ]]; then
+   log "=== Phase: implement ==="
+@@ -261,32 +413,383 @@ if [[ "$PHASE" == "implement" ]]; then
+     orchestrator_fail "Orchestrator is blocked from previous phase"
+   fi
+ 
+-  IMPLEMENT_PROMPT="You are implementing code changes.
++  TASK_MANIFEST="${ISSUES_DIR}/task-manifest.json"
+ 
+-## CONTEXT
++  # ── helpers ────────────────────────────────────────────────────────────────
++
++  # Parse numbered tasks from plan.md, output one per line: "N. Title"
++  parse_tasks() {
++    local plan_file="$1"
++    grep -E "^#{2,3} Task [0-9]+:" "$plan_file" 2>/dev/null | sed -E "s/^#{2,3} Task [0-9]+: //" || true
++  }
++
++  # Extract full task text (from ## Task N: title line to the next ## section header)
++  # Uses a temp file for the task_title to avoid all bash interpolation issues
++  # with special chars (backticks, asterisks, $(), etc.) in task titles.
++  # Terminates on: any ^##  line (section header like ## Risk Areas, ## Stop Conditions, etc.)
++  extract_task_text() {
++    local plan_file="$1"
++    local task_title="$2"
++
++    local title_file
++    title_file=$(mktemp)
++    printf '%s' "$task_title" > "$title_file"
++
++    local line_num
++    line_num=$(grep -F -n -f "$title_file" "$plan_file" 2>/dev/null | head -1 | cut -d: -f1 || true)
++    rm -f "$title_file"
++
++    if [[ -z "$line_num" ]]; then return 1; fi
++
++    printf '%s' "$task_title" > "$title_file"
++    tail -n +"$line_num" "$plan_file" | awk -v title_file="$title_file" '
++      BEGIN {
++        while ((getline line < title_file) > 0) { title = line }
++        close(title_file)
++        buf_idx = 0
++      }
++      NF == 0 { next }
++      index($0, title) > 0 { in_task=1; next }
++      /^## / {
++        if (in_task) {
++          for (i = 1; i <= buf_idx; i++) print buf[i]
++          exit
++        }
++      }
++      in_task { buf[++buf_idx] = $0 }
++    '
++    rm -f "$title_file"
++  }
++
++  # Get task number from title prefix
++  task_num() { echo "$1" | cut -d. -f1; }
++
++  # Run implementer for a single task, returns status in IMPLEMENTER_STATUS
++  run_implementer() {
++    local task_n="$1"
++    local task_title="$2"
++    local task_text="$3"
++    local output_log="${ISSUES_DIR}/implement-task-${task_n}.log"
++    local impl_status="unknown"
++
++    log "  Task ${task_n}: implementing..."
++
++    IMPLEMENTER_PROMPT="You are implementing Task ${task_n}: ${task_title}
++
++## Task Description
++${task_text}
++
++## Context
+ You are working in: ${WORKTREE_DIR}
+ Issue: issue.md
++Design: design.md
+ Plan: plan.md
+-You are on branch: ${BRANCH}
++Branch: ${BRANCH}
++
++You are using Subagent-Driven Development. Follow the process below exactly.
++
++## Your Job
++
++1. Read issue.md, design.md, and plan.md to understand the full scope.
++2. Implement exactly what the task specifies.
++3. Write tests following TDD where applicable.
++4. Verify implementation works.
++5. Run: git add -A && git commit -m 'feat: implement issue #${ISSUE_NUM} task ${task_n}'
++6. Self-review before reporting back.
++
++## Questions?
++If you have clarifications or concerns BEFORE implementing, note them in your report
++and proceed with a reasonable assumption. Do not ask questions — make decisions
++and document them.
++
++## Self-Review Checklist (before reporting back)
++- Completeness: Did I implement everything specified?
++- Quality: Is the code clean and maintainable?
++- Discipline: Did I avoid overbuilding?
++- Testing: Do tests verify actual behavior?
++
++## Report Format
++Report back with:
++- Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
++- What you implemented
++- What you tested and results
++- Files changed
++- Self-review findings
++- Any questions or concerns
++
++Stop after reporting."
++
++    echo "$IMPLEMENTER_PROMPT" | run_agent_raw "implement-task-${task_n}" "$TIMEOUT_IMPLEMENT"
++
++    # Detect status from log
++    if grep -qi "Status:.*BLOCKED" "$output_log" 2>/dev/null; then
++      impl_status="BLOCKED"
++    elif grep -qi "Status:.*NEEDS_CONTEXT" "$output_log" 2>/dev/null; then
++      impl_status="NEEDS_CONTEXT"
++    elif grep -qi "Status:.*DONE_WITH_CONCERNS" "$output_log" 2>/dev/null; then
++      impl_status="DONE_WITH_CONCERNS"
++    elif grep -qi "Status:.*DONE" "$output_log" 2>/dev/null; then
++      impl_status="DONE"
++    else
++      impl_status="DONE"  # assume done if no status found
++    fi
+ 
+-## TASK
+-Read issue.md and plan.md.
+-Make the code changes described in the plan.
++    echo "$impl_status"
++  }
+ 
+-## CRITICAL RULES
+-- Do NOT ask questions. Make reasonable assumptions and document deviations.
+-- Do NOT rely on agent memory. Write implementation log to ./implementation-log.md.
+-- Do NOT modify files outside the scope of the plan.
+-- If you are blocked (waiting for something), write ./blocked.json with the reason and stop.
+-- After implementing, run: git add -A && git commit -m 'feat: implement issue #${ISSUE_NUM}'
+-- Stop after implementing and committing.
++  # Run spec reviewer for a single task
++  run_spec_reviewer() {
++    local task_n="$1"
++    local task_title="$2"
++    local task_text="$3"
++    local impl_report="$4"
++    local output_log="${ISSUES_DIR}/spec-review-task-${task_n}.log"
+ 
+-Start now."
++    log "  Task ${task_n}: spec review..."
++
++    SPEC_REVIEWER_PROMPT="You are reviewing whether an implementation matches its specification.
++
++## Task Requirements
++${task_text}
++
++## What Implementer Claims They Built
++$(echo "$impl_report" | head -50)
++
++## CRITICAL: Do Not Trust the Report
++You MUST read the actual code and verify line by line. Do not take the
++implementer's word for what was built.
++
++## Your Job
++1. Read the code that was actually committed.
++2. Compare actual implementation to requirements.
++3. Check for missing pieces.
++4. Check for extra work not requested.
++5. Check for misunderstandings.
++
++## Report Format
++- ✅ Spec compliant (if everything matches)
++- ❌ Issues found: [list specifically with file:line references]
++
++Stop after writing your review to ./spec-review-task-${task_n}.md."
++
++    echo "$SPEC_REVIEWER_PROMPT" | run_agent_raw "spec-review-task-${task_n}" "$TIMEOUT_REVIEW"
++
++    # Return pass/fail
++    if grep -q "✅ Spec compliant" "$output_log" 2>/dev/null; then
++      echo "SPEC_PASS"
++    else
++      echo "SPEC_FAIL"
++    fi
++  }
++
++  # Run quality reviewer for a single task
++  run_quality_reviewer() {
++    local task_n="$1"
++    local task_title="$2"
++    local task_text="$3"
++    local base_sha="$4"
++    local head_sha="$5"
++    local output_log="${ISSUES_DIR}/quality-review-task-${task_n}.log"
++
++    log "  Task ${task_n}: quality review..."
++
++    QUALITY_REVIEWER_PROMPT="You are reviewing the code quality of an implementation.
++
++## Task Summary
++${task_title}
++
++## Task Requirements
++${task_text}
++
++## What Was Implemented
++Files changed (see git diff ${base_sha}..${head_sha})
++
++## Your Job
++Run: git diff ${base_sha}..${head_sha}
++Review the diff for:
++- Code cleanliness and maintainability
++- Proper testing
++- Following existing patterns
++- Single responsibility per file
++
++## Report Format
++- Strengths: [what was done well]
++- Issues: [Critical | Important | Minor]
++- Assessment: APPROVED | NEEDS_WORK
++
++Stop after writing your review to ./quality-review-task-${task_n}.md."
++
++    echo "$QUALITY_REVIEWER_PROMPT" | run_agent_raw "quality-review-task-${task_n}" "$TIMEOUT_REVIEW"
++
++    if grep -qi "Assessment:.*APPROVED" "$output_log" 2>/dev/null; then
++      echo "QUALITY_PASS"
++    else
++      echo "QUALITY_FAIL"
++    fi
++  }
++
++  # ── main task loop ─────────────────────────────────────────────────────────
++  cd "${WORKTREE_DIR}"
++
++  log "Installing dependencies in worktree..."
++  {
++    echo "=== pnpm install ==="
++    timeout 120 pnpm install --frozen-lockfile 2>&1 | tail -10 || echo "[install completed with warnings]"
++  } > >(tee -a "${ISSUES_DIR}/install-worktree.log") 2>&1 || true
++
++  if [[ ! -f "plan.md" ]]; then
++    orchestrator_fail "plan.md not found in worktree"
++  fi
++
++  TASKS=$(parse_tasks "plan.md")
++  TASK_COUNT=$(echo "$TASKS" | grep -c "." || echo 0)
++
++  if [[ $TASK_COUNT -eq 0 ]]; then
++    orchestrator_fail "No tasks found in plan.md"
++  fi
++
++  log "Found ${TASK_COUNT} task(s) to implement"
++
++  TASK_NUM=0
++  IMPLEMENTATION_LOG="${ISSUES_DIR}/implementation-log.md"
++  echo "# Implementation Log — Issue #${ISSUE_NUM}" > "$IMPLEMENTATION_LOG"
++
++  RESUME_TASK_NUM=0
++  RESUME_STAGE=""
++  if [[ "$PHASE" == "implement" ]]; then
++    RESUME_TASK_NUM=$(find_first_incomplete_task)
++    RESUME_STAGE="implement"
++    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
++  elif [[ "$PHASE" == "spec-review" ]]; then
++    RESUME_TASK_NUM=$(find_first_incomplete_task)
++    RESUME_STAGE="spec-review"
++    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
++  elif [[ "$PHASE" == "quality-review" ]]; then
++    RESUME_TASK_NUM=$(find_first_incomplete_task)
++    RESUME_STAGE="quality-review"
++    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
++  fi
++
++  while IFS= read -r task_title; do
++    TASK_NUM=$((TASK_NUM + 1))
+ 
+-  echo "$IMPLEMENT_PROMPT" | run_agent_raw "implement" "$TIMEOUT_IMPLEMENT"
++    if [[ $TASK_NUM -lt $RESUME_TASK_NUM ]]; then
++      log "  Skipping completed task ${TASK_NUM}"
++      continue
++    fi
++
++    log "=== Task ${TASK_NUM}/${TASK_COUNT}: ${task_title} ==="
++
++    TASK_TEXT=$(extract_task_text "plan.md" "$task_title")
++    if [[ -z "$TASK_TEXT" ]]; then
++      warn "Could not extract task text for '${task_title}', using title as description"
++      TASK_TEXT="$task_title"
++    fi
++
++    BASE_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
++
++    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "spec-review" ]]; then
++      log "  Resuming at spec-review for task ${TASK_NUM}"
++    elif [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "quality-review" ]]; then
++      log "  Resuming at quality-review for task ${TASK_NUM}"
++    fi
++
++    IMPL_STATUS="DONE"
++    HEAD_SHA=""
++    SPEC_RESULT="SPEC_PASS"
++    QUALITY_RESULT="QUALITY_PASS"
++
++    if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" == "implement" || -z "$RESUME_STAGE" ]]; then
++      IMPL_STATUS=$(run_implementer "$TASK_NUM" "$task_title" "$TASK_TEXT")
++      log "  Implementer status: ${IMPL_STATUS}"
++
++      if [[ "$IMPL_STATUS" == "BLOCKED" || "$IMPL_STATUS" == "NEEDS_CONTEXT" ]]; then
++        orchestrator_fail "Task ${TASK_NUM} is ${IMPL_STATUS}. Fix the blocker and re-run."
++      fi
++
++      HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
++    fi
++
++    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "quality-review" ]]; then
++      log "  Skipping spec review for resumed task ${TASK_NUM} (already complete)"
++    else
++      IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}.log" 2>/dev/null || echo "")
++      SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
++      log "  Spec review: ${SPEC_RESULT}"
++
++      SPEC_LOOP=0
++      while [[ "$SPEC_RESULT" == "SPEC_FAIL" && $SPEC_LOOP -lt 3 ]]; do
++        SPEC_LOOP=$((SPEC_LOOP + 1))
++        warn "  Spec review failures detected, re-running implementer (loop ${SPEC_LOOP})..."
++
++        FIX_PROMPT="You are fixing spec compliance issues for Task ${TASK_NUM}.
++
++## Task: ${task_title}
++## Original task text:
++${TASK_TEXT}
++
++## Previous implementation had spec compliance issues.
++Fix ONLY the issues identified. Do not expand scope.
++
++Run: git add -A && git commit -m 'fix: task ${TASK_NUM} spec compliance'
++Report status: DONE | BLOCKED"
++
++        echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-fix" "$TIMEOUT_FIX"
++        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+ 
+-  # No blocked.json check here — agent already wrote implementation-log.md and committed.
+-  # If the agent was blocked, it would have exited before writing the commit.
++        IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}-fix.log" 2>/dev/null || echo "")
++        SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
++        log "  Spec review after fix: ${SPEC_RESULT}"
++      done
++
++      if [[ "$SPEC_RESULT" == "SPEC_FAIL" ]]; then
++        warn "Spec review failed after ${SPEC_LOOP} loops. Proceeding with caution."
++      fi
++    fi
++
++    if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" != "quality-review" ]]; then
++      QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
++      log "  Quality review: ${QUALITY_RESULT}"
++
++      QUALITY_LOOP=0
++      while [[ "$QUALITY_RESULT" == "QUALITY_FAIL" && $QUALITY_LOOP -lt 3 ]]; do
++        QUALITY_LOOP=$((QUALITY_LOOP + 1))
++        warn "  Quality issues detected, re-running implementer (loop ${QUALITY_LOOP})..."
++
++        FIX_PROMPT="You are fixing code quality issues for Task ${TASK_NUM}.
++
++## Task: ${task_title}
++
++Address the quality issues raised by the reviewer. Do not expand scope.
++
++Run: git add -A && git commit -m 'fix: task ${TASK_NUM} quality'
++Report status: DONE | BLOCKED"
++
++        echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-quality-fix" "$TIMEOUT_FIX"
++        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
++
++        QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
++        log "  Quality review after fix: ${QUALITY_RESULT}"
++      done
++    fi
++
++    {
++      echo ""
++      echo "## Task ${TASK_NUM}: ${task_title}"
++      echo "- Status: ${IMPL_STATUS}"
++      echo "- Spec: ${SPEC_RESULT}"
++      echo "- Quality: ${QUALITY_RESULT}"
++      echo "- Commit: ${HEAD_SHA}"
++    } >> "$IMPLEMENTATION_LOG"
++
++    log "  Task ${TASK_NUM} complete (impl=${IMPL_STATUS}, spec=${SPEC_RESULT}, quality=${QUALITY_RESULT})"
++
++  done <<< "$TASKS"
++
++  # Final commit aggregating all tasks
++  log "Committing full implementation..."
++  git add -A
++  git commit -m "feat: implement issue #${ISSUE_NUM} — all ${TASK_COUNT} tasks complete" 2>/dev/null || true
+ 
+   PHASE="validate"
+ fi
+@@ -418,11 +921,11 @@ while [[ "$PHASE" == "fix-review" ]]; do
+     CRITICAL_HIGH_COUNT=$(grep -cE "^## Severity: (critical|high)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)
+   fi
+ 
+-  if [[ $FIX_LOOP_COUNT -gt 10 && "$CRITICAL_HIGH_COUNT" -eq 0 ]]; then
++  if [[ $FIX_LOOP_COUNT -gt 10 && $CRITICAL_HIGH_COUNT -eq 0 ]]; then
+     info "Fix loop limit (10) reached with no critical/high findings. Moving on."
+     break
+   fi
+-  if [[ "$CRITICAL_HIGH_COUNT" -eq 0 ]]; then
++  if [[ $CRITICAL_HIGH_COUNT -eq 0 ]]; then
+     info "No critical/high findings in review. Skipping fix loop."
+     break
+   fi
+@@ -435,7 +938,7 @@ while [[ "$PHASE" == "fix-review" ]]; do
+ You are working in: ${WORKTREE_DIR}
+ Issue: issue.md
+ Plan: plan.md
+-Review findings: ${ISSUES_DIR}/review.md
++Review findings: ./review.md
+ 
+ ## TASK
+ Read the code review findings.
+@@ -486,7 +989,7 @@ Start now."
+ ## CONTEXT
+ You are reviewing branch: ${BRANCH} against base: ${BASE_BRANCH}
+ Your working directory: ${WORKTREE_DIR}
+-Original review: ${ISSUES_DIR}/review.md
++Original review: ./review.md
+ 
+ ## TASK
+ Run: git diff origin/${BASE_BRANCH}...HEAD
+@@ -509,8 +1012,6 @@ Write code-review.md now."
+   if [[ -f "${WORKTREE_DIR}/code-review.md" ]]; then
+     cp "${WORKTREE_DIR}/code-review.md" "${ISSUES_DIR}/review.md"
+   fi
+-
+-  # Loop will re-evaluate critical_high_count and either break or continue
+ done
+ 
+ PHASE="compound"
+@@ -534,6 +1035,7 @@ if [[ "$PHASE" == "compound" ]]; then
+ You are working in: ${WORKTREE_DIR}
+ Issue: issue.md
+ Plan: plan.md
++Design: design.md
+ Implementation: implementation-log.md
+ 
+ ## TASK
+@@ -552,7 +1054,7 @@ Format: markdown with clear sections. Be specific. Include actual code paths, no
+ Rules:
+ - Do NOT ask questions.
+ - Write the document yourself. Do not delegate.
+-- Do NOT create a PR or commit anything.
++- Do not create a PR or commit anything.
+ 
+ Start now."
+ 
+@@ -657,8 +1159,15 @@ if [[ "$PHASE" == "done" ]]; then
+   log "=== Orchestrator complete ==="
+   log "PR: $(cat "${ISSUES_DIR}/pr-url.txt")"
+   log "Artifacts: ai/issues/${ISSUE_NUM}/"
++
++  ARCHIVE_DIR="${REPO_ROOT}/ai/issues/${ISSUE_NUM}"
++  mkdir -p "$ARCHIVE_DIR"
++  cp -r "${WORKTREE_DIR}"/* "$ARCHIVE_DIR"/ 2>/dev/null || true
++  cp "${WORKTREE_DIR}/.git" "$ARCHIVE_DIR/.git-worktree" 2>/dev/null || true
++  log "Worktree archived to ${ARCHIVE_DIR}/"
++
+   echo ""
+   echo "✅ Issue #${ISSUE_NUM} → PR ready"
+   echo "   PR: $(cat "${ISSUES_DIR}/pr-url.txt")"
+   echo "   Branch: ${BRANCH}"
+-fi
+\ No newline at end of file
++fi
+[0m
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/plan.md
+[0m
+[0m$ [0mgit log --oneline origin/main...HEAD
+695ff5d feat: make orchestrator self-contained — all artifacts live in worktree
+[0m
+[0m$ [0mgit show --stat HEAD
+commit 695ff5d00b7eba5d6482def737d0a53cee6993f0
+Author: opsclawd <opsclawd@gmail.com>
+Date:   Tue May 12 13:03:29 2026 -0600
+
+    feat: make orchestrator self-contained — all artifacts live in worktree
+    
+    - ISSUES_DIR now points to WORKTREE_DIR (no cross-directory permission needed for sub-agents)
+    - Removed all cp cross-refs between ISSUES_DIR and WORKTREE_DIR
+    - fix-review prompts use relative path ./review.md
+    - On done phase: archive worktree to ai/issues/{N}/ for permanent record
+    - Fixed TASK_COUNT and CRITICAL_HIGH_COUNT comparisons (unquoted awk results)
+    - Fixed task parsing pattern: ### Task N: and ## Task N: both matched
+    - detect_phase() uses new detect_resume_point() for task-level auto-resume
+    - Task loop skips completed tasks and resumes at failed stage
+
+ scripts/ai-run-issue-v2.sh | 659 +++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 584 insertions(+), 75 deletions(-)
+[0m
+[0m✱ [0mGlob "ai/issues/*/review.md"[90m 0 matches[0m
+[0m✱ [0mGlob ".ai-worktrees/issue-51/**"[90m 0 matches[0m
+[0m✱ [0mGrep "round-by-round|round-level|round based"[90m 1 match[0m
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/code-review.md
+Wrote file successfully.
+[0m
+Code review written to `./code-review.md`.

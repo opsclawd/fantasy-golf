@@ -24,3 +24,36 @@ Written to `docs/solutions/issue-51-stale-description-2026-05-12.md`.
 > build · MiniMax-M2.7
 [0m
 [0m→ [0mRead .ai-worktrees/issue-51/implementation-log.md
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead implementation-log.md
+Let me read the issue, plan, and design documents for full context.
+[0m→ [0mRead issue.md
+[0m→ [0mRead plan.md
+[0m→ [0mRead design.md
+Now I have all the context. Let me write the solution document.
+[0m
+[0m← [0mWrite docs/solutions/issue-51.md
+Wrote file successfully.
+[0m
+Written `docs/solutions/issue-51.md`. The document captures:
+
+- **Root cause**: Issue #51 was based on pre-work state — the GET endpoint was already correctly using `rankEntriesWithHoles` with `tournament_holes`; the issue description was obsolete
+- **What was done**: Verification only — ran tests (7/7 pass), confirmed `getTournamentScoreRounds` has 0 live API hits, confirmed `rules-spec.md` was already correct
+- **Gotchas**: Issue description was misleading (tried to "fix" already-fixed code), committed build artifacts (`implement-task-1.log`), `tournament_score_rounds` is an archive table (correctly not read by GET)
+- **Guidance**: Always read `design.md` before implementing, run existing tests first, grep for deprecated functions, never commit `*.log` files
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead .ai-worktrees/issue-51/implementation-log.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/plan.md
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+[0m
+[0m← [0mWrite docs/solutions/issue-51.md
+Wrote file successfully.
+[0m
+Written to `docs/solutions/issue-51.md`. 
+
+Key finding: Issue #51 described a problem that was already fixed. The leaderboard GET endpoint at `route.ts:149` already calls `rankEntriesWithHoles` with `tournament_holes` data — not `getTournamentScoreRounds`. The issue author was looking at stale code state. The only remaining gap was README.md line 3 saying "round-by-round" instead of "hole-by-hole", which was corrected. The solution doc captures the wrong premise, the correct architecture (`tournament_holes` as source of truth, `tournament_score_rounds` as archive only), and the guard test at `route.test.ts:328` that prevents round-level path reintroduction.

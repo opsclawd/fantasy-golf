@@ -1,9 +1,8 @@
 
-[13:51:00] === Starting orchestrator for issue #51 ===
-[13:51:00] Auto-resume: detected phase='review'
-[13:51:00] === Phase: review ===
-[13:51:00] Running agent for phase 'review' (timeout=600s)...
-[13:51:34] INFO: Review saved to /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review.md
-[13:51:34] === Phase: fix-review (loop 1) ===
-[13:51:34] INFO: Found 8 critical/high finding(s). Running fix...
-[13:51:34] Running agent for phase 'fix-review-1' (timeout=900s)...
+[14:10:04] === Starting orchestrator for issue #51 ===
+[14:10:04] Auto-resume: detected phase='review'
+[14:10:04] === Phase: review ===
+[14:10:04] Running agent for phase 'review' (timeout=600s)...
+[14:10:54] INFO: Review saved to /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review.md
+[14:10:54] === Phase: fix-review (loop 1) ===
+[14:10:54] Running agent for phase 'fix-review-1' (timeout=900s)...
