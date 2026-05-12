@@ -9,7 +9,7 @@ import {
 } from '../scoring/domain'
 
 function makePlayerHoleScore(roundId: number, scoreToPar: number, status: GolferStatus, isComplete: boolean): PlayerHoleScore {
-  return { roundId, scoreToPar: scoreToPar as number, status, isComplete }
+  return { holeId: 1, roundId, scoreToPar: scoreToPar as number, status, isComplete }
 }
 
 function makeGolferRoundScoresMapentries(entries: [string, PlayerHoleScore[]][]): GolferRoundScoresMap {

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from './route'
 import { createClient } from '@/lib/supabase/server'
 import { classifyFreshness } from '@/lib/freshness'
+import type { TournamentHole } from '@/lib/supabase/types'
 import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
 import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
@@ -479,7 +480,7 @@ describe('GET /api/leaderboard/[poolId]', () => {
 
     expect(response.status).toBe(200)
     expect(rankEntriesWithHoles).toHaveBeenCalled()
-    const callArg = rankEntriesWithHoles.mock.calls[0]?.[1]
+    const callArg = vi.mocked(rankEntriesWithHoles).mock.calls[0]?.[1]
     expect(callArg).toBeInstanceOf(Map)
     const holesFromCall = callArg as Map<string, TournamentHole[]>
     expect(holesFromCall.size).toBe(1)

@@ -239,7 +239,6 @@ function createScore(
     golfer_id: golferId,
     tournament_id: 't1',
     round_id: roundScore === null ? null : 1,
-    round_score: roundScore,
     total_score: totalScore,
     total_birdies: birdies,
     status,

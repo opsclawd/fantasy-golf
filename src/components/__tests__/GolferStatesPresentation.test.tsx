@@ -17,15 +17,10 @@ function createScore(status: TournamentScore['status']): TournamentScore {
   return {
     golfer_id: 'g1',
     tournament_id: 't1',
-    round_id: 1,
-    round_score: -1,
     total_score: -1,
     total_birdies: 1,
     status,
     position: null,
-    round_status: null,
-    current_hole: null,
-    tee_time: null,
     updated_at: null,
   }
 }

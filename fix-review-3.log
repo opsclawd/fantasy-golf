@@ -121,3 +121,408 @@ Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review
  create mode 100644 validation-2.md
 [0m
 All done. All 468 tests pass - no code fixes needed. The review findings were stale; all critical/high issues were already resolved in prior loops. Committed the documentation update.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead review.md
+The review is clear. All original acceptance criteria are fixed. Three minor issues remain, all pre-existing. Let me fix what's legitimately fixable:
+
+1. **`rankEntriesLegacy`** - remove or confirm no other imports
+2. **route.test.ts mock typing** - fix `domainRankEntries.mock` typing issue
+3. **route.test.ts missing import** - add `TournamentHole` import
+
+The typecheck failures in other test files are pre-existing and not related to my changes.
+[0m✱ [0mGrep "rankEntriesLegacy"[90m in src · 4 matches[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=30, offset=475][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=20][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=25, offset=19][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=25, offset=460][0m
+[0m✱ [0mGrep "TournamentHole"[90m in src/lib · 55 matches[0m
+Now I have a clear picture. Let me fix the two legitimate findings in `route.test.ts`:
+
+1. **Line 484**: Missing `TournamentHole` import (used in type annotation)
+2. **Line 482**: `rankEntriesWithHoles.mock` - need to use `vi.mocked()` for proper typing
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=10, offset=478][0m
+Now I'll fix both issues. The `rankEntriesWithHoles.mock` type issue and the missing `TournamentHole` import.
+[0m
+[0m← [0mEdit src/app/api/leaderboard/[poolId]/route.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/api/leaderboard/[poolId]/route.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/api/leaderboard/[poolId]/route.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/api/leaderboard/[poolId]/route.test.ts
+@@ -2,8 +2,9 @@
+ 
+ import { GET } from './route'
+ import { createClient } from '@/lib/supabase/server'
+ import { classifyFreshness } from '@/lib/freshness'
++import type { TournamentHole } from '@/lib/supabase/types'
+ import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
+ import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
+ import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
+ import { rankEntries as domainRankEntries } from '@/lib/scoring/domain'
+
+[0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && npx tsc --noEmit 2>&1 | head -80
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+src/app/api/leaderboard/[poolId]/route.test.ts(483,42): error TS2339: Property 'mock' does not exist on type '(entries: Entry[], holesByGolfer: Map<string, TournamentHole[]>, golferStatuses: Map<string, GolferStatus>, completedRounds: number) => (Entry & { ...; })[]'.
+src/components/__tests__/GolferStatesPresentation.test.tsx(21,5): error TS2353: Object literal may only specify known properties, and 'round_score' does not exist in type 'TournamentScore'.
+src/components/__tests__/LeaderboardPresentation.test.tsx(11,12): error TS2741: Property 'rowIndex' is missing in type '{ entry: { id: string; user_id: string; golfer_ids: string[]; totalScore: number; totalBirdies: number; rank: number; }; isTied: false; golferNames: { g1: string; }; withdrawnGolferIds: Set<string>; onSelectGolfer: () => void; }' but required in type 'LeaderboardRowProps'.
+src/components/__tests__/LeaderboardRow.test.tsx(23,9): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'Set<unknown>' is not assignable to type 'Set<string>'.
+      Type 'unknown' is not assignable to type 'string'.
+src/components/__tests__/LeaderboardRow.test.tsx(37,9): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'Set<unknown>' is not assignable to type 'Set<string>'.
+      Type 'unknown' is not assignable to type 'string'.
+src/components/__tests__/LeaderboardRow.test.tsx(51,9): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Type 'Set<unknown>' is not assignable to type 'Set<string>'.
+      Type 'unknown' is not assignable to type 'string'.
+src/lib/__tests__/design-tokens.test.ts(4,16): error TS18048: 'tailwindConfig.theme' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(4,16): error TS18048: 'tailwindConfig.theme.extend' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(5,17): error TS18048: 'tailwindConfig.theme' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(5,17): error TS18048: 'tailwindConfig.theme.extend' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(9,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(9,19): error TS2339: Property 'primary' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(10,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(10,19): error TS2339: Property 'primary' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(11,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(11,19): error TS2339: Property 'primary' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(15,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(15,19): error TS2339: Property 'surface' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'surface' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(16,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(16,19): error TS2339: Property 'surface' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'surface' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(20,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(20,19): error TS2339: Property 'action' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'action' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(21,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(21,19): error TS2339: Property 'action' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'action' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(25,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(25,19): error TS2339: Property 'neutral' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(26,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(26,19): error TS2339: Property 'neutral' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(27,12): error TS18048: 'colors' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(27,19): error TS2339: Property 'neutral' does not exist on type 'ResolvableTo<RecursiveKeyValuePair<string, string>>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+src/lib/__tests__/design-tokens.test.ts(33,12): error TS18048: 'spacing' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(33,12): error TS7053: Element implicitly has an 'any' type because expression of type '"1x"' can't be used to index type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '1x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+src/lib/__tests__/design-tokens.test.ts(34,12): error TS18048: 'spacing' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(34,12): error TS7053: Element implicitly has an 'any' type because expression of type '"2x"' can't be used to index type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '2x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+src/lib/__tests__/design-tokens.test.ts(35,12): error TS18048: 'spacing' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(35,12): error TS7053: Element implicitly has an 'any' type because expression of type '"3x"' can't be used to index type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '3x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+src/lib/__tests__/design-tokens.test.ts(36,12): error TS18048: 'spacing' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(36,12): error TS7053: Element implicitly has an 'any' type because expression of type '"4x"' can't be used to index type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '4x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+src/lib/__tests__/design-tokens.test.ts(37,12): error TS18048: 'spacing' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(37,12): error TS7053: Element implicitly has an 'any' type because expression of type '"6x"' can't be used to index type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '6x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+src/lib/__tests__/design-tokens.test.ts(43,22): error TS18048: 'tailwindConfig.theme' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(43,22): error TS18048: 'tailwindConfig.theme.extend' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(44,12): error TS18048: 'fontSize' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(44,21): error TS2339: Property 'label' does not exist on type 'ResolvableTo<KeyValuePair<string, string | [fontSize: string, lineHeight: string] | [fontSize: string, configuration: Partial<{ lineHeight: string; letterSpacing: string; fontWeight: string | number; }>]>>'.
+  Property 'label' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | [fontSize: string, lineHeight: string] | [fontSize: string, configuration: Partial<{ lineHeight: string; letterSpacing: string; fontWeight: string | number; }>]>'.
+src/lib/__tests__/design-tokens.test.ts(48,24): error TS18048: 'tailwindConfig.theme' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(48,24): error TS18048: 'tailwindConfig.theme.extend' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(49,12): error TS18048: 'fontFamily' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(49,23): error TS2339: Property 'sans' does not exist on type 'ResolvableTo<KeyValuePair<string, string | string[] | [fontFamily: string | string[], configuration: Partial<{ fontFeatureSettings: string; fontVariationSettings: string; }>]>>'.
+  Property 'sans' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | string[] | [fontFamily: string | string[], configuration: Partial<{ fontFeatureSettings: string; fontVariationSettings: string; }>]>'.
+src/lib/__tests__/design-tokens.test.ts(53,24): error TS18048: 'tailwindConfig.theme' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(53,24): error TS18048: 'tailwindConfig.theme.extend' is possibly 'undefined'.
+src/lib/__tests__/design-tokens.test.ts(54,12): error TS18048: 'fontFamily' is possibly 'undefined'.
+[0m
+[0m← [0mEdit src/app/api/leaderboard/[poolId]/route.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/api/leaderboard/[poolId]/route.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/api/leaderboard/[poolId]/route.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/api/leaderboard/[poolId]/route.test.ts
+@@ -479,9 +479,9 @@
+ })
+ 
+ expect(response.status).toBe(200)
+ expect(rankEntriesWithHoles).toHaveBeenCalled()
+-const callArg = rankEntriesWithHoles.mock.calls[0]?.[1]
++const callArg = vi.mocked(rankEntriesWithHoles).mock.calls[0]?.[1]
+ expect(callArg).toBeInstanceOf(Map)
+ const holesFromCall = callArg as Map<string, TournamentHole[]>
+ expect(holesFromCall.size).toBe(1)
+ const golferHoles = holesFromCall.get('g1')
+
+[0m
+[0m→ [0mRead src/components/__tests__/LeaderboardRow.test.tsx
+[0m
+[0m← [0mEdit src/components/__tests__/LeaderboardRow.test.tsx
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/LeaderboardRow.test.tsx
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/LeaderboardRow.test.tsx
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/LeaderboardRow.test.tsx
+@@ -19,9 +19,9 @@
+   createElement(LeaderboardRow, {
+     entry: baseEntry,
+     isTied: false,
+     golferNames: { g1: 'A. golfer', g2: 'B. golfer', g3: 'C. golfer', g4: 'D. golfer' },
+-    withdrawnGolferIds: new Set(),
++    withdrawnGolferIds: new Set<string>(),
+     onSelectGolfer: vi.fn(),
+     rowIndex: 0,
+   })
+ )
+@@ -33,9 +33,9 @@
+   createElement(LeaderboardRow, {
+     entry: baseEntry,
+     isTied: true,
+     golferNames: { g1: 'A. golfer', g2: 'B. golfer', g3: 'C. golfer', g4: 'D. golfer' },
+-    withdrawnGolferIds: new Set(),
++    withdrawnGolferIds: new Set<string>(),
+     onSelectGolfer: vi.fn(),
+     rowIndex: 0,
+   })
+ )
+@@ -47,9 +47,9 @@
+   createElement(LeaderboardRow, {
+     entry: baseEntry,
+     isTied: false,
+     golferNames: { g1: 'A. golfer', g2: 'B. golfer', g3: 'C. golfer', g4: 'D. golfer' },
+-    withdrawnGolferIds: new Set(),
++    withdrawnGolferIds: new Set<string>(),
+     onSelectGolfer: vi.fn(),
+     rowIndex: 0,
+   })
+ )
+
+[0m
+[0m→ [0mRead src/components/__tests__/LeaderboardPresentation.test.tsx
+[0m
+[0m← [0mEdit src/components/__tests__/LeaderboardPresentation.test.tsx
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/LeaderboardPresentation.test.tsx
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/LeaderboardPresentation.test.tsx
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/LeaderboardPresentation.test.tsx
+@@ -20,8 +20,9 @@
+         isTied={false}
+         golferNames={{ g1: 'Scottie Scheffler' }}
+         withdrawnGolferIds={new Set<string>()}
+         onSelectGolfer={() => {}}
++        rowIndex={0}
+       />
+     </tbody>
+   </table>,
+ )
+
+[0m
+[0m→ [0mRead src/components/__tests__/GolferStatesPresentation.test.tsx
+[0m✱ [0mGrep "export interface TournamentScore"[90m in src/lib/supabase/types.ts · 2 matches[0m
+[0m→ [0mRead src/lib/supabase/types.ts[90m [limit=20, offset=97][0m
+[0m
+[0m← [0mEdit src/components/__tests__/GolferStatesPresentation.test.tsx
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/GolferStatesPresentation.test.tsx
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/GolferStatesPresentation.test.tsx
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/__tests__/GolferStatesPresentation.test.tsx
+@@ -16,17 +16,12 @@
+ function createScore(status: TournamentScore['status']): TournamentScore {
+   return {
+     golfer_id: 'g1',
+     tournament_id: 't1',
+-    round_id: 1,
+-    round_score: -1,
+     total_score: -1,
+     total_birdies: 1,
+     status,
+     position: null,
+-    round_status: null,
+-    current_hole: null,
+-    tee_time: null,
+     updated_at: null,
+   }
+ }
+ 
+
+[0m
+[0m→ [0mRead src/lib/__tests__/design-tokens.test.ts
+[0m✱ [0mGlob "tailwind.config.*"[90m in . · 1 match[0m
+[0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && npx tsc --noEmit 2>&1 | grep -v "design-tokens" | head -40
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'surface' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'surface' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'action' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'action' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property '1x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '2x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '3x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '4x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '6x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property 'label' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | [fontSize: string, lineHeight: string] | [fontSize: string, configuration: Partial<{ lineHeight: string; letterSpacing: string; fontWeight: string | number; }>]>'.
+  Property 'sans' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | string[] | [fontFamily: string | string[], configuration: Partial<{ fontFeatureSettings: string; fontVariationSettings: string; }>]>'.
+  Property 'mono' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | string[] | [fontFamily: string | string[], configuration: Partial<{ fontFeatureSettings: string; fontVariationSettings: string; }>]>'.
+src/lib/__tests__/scoring-edge-cases.test.ts(12,3): error TS2741: Property 'holeId' is missing in type '{ roundId: number; scoreToPar: number; status: GolferStatus; isComplete: boolean; }' but required in type 'PlayerHoleScore'.
+src/lib/__tests__/scoring-queries.test.ts(2,15): error TS2459: Module '"../scoring-queries"' declares 'TournamentHole' locally, but it is not exported.
+src/lib/__tests__/scoring-queries.test.ts(268,12): error TS2571: Object is of type 'unknown'.
+src/lib/__tests__/scoring-refresh-edge-cases.test.ts(5,23): error TS2305: Module '"@/lib/scoring/domain"' has no exported member 'rankEntriesWithHoles'.
+src/lib/__tests__/scoring.test.ts(242,5): error TS2353: Object literal may only specify known properties, and 'round_score' does not exist in type 'TournamentScore'.
+[0m
+[0m✱ [0mGrep "^export"[90m in src/lib/scoring-queries.ts · 6 matches[0m
+[0m→ [0mRead src/lib/__tests__/scoring-queries.test.ts[90m [limit=10][0m
+[0m
+[0m← [0mEdit src/lib/__tests__/scoring-queries.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-queries.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-queries.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-queries.test.ts
+@@ -1,6 +1,6 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+-import type { TournamentHole } from '../scoring-queries'
++import type { TournamentHole } from '../supabase/types'
+ 
+ import { upsertTournamentScore, upsertTournamentHoles } from '../scoring-queries'
+ 
+ describe('tournament_holes queries', () => {
+
+[0m
+[0m→ [0mRead src/lib/__tests__/scoring-edge-cases.test.ts[90m [limit=40][0m
+[0m✱ [0mGrep "interface PlayerHoleScore|type PlayerHoleScore"[90m in src/lib/scoring/domain · 0 matches[0m
+[0m✱ [0mGlob "*"[90m in src/lib/scoring · 1 match[0m
+[0m✱ [0mGrep "PlayerHoleScore"[90m in src/lib/scoring/domain.ts · 2 matches[0m
+[0m→ [0mRead src/lib/scoring/domain.ts[90m [limit=15][0m
+[0m
+[0m← [0mEdit src/lib/__tests__/scoring-edge-cases.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-edge-cases.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-edge-cases.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-edge-cases.test.ts
+@@ -8,9 +8,9 @@
+   type PlayerHoleScore,
+ } from '../scoring/domain'
+ 
+ function makePlayerHoleScore(roundId: number, scoreToPar: number, status: GolferStatus, isComplete: boolean): PlayerHoleScore {
+-  return { roundId, scoreToPar: scoreToPar as number, status, isComplete }
++  return { holeId: 1, roundId, scoreToPar: scoreToPar as number, status, isComplete }
+ }
+ 
+ function makeGolferRoundScoresMapentries(entries: [string, PlayerHoleScore[]][]): GolferRoundScoresMap {
+   return new Map(entries)
+
+[0m
+[0m→ [0mRead src/lib/__tests__/scoring-refresh-edge-cases.test.ts[90m [limit=10][0m
+[0m✱ [0mGrep "^export"[90m in src/lib/scoring/domain.ts · 10 matches[0m
+[0m✱ [0mGrep "rankEntriesWithHoles"[90m in src/lib/scoring.ts · 2 matches[0m
+[0m
+[0m← [0mEdit src/lib/__tests__/scoring-refresh-edge-cases.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-refresh-edge-cases.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-refresh-edge-cases.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-refresh-edge-cases.test.ts
+@@ -1,9 +1,10 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+ import { refreshScoresForPool } from '../scoring-refresh'
+ import { createAdminClient } from '@/lib/supabase/admin'
+ import { getTournamentScores } from '@/lib/slash-golf/client'
+-import { rankEntries, rankEntriesWithHoles, deriveCompletedRounds } from '@/lib/scoring/domain'
++import { rankEntries, deriveCompletedRounds } from '@/lib/scoring/domain'
++import { rankEntriesWithHoles } from '@/lib/scoring'
+ import { buildRefreshAuditDetails } from '@/lib/audit'
+ import {
+   getPoolsByTournament,
+   getEntriesForPool,
+
+[0m
+[0m✱ [0mGrep "round_score"[90m in src/lib/__tests__/scoring.test.ts · 1 match[0m
+[0m→ [0mRead src/lib/__tests__/scoring.test.ts[90m [limit=30, offset=230][0m
+[0m
+[0m← [0mEdit src/lib/__tests__/scoring.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring.test.ts
+@@ -238,9 +238,8 @@
+ return {
+   golfer_id: golferId,
+   tournament_id: 't1',
+   round_id: roundScore === null ? null : 1,
+-  round_score: roundScore,
+   total_score: totalScore,
+   total_birdies: birdies,
+   status,
+ }
+
+[0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && npx tsc --noEmit 2>&1 | grep -v "design-tokens" | head -30
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'primary' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'surface' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'surface' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'action' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'action' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property 'neutral' does not exist on type '(utils: PluginUtils) => RecursiveKeyValuePair<string, string>'.
+  Property '1x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '2x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '3x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '4x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property '6x' does not exist on type 'ResolvableTo<KeyValuePair<string, string>>'.
+  Property 'label' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | [fontSize: string, lineHeight: string] | [fontSize: string, configuration: Partial<{ lineHeight: string; letterSpacing: string; fontWeight: string | number; }>]>'.
+  Property 'sans' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | string[] | [fontFamily: string | string[], configuration: Partial<{ fontFeatureSettings: string; fontVariationSettings: string; }>]>'.
+  Property 'mono' does not exist on type '(utils: PluginUtils) => KeyValuePair<string, string | string[] | [fontFamily: string | string[], configuration: Partial<{ fontFeatureSettings: string; fontVariationSettings: string; }>]>'.
+src/lib/__tests__/scoring-queries.test.ts(268,12): error TS2571: Object is of type 'unknown'.
+[0m
+[0m→ [0mRead src/lib/__tests__/scoring-queries.test.ts[90m [limit=15, offset=260][0m
+[0m→ [0mRead src/lib/__tests__/scoring-queries.test.ts[90m [limit=40, offset=210][0m
+[0m→ [0mRead src/lib/__tests__/scoring-queries.test.ts[90m [limit=35, offset=243][0m
+[0m
+[0m← [0mEdit src/lib/__tests__/scoring-queries.test.ts
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-queries.test.ts
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-queries.test.ts
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/lib/__tests__/scoring-queries.test.ts
+@@ -264,9 +264,9 @@
+ const result = await upsertTournamentHoles(supabase as never, holes)
+ expect(result.error).toBeNull()
+ expect(upserts).toHaveLength(1)
+ expect(upserts[0]).toHaveLength(2)
+-expect(upserts[0][0]).toMatchObject({
++expect((upserts[0] as TournamentHole[])[0]).toMatchObject({
+   golfer_id: 'g1',
+   tournament_id: 't1',
+   round_id: 1,
+   hole_id: 1,
+
+[0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && npx tsc --noEmit 2>&1 | grep -v "design-tokens" | grep "error TS"
+(no output)
+[0m
+[0m$ [0mcd /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51 && npm run lint 2>&1 | tail -5
+> fantasy-golf@0.1.0 lint
+> next lint
+
+✔ No ESLint warnings or errors
+[0m
+[0m← [0mWrite review-fix-log.md
+Wrote file successfully.
+[0m

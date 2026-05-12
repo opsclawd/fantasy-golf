@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { TournamentHole } from '../scoring-queries'
+import type { TournamentHole } from '../supabase/types'
 
 import { upsertTournamentScore, upsertTournamentHoles } from '../scoring-queries'
 
@@ -265,7 +265,7 @@ describe('upsertTournamentHoles', () => {
     expect(result.error).toBeNull()
     expect(upserts).toHaveLength(1)
     expect(upserts[0]).toHaveLength(2)
-    expect(upserts[0][0]).toMatchObject({
+    expect((upserts[0] as TournamentHole[])[0]).toMatchObject({
       golfer_id: 'g1',
       tournament_id: 't1',
       round_id: 1,

@@ -21,6 +21,7 @@ describe('LeaderboardRow', () => {
             golferNames={{ g1: 'Scottie Scheffler' }}
             withdrawnGolferIds={new Set<string>()}
             onSelectGolfer={() => {}}
+            rowIndex={0}
           />
         </tbody>
       </table>,

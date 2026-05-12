@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { refreshScoresForPool } from '../scoring-refresh'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getTournamentScores } from '@/lib/slash-golf/client'
-import { rankEntries, rankEntriesWithHoles, deriveCompletedRounds } from '@/lib/scoring/domain'
+import { rankEntries, deriveCompletedRounds } from '@/lib/scoring/domain'
+import { rankEntriesWithHoles } from '@/lib/scoring'
 import { buildRefreshAuditDetails } from '@/lib/audit'
 import {
   getPoolsByTournament,
