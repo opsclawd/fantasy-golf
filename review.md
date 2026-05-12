@@ -1,11 +1,11 @@
-# Code Review: ai/issue-51 — Eighth Revalidation
+# Code Review: ai/issue-51 — Ninth Revalidation
 
 ## Review Basis
 
 - **Branch:** ai/issue-51
 - **Base:** origin/main
 - **Issue:** #51 — Align leaderboard GET with hole-by-hole best-ball
-- **Revalidation of:** ./review.md (seventh revalidation), ./revalidate-8.log
+- **Revalidation of:** ./review.md (eighth revalidation), ./revalidate-9.log
 
 ---
 
