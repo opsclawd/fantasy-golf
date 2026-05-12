@@ -22,21 +22,23 @@ REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$REPO_ROOT"
 
 BASE_BRANCH="${BASE_BRANCH:-main}"
-ISSUES_DIR="ai/issues/${ISSUE_NUM}"
 BRANCH="ai/issue-${ISSUE_NUM}"
 PROMPTS_DIR="automation/prompts"
 AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
 AGENT_CLI="${AGENT_CLI:-opencode}"
 
 # Phase timeouts (seconds)
-TIMEOUT_PLAN=600
+TIMEOUT_BRAINSTORM=600
+TIMEOUT_PLAN_WRITE=600
 TIMEOUT_IMPLEMENT=1800
 TIMEOUT_VALIDATE=300
 TIMEOUT_REVIEW=600
 TIMEOUT_FIX=900
 TIMEOUT_COMPOUND=600
 
-# Max fix loops
+# All artifacts live in the worktree (no cross-directory permission needed for sub-agents)
+WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
+ISSUES_DIR="${WORKTREE_DIR}"
 
 # ── helpers (functions) ───────────────────────────────────────────────────────
 log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "${ISSUES_DIR}/orchestrator.log"; }
@@ -78,10 +80,19 @@ run_agent_raw() {
 
   log "Running agent for phase '$phase' (timeout=${timeout_sec}s)..."
 
-  # Read prompt from stdin, run with timeout
+  # Write prompt to temp file to avoid pipeline issues with SIGPIPE/tee
+  local prompt_file
+  prompt_file=$(mktemp)
+  cat > "$prompt_file"
+
+  # Run agent: stdin from prompt file, stdout+stderr to log file AND console
   local ec=0
-  timeout "$timeout_sec" bash -c "$agent_cmd" \
-    > >(tee "$output_log") 2>&1 || ec=$?
+  timeout "$timeout_sec" bash -c "$agent_cmd" < "$prompt_file" 2>&1 \
+    | tee -a "$output_log" \
+    | grep -v "^\[0m$" | grep -v "^$" || true
+  ec=${PIPESTATUS[0]}
+
+  rm -f "$prompt_file"
 
   if [[ $ec -eq 124 ]]; then
     orchestrator_fail "Phase '$phase' timed out after ${timeout_sec}s"
@@ -101,25 +112,131 @@ echo "" > "${ISSUES_DIR}/orchestrator.log"
 
 log "=== Starting orchestrator for issue #${ISSUE_NUM} ==="
 
-# ── idempotency: check for existing branch/PR ────────────────────────────────
-PHASE="${ORCHESTRATOR_PHASE:-start}"
+# ── auto-resume: task-level checkpoint detection ─────────────────────────────
 LAST_PHASE="start"
 
-if git revparse --verify "${BRANCH}" 2>/dev/null; then
-  EXISTING_PR_NUM=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
-  if [[ -n "$EXISTING_PR_NUM" && "$EXISTING_PR_NUM" != "null" ]]; then
-    info "Branch '$BRANCH}' already exists with PR #$EXISTING_PR_NUM. Resuming..."
-    if [[ -f "${ISSUES_DIR}/pr-number.txt" ]]; then
-      log "Orchestrator already completed. See PR #$EXISTING_PR_NUM."
-      exit 0
+get_task_completion_status() {
+  local task_n="$1"
+  local spec_log="${ISSUES_DIR}/spec-review-task-${task_n}.log"
+  local quality_log="${ISSUES_DIR}/quality-review-task-${task_n}.log"
+
+  if [[ ! -f "$spec_log" || ! -f "$quality_log" ]]; then
+    if [[ -f "${ISSUES_DIR}/implement-task-${task_n}.log" ]]; then
+      echo "implementing"
+    else
+      echo "pending"
     fi
-    PHASE="create-pr"
-  else
-    info "Branch '$BRANCH}' exists, no PR yet. Resuming from PR creation."
-    PHASE="create-pr"
+    return
   fi
-else
-  PHASE="read_issue"
+
+  local spec_failed=false quality_failed=false
+  if grep -q "❌ Issues found" "$spec_log" 2>/dev/null; then
+    spec_failed=true
+  fi
+  if grep -qi "Assessment:.*NEEDS_WORK" "$quality_log" 2>/dev/null; then
+    quality_failed=true
+  fi
+
+  if $spec_failed; then
+    echo "spec-failed"
+  elif $quality_failed; then
+    echo "quality-failed"
+  else
+    echo "complete"
+  fi
+}
+
+find_first_incomplete_task() {
+  local plan_file="plan.md"
+  if [[ ! -f "$plan_file" ]]; then
+    echo "0"
+    return
+  fi
+
+  local task_count
+  task_count=$(awk '/^#{2,3} Task [0-9]+:/ {n++} END{print n+0}' "$plan_file")
+
+  if [[ "$task_count" -eq 0 ]]; then
+    echo "0"
+    return
+  fi
+
+  local n=1
+  while [[ $n -le "$task_count" ]]; do
+    local status
+    status=$(get_task_completion_status "$n")
+    if [[ "$status" != "complete" ]]; then
+      echo "$n"
+      return
+    fi
+    n=$((n + 1))
+  done
+
+  echo "$((task_count + 1))"
+}
+
+detect_resume_point() {
+  local first_incomplete
+  first_incomplete=$(find_first_incomplete_task)
+
+  if [[ "$first_incomplete" -eq 0 ]]; then
+    echo "read_issue"
+    return
+  fi
+
+  local status
+  status=$(get_task_completion_status "$first_incomplete")
+
+  case "$status" in
+    complete)
+      local task_count
+      task_count=$(awk '/^#{2,3} Task [0-9]+:/ {n++} END{print n+0}' "plan.md")
+      if [[ $first_incomplete -gt $task_count ]]; then
+        echo "validate"
+      else
+        echo "implement"
+      fi
+      ;;
+    implementing)  echo "implement" ;;
+    pending)        echo "implement" ;;
+    spec-failed)    echo "spec-review" ;;
+    quality-failed) echo "quality-review" ;;
+    *)              echo "implement" ;;
+  esac
+}
+
+detect_phase() {
+  if [[ -n "${ORCHESTRATOR_PHASE:-}" ]]; then
+    echo "$ORCHESTRATOR_PHASE"
+    return
+  fi
+
+  if [[ -f "${ISSUES_DIR}/pr-url.txt" ]]; then
+    echo "done"
+  elif [[ -f "${ISSUES_DIR}/compound.md" ]]; then
+    echo "create-pr"
+  elif [[ -f "${ISSUES_DIR}/review.md" ]]; then
+    echo "fix-review"
+  elif [[ -f "${ISSUES_DIR}/validate.log" ]]; then
+    echo "review"
+  elif [[ -f "${ISSUES_DIR}/plan.md" ]]; then
+    detect_resume_point
+  elif [[ -f "${ISSUES_DIR}/design.md" ]]; then
+    echo "plan-write"
+  elif [[ -f "${ISSUES_DIR}/issue.json" ]]; then
+    echo "plan-design"
+  else
+    echo "read_issue"
+  fi
+}
+
+PHASE="$(detect_phase)"
+
+log "Auto-resume: detected phase='${PHASE}'"
+
+if [[ "$PHASE" == "done" ]]; then
+  log "Orchestrator already completed. See $(cat "${ISSUES_DIR}/pr-url.txt" 2>/dev/null || echo 'PR')."
+  exit 0
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -182,32 +299,79 @@ if [[ "$PHASE" == "read_issue" ]]; then
   mkdir -p "${WORKTREE_DIR}/scripts"
   cp -r "${REPO_ROOT}/scripts/"*.sh "${WORKTREE_DIR}/scripts/" 2>/dev/null || true
 
-  # Copy run artifacts into worktree root (issue.md, plan.md etc. for agent access)
-  cp -r "${ISSUES_DIR}/." "${WORKTREE_DIR}/" 2>/dev/null || true
+  # Run artifacts (issue.json, issue.md, issue-comments.md) are written directly to worktree
 
-  PHASE="plan"
+  PHASE="plan-design"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PHASE: plan
+# PHASE: plan-design — brainstorm using the brainstorming skill
 # ═══════════════════════════════════════════════════════════════════════════
-if [[ "$PHASE" == "plan" ]]; then
-  log "=== Phase: plan ==="
-  LAST_PHASE="plan"
+if [[ "$PHASE" == "plan-design" ]]; then
+  log "=== Phase: plan-design (brainstorm) ==="
+  LAST_PHASE="plan-design"
 
   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
 
-  PLAN_PROMPT="You are writing an implementation plan.
+  BRAINSTORM_PROMPT="You are analyzing a GitHub issue to produce a design document.
 
 ## CONTEXT
 You are working in: ${WORKTREE_DIR}
 Issue file: issue.md (contains the GitHub issue description)
 Comments file: issue-comments.md (contains issue comments)
-You are on branch: ${BRANCH}
 
 ## TASK
-Read issue.md and issue-comments.md.
-Write a complete implementation plan to ./plan.md.
+1. Load the brainstorming skill: say exactly '/skill brainstorming' to activate it.
+2. Read issue.md and issue-comments.md thoroughly.
+3. Analyze the codebase to understand the existing patterns, types, and architecture relevant to this issue.
+4. Using the brainstorming skill guidance, produce a design document at ./design.md covering:
+   - The problem being solved and why it matters
+   - Key design decisions and trade-offs considered
+   - Proposed approach with rationale
+   - Assumptions made (do not ask questions — state assumptions explicitly)
+   - What is in scope and what is explicitly out of scope
+   - Any risks or concerns identified from code analysis
+
+## CRITICAL RULES
+- Do NOT ask questions. Make reasonable assumptions and document them explicitly.
+- Do NOT rely on agent memory. Write everything to design.md.
+- Stop after writing design.md. Do not implement anything.
+
+Write design.md now."
+
+  echo "$BRAINSTORM_PROMPT" | run_agent_raw "plan-design" "$TIMEOUT_BRAINSTORM"
+
+  if [[ ! -f "${WORKTREE_DIR}/design.md" ]]; then
+    orchestrator_fail "Design doc not found after plan-design phase"
+  fi
+  info "Design doc saved to ${WORKTREE_DIR}/design.md"
+
+  PHASE="plan-write"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PHASE: plan-write — write implementation plan using writing-plans skill
+# ═══════════════════════════════════════════════════════════════════════════
+if [[ "$PHASE" == "plan-write" ]]; then
+  log "=== Phase: plan-write (implementation plan) ==="
+  LAST_PHASE="plan-write"
+
+  WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
+
+  # design.md lives in the worktree (written by plan-design agent) — no action needed
+
+  PLAN_WRITE_PROMPT="You are writing an implementation plan.
+
+## CONTEXT
+You are working in: ${WORKTREE_DIR}
+Design doc: design.md (produced in the previous brainstorming step)
+Issue file: issue.md
+Comments file: issue-comments.md
+
+## TASK
+1. Load the writing-plans skill: say exactly '/skill writing-plans' to activate it.
+2. Read design.md, issue.md, and issue-comments.md.
+3. Using the writing-plans skill guidance, produce a complete implementation plan at ./plan.md.
 
 The plan MUST include:
 - goal
@@ -220,36 +384,24 @@ The plan MUST include:
 - stop conditions (what would cause you to abort instead of continue)
 
 ## CRITICAL RULES
-- Do NOT ask questions. If anything is unclear, make a reasonable assumption and document it.
+- Do NOT ask questions. Make reasonable assumptions and document them.
 - Do NOT rely on agent memory. Write everything to plan.md.
-- Write the plan file directly. Do NOT run any code yet.
-- Stop after writing plan.md.
+- Stop after writing plan.md. Do not implement anything.
 
 Write plan.md now."
 
-  echo "$PLAN_PROMPT" | run_agent_raw "plan" "$TIMEOUT_PLAN"
+  echo "$PLAN_WRITE_PROMPT" | run_agent_raw "plan-write" "$TIMEOUT_PLAN_WRITE"
 
-  # Copy plan from worktree back to issues dir
-  if [[ -f "${WORKTREE_DIR}/plan.md" ]]; then
-    cp "${WORKTREE_DIR}/plan.md" "${ISSUES_DIR}/plan.md"
-    info "Plan saved to ${ISSUES_DIR}/plan.md"
-  elif [[ -f "${ISSUES_DIR}/plan.log" ]] && grep -l "plan.md" "${ISSUES_DIR}/plan.log" 2>/dev/null; then
-    # Agent may have written it elsewhere
-    PLAN_FILE=$(find "${WORKTREE_DIR}" -name "plan.md" 2>/dev/null | head -1)
-    if [[ -n "$PLAN_FILE" && -f "$PLAN_FILE" ]]; then
-      cp "$PLAN_FILE" "${ISSUES_DIR}/plan.md"
-    fi
+  if [[ ! -f "${WORKTREE_DIR}/plan.md" ]]; then
+    orchestrator_fail "Plan file not found after plan-write phase"
   fi
-
-  if [[ ! -f "${ISSUES_DIR}/plan.md" ]]; then
-    orchestrator_fail "Plan file not found after plan phase"
-  fi
+  info "Plan saved to ${WORKTREE_DIR}/plan.md"
 
   PHASE="implement"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PHASE: implement
+# PHASE: implement — subagent-driven development per task
 # ═══════════════════════════════════════════════════════════════════════════
 if [[ "$PHASE" == "implement" ]]; then
   log "=== Phase: implement ==="
@@ -261,32 +413,383 @@ if [[ "$PHASE" == "implement" ]]; then
     orchestrator_fail "Orchestrator is blocked from previous phase"
   fi
 
-  IMPLEMENT_PROMPT="You are implementing code changes.
+  TASK_MANIFEST="${ISSUES_DIR}/task-manifest.json"
 
-## CONTEXT
+  # ── helpers ────────────────────────────────────────────────────────────────
+
+  # Parse numbered tasks from plan.md, output one per line: "N. Title"
+  parse_tasks() {
+    local plan_file="$1"
+    grep -E "^#{2,3} Task [0-9]+:" "$plan_file" 2>/dev/null | sed -E "s/^#{2,3} Task [0-9]+: //" || true
+  }
+
+  # Extract full task text (from ## Task N: title line to the next ## section header)
+  # Uses a temp file for the task_title to avoid all bash interpolation issues
+  # with special chars (backticks, asterisks, $(), etc.) in task titles.
+  # Terminates on: any ^##  line (section header like ## Risk Areas, ## Stop Conditions, etc.)
+  extract_task_text() {
+    local plan_file="$1"
+    local task_title="$2"
+
+    local title_file
+    title_file=$(mktemp)
+    printf '%s' "$task_title" > "$title_file"
+
+    local line_num
+    line_num=$(grep -F -n -f "$title_file" "$plan_file" 2>/dev/null | head -1 | cut -d: -f1 || true)
+    rm -f "$title_file"
+
+    if [[ -z "$line_num" ]]; then return 1; fi
+
+    printf '%s' "$task_title" > "$title_file"
+    tail -n +"$line_num" "$plan_file" | awk -v title_file="$title_file" '
+      BEGIN {
+        while ((getline line < title_file) > 0) { title = line }
+        close(title_file)
+        buf_idx = 0
+      }
+      NF == 0 { next }
+      index($0, title) > 0 { in_task=1; next }
+      /^## / {
+        if (in_task) {
+          for (i = 1; i <= buf_idx; i++) print buf[i]
+          exit
+        }
+      }
+      in_task { buf[++buf_idx] = $0 }
+    '
+    rm -f "$title_file"
+  }
+
+  # Get task number from title prefix
+  task_num() { echo "$1" | cut -d. -f1; }
+
+  # Run implementer for a single task, returns status in IMPLEMENTER_STATUS
+  run_implementer() {
+    local task_n="$1"
+    local task_title="$2"
+    local task_text="$3"
+    local output_log="${ISSUES_DIR}/implement-task-${task_n}.log"
+    local impl_status="unknown"
+
+    log "  Task ${task_n}: implementing..."
+
+    IMPLEMENTER_PROMPT="You are implementing Task ${task_n}: ${task_title}
+
+## Task Description
+${task_text}
+
+## Context
 You are working in: ${WORKTREE_DIR}
 Issue: issue.md
+Design: design.md
 Plan: plan.md
-You are on branch: ${BRANCH}
+Branch: ${BRANCH}
 
-## TASK
-Read issue.md and plan.md.
-Make the code changes described in the plan.
+You are using Subagent-Driven Development. Follow the process below exactly.
 
-## CRITICAL RULES
-- Do NOT ask questions. Make reasonable assumptions and document deviations.
-- Do NOT rely on agent memory. Write implementation log to ./implementation-log.md.
-- Do NOT modify files outside the scope of the plan.
-- If you are blocked (waiting for something), write ./blocked.json with the reason and stop.
-- After implementing, run: git add -A && git commit -m 'feat: implement issue #${ISSUE_NUM}'
-- Stop after implementing and committing.
+## Your Job
 
-Start now."
+1. Read issue.md, design.md, and plan.md to understand the full scope.
+2. Implement exactly what the task specifies.
+3. Write tests following TDD where applicable.
+4. Verify implementation works.
+5. Run: git add -A && git commit -m 'feat: implement issue #${ISSUE_NUM} task ${task_n}'
+6. Self-review before reporting back.
 
-  echo "$IMPLEMENT_PROMPT" | run_agent_raw "implement" "$TIMEOUT_IMPLEMENT"
+## Questions?
+If you have clarifications or concerns BEFORE implementing, note them in your report
+and proceed with a reasonable assumption. Do not ask questions — make decisions
+and document them.
 
-  # No blocked.json check here — agent already wrote implementation-log.md and committed.
-  # If the agent was blocked, it would have exited before writing the commit.
+## Self-Review Checklist (before reporting back)
+- Completeness: Did I implement everything specified?
+- Quality: Is the code clean and maintainable?
+- Discipline: Did I avoid overbuilding?
+- Testing: Do tests verify actual behavior?
+
+## Report Format
+Report back with:
+- Status: DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
+- What you implemented
+- What you tested and results
+- Files changed
+- Self-review findings
+- Any questions or concerns
+
+Stop after reporting."
+
+    echo "$IMPLEMENTER_PROMPT" | run_agent_raw "implement-task-${task_n}" "$TIMEOUT_IMPLEMENT"
+
+    # Detect status from log
+    if grep -qi "Status:.*BLOCKED" "$output_log" 2>/dev/null; then
+      impl_status="BLOCKED"
+    elif grep -qi "Status:.*NEEDS_CONTEXT" "$output_log" 2>/dev/null; then
+      impl_status="NEEDS_CONTEXT"
+    elif grep -qi "Status:.*DONE_WITH_CONCERNS" "$output_log" 2>/dev/null; then
+      impl_status="DONE_WITH_CONCERNS"
+    elif grep -qi "Status:.*DONE" "$output_log" 2>/dev/null; then
+      impl_status="DONE"
+    else
+      impl_status="DONE"  # assume done if no status found
+    fi
+
+    echo "$impl_status"
+  }
+
+  # Run spec reviewer for a single task
+  run_spec_reviewer() {
+    local task_n="$1"
+    local task_title="$2"
+    local task_text="$3"
+    local impl_report="$4"
+    local output_log="${ISSUES_DIR}/spec-review-task-${task_n}.log"
+
+    log "  Task ${task_n}: spec review..."
+
+    SPEC_REVIEWER_PROMPT="You are reviewing whether an implementation matches its specification.
+
+## Task Requirements
+${task_text}
+
+## What Implementer Claims They Built
+$(echo "$impl_report" | head -50)
+
+## CRITICAL: Do Not Trust the Report
+You MUST read the actual code and verify line by line. Do not take the
+implementer's word for what was built.
+
+## Your Job
+1. Read the code that was actually committed.
+2. Compare actual implementation to requirements.
+3. Check for missing pieces.
+4. Check for extra work not requested.
+5. Check for misunderstandings.
+
+## Report Format
+- ✅ Spec compliant (if everything matches)
+- ❌ Issues found: [list specifically with file:line references]
+
+Stop after writing your review to ./spec-review-task-${task_n}.md."
+
+    echo "$SPEC_REVIEWER_PROMPT" | run_agent_raw "spec-review-task-${task_n}" "$TIMEOUT_REVIEW"
+
+    # Return pass/fail
+    if grep -q "✅ Spec compliant" "$output_log" 2>/dev/null; then
+      echo "SPEC_PASS"
+    else
+      echo "SPEC_FAIL"
+    fi
+  }
+
+  # Run quality reviewer for a single task
+  run_quality_reviewer() {
+    local task_n="$1"
+    local task_title="$2"
+    local task_text="$3"
+    local base_sha="$4"
+    local head_sha="$5"
+    local output_log="${ISSUES_DIR}/quality-review-task-${task_n}.log"
+
+    log "  Task ${task_n}: quality review..."
+
+    QUALITY_REVIEWER_PROMPT="You are reviewing the code quality of an implementation.
+
+## Task Summary
+${task_title}
+
+## Task Requirements
+${task_text}
+
+## What Was Implemented
+Files changed (see git diff ${base_sha}..${head_sha})
+
+## Your Job
+Run: git diff ${base_sha}..${head_sha}
+Review the diff for:
+- Code cleanliness and maintainability
+- Proper testing
+- Following existing patterns
+- Single responsibility per file
+
+## Report Format
+- Strengths: [what was done well]
+- Issues: [Critical | Important | Minor]
+- Assessment: APPROVED | NEEDS_WORK
+
+Stop after writing your review to ./quality-review-task-${task_n}.md."
+
+    echo "$QUALITY_REVIEWER_PROMPT" | run_agent_raw "quality-review-task-${task_n}" "$TIMEOUT_REVIEW"
+
+    if grep -qi "Assessment:.*APPROVED" "$output_log" 2>/dev/null; then
+      echo "QUALITY_PASS"
+    else
+      echo "QUALITY_FAIL"
+    fi
+  }
+
+  # ── main task loop ─────────────────────────────────────────────────────────
+  cd "${WORKTREE_DIR}"
+
+  log "Installing dependencies in worktree..."
+  {
+    echo "=== pnpm install ==="
+    timeout 120 pnpm install --frozen-lockfile 2>&1 | tail -10 || echo "[install completed with warnings]"
+  } > >(tee -a "${ISSUES_DIR}/install-worktree.log") 2>&1 || true
+
+  if [[ ! -f "plan.md" ]]; then
+    orchestrator_fail "plan.md not found in worktree"
+  fi
+
+  TASKS=$(parse_tasks "plan.md")
+  TASK_COUNT=$(echo "$TASKS" | grep -c "." || echo 0)
+
+  if [[ $TASK_COUNT -eq 0 ]]; then
+    orchestrator_fail "No tasks found in plan.md"
+  fi
+
+  log "Found ${TASK_COUNT} task(s) to implement"
+
+  TASK_NUM=0
+  IMPLEMENTATION_LOG="${ISSUES_DIR}/implementation-log.md"
+  echo "# Implementation Log — Issue #${ISSUE_NUM}" > "$IMPLEMENTATION_LOG"
+
+  RESUME_TASK_NUM=0
+  RESUME_STAGE=""
+  if [[ "$PHASE" == "implement" ]]; then
+    RESUME_TASK_NUM=$(find_first_incomplete_task)
+    RESUME_STAGE="implement"
+    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
+  elif [[ "$PHASE" == "spec-review" ]]; then
+    RESUME_TASK_NUM=$(find_first_incomplete_task)
+    RESUME_STAGE="spec-review"
+    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
+  elif [[ "$PHASE" == "quality-review" ]]; then
+    RESUME_TASK_NUM=$(find_first_incomplete_task)
+    RESUME_STAGE="quality-review"
+    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
+  fi
+
+  while IFS= read -r task_title; do
+    TASK_NUM=$((TASK_NUM + 1))
+
+    if [[ $TASK_NUM -lt $RESUME_TASK_NUM ]]; then
+      log "  Skipping completed task ${TASK_NUM}"
+      continue
+    fi
+
+    log "=== Task ${TASK_NUM}/${TASK_COUNT}: ${task_title} ==="
+
+    TASK_TEXT=$(extract_task_text "plan.md" "$task_title")
+    if [[ -z "$TASK_TEXT" ]]; then
+      warn "Could not extract task text for '${task_title}', using title as description"
+      TASK_TEXT="$task_title"
+    fi
+
+    BASE_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "spec-review" ]]; then
+      log "  Resuming at spec-review for task ${TASK_NUM}"
+    elif [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "quality-review" ]]; then
+      log "  Resuming at quality-review for task ${TASK_NUM}"
+    fi
+
+    IMPL_STATUS="DONE"
+    HEAD_SHA=""
+    SPEC_RESULT="SPEC_PASS"
+    QUALITY_RESULT="QUALITY_PASS"
+
+    if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" == "implement" || -z "$RESUME_STAGE" ]]; then
+      IMPL_STATUS=$(run_implementer "$TASK_NUM" "$task_title" "$TASK_TEXT")
+      log "  Implementer status: ${IMPL_STATUS}"
+
+      if [[ "$IMPL_STATUS" == "BLOCKED" || "$IMPL_STATUS" == "NEEDS_CONTEXT" ]]; then
+        orchestrator_fail "Task ${TASK_NUM} is ${IMPL_STATUS}. Fix the blocker and re-run."
+      fi
+
+      HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+    fi
+
+    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "quality-review" ]]; then
+      log "  Skipping spec review for resumed task ${TASK_NUM} (already complete)"
+    else
+      IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}.log" 2>/dev/null || echo "")
+      SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
+      log "  Spec review: ${SPEC_RESULT}"
+
+      SPEC_LOOP=0
+      while [[ "$SPEC_RESULT" == "SPEC_FAIL" && $SPEC_LOOP -lt 3 ]]; do
+        SPEC_LOOP=$((SPEC_LOOP + 1))
+        warn "  Spec review failures detected, re-running implementer (loop ${SPEC_LOOP})..."
+
+        FIX_PROMPT="You are fixing spec compliance issues for Task ${TASK_NUM}.
+
+## Task: ${task_title}
+## Original task text:
+${TASK_TEXT}
+
+## Previous implementation had spec compliance issues.
+Fix ONLY the issues identified. Do not expand scope.
+
+Run: git add -A && git commit -m 'fix: task ${TASK_NUM} spec compliance'
+Report status: DONE | BLOCKED"
+
+        echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-fix" "$TIMEOUT_FIX"
+        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+        IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}-fix.log" 2>/dev/null || echo "")
+        SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
+        log "  Spec review after fix: ${SPEC_RESULT}"
+      done
+
+      if [[ "$SPEC_RESULT" == "SPEC_FAIL" ]]; then
+        warn "Spec review failed after ${SPEC_LOOP} loops. Proceeding with caution."
+      fi
+    fi
+
+    if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" != "quality-review" ]]; then
+      QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
+      log "  Quality review: ${QUALITY_RESULT}"
+
+      QUALITY_LOOP=0
+      while [[ "$QUALITY_RESULT" == "QUALITY_FAIL" && $QUALITY_LOOP -lt 3 ]]; do
+        QUALITY_LOOP=$((QUALITY_LOOP + 1))
+        warn "  Quality issues detected, re-running implementer (loop ${QUALITY_LOOP})..."
+
+        FIX_PROMPT="You are fixing code quality issues for Task ${TASK_NUM}.
+
+## Task: ${task_title}
+
+Address the quality issues raised by the reviewer. Do not expand scope.
+
+Run: git add -A && git commit -m 'fix: task ${TASK_NUM} quality'
+Report status: DONE | BLOCKED"
+
+        echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-quality-fix" "$TIMEOUT_FIX"
+        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+
+        QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
+        log "  Quality review after fix: ${QUALITY_RESULT}"
+      done
+    fi
+
+    {
+      echo ""
+      echo "## Task ${TASK_NUM}: ${task_title}"
+      echo "- Status: ${IMPL_STATUS}"
+      echo "- Spec: ${SPEC_RESULT}"
+      echo "- Quality: ${QUALITY_RESULT}"
+      echo "- Commit: ${HEAD_SHA}"
+    } >> "$IMPLEMENTATION_LOG"
+
+    log "  Task ${TASK_NUM} complete (impl=${IMPL_STATUS}, spec=${SPEC_RESULT}, quality=${QUALITY_RESULT})"
+
+  done <<< "$TASKS"
+
+  # Final commit aggregating all tasks
+  log "Committing full implementation..."
+  git add -A
+  git commit -m "feat: implement issue #${ISSUE_NUM} — all ${TASK_COUNT} tasks complete" 2>/dev/null || true
 
   PHASE="validate"
 fi
@@ -418,11 +921,11 @@ while [[ "$PHASE" == "fix-review" ]]; do
     CRITICAL_HIGH_COUNT=$(grep -cE "^## Severity: (critical|high)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)
   fi
 
-  if [[ $FIX_LOOP_COUNT -gt 10 && "$CRITICAL_HIGH_COUNT" -eq 0 ]]; then
+  if [[ $FIX_LOOP_COUNT -gt 10 && $CRITICAL_HIGH_COUNT -eq 0 ]]; then
     info "Fix loop limit (10) reached with no critical/high findings. Moving on."
     break
   fi
-  if [[ "$CRITICAL_HIGH_COUNT" -eq 0 ]]; then
+  if [[ $CRITICAL_HIGH_COUNT -eq 0 ]]; then
     info "No critical/high findings in review. Skipping fix loop."
     break
   fi
@@ -435,7 +938,7 @@ while [[ "$PHASE" == "fix-review" ]]; do
 You are working in: ${WORKTREE_DIR}
 Issue: issue.md
 Plan: plan.md
-Review findings: ${ISSUES_DIR}/review.md
+Review findings: ./review.md
 
 ## TASK
 Read the code review findings.
@@ -486,7 +989,7 @@ Start now."
 ## CONTEXT
 You are reviewing branch: ${BRANCH} against base: ${BASE_BRANCH}
 Your working directory: ${WORKTREE_DIR}
-Original review: ${ISSUES_DIR}/review.md
+Original review: ./review.md
 
 ## TASK
 Run: git diff origin/${BASE_BRANCH}...HEAD
@@ -509,8 +1012,6 @@ Write code-review.md now."
   if [[ -f "${WORKTREE_DIR}/code-review.md" ]]; then
     cp "${WORKTREE_DIR}/code-review.md" "${ISSUES_DIR}/review.md"
   fi
-
-  # Loop will re-evaluate critical_high_count and either break or continue
 done
 
 PHASE="compound"
@@ -534,6 +1035,7 @@ if [[ "$PHASE" == "compound" ]]; then
 You are working in: ${WORKTREE_DIR}
 Issue: issue.md
 Plan: plan.md
+Design: design.md
 Implementation: implementation-log.md
 
 ## TASK
@@ -552,7 +1054,7 @@ Format: markdown with clear sections. Be specific. Include actual code paths, no
 Rules:
 - Do NOT ask questions.
 - Write the document yourself. Do not delegate.
-- Do NOT create a PR or commit anything.
+- Do not create a PR or commit anything.
 
 Start now."
 
@@ -657,6 +1159,13 @@ if [[ "$PHASE" == "done" ]]; then
   log "=== Orchestrator complete ==="
   log "PR: $(cat "${ISSUES_DIR}/pr-url.txt")"
   log "Artifacts: ai/issues/${ISSUE_NUM}/"
+
+  ARCHIVE_DIR="${REPO_ROOT}/ai/issues/${ISSUE_NUM}"
+  mkdir -p "$ARCHIVE_DIR"
+  cp -r "${WORKTREE_DIR}"/* "$ARCHIVE_DIR"/ 2>/dev/null || true
+  cp "${WORKTREE_DIR}/.git" "$ARCHIVE_DIR/.git-worktree" 2>/dev/null || true
+  log "Worktree archived to ${ARCHIVE_DIR}/"
+
   echo ""
   echo "✅ Issue #${ISSUE_NUM} → PR ready"
   echo "   PR: $(cat "${ISSUES_DIR}/pr-url.txt")"
