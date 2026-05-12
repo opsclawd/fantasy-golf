@@ -29,14 +29,13 @@ AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
 AGENT_CLI="${AGENT_CLI:-opencode}"
 
 # Phase timeouts (seconds)
-TIMEOUT_PLAN=600
+TIMEOUT_BRAINSTORM=600
+TIMEOUT_PLAN_WRITE=600
 TIMEOUT_IMPLEMENT=1800
 TIMEOUT_VALIDATE=300
 TIMEOUT_REVIEW=600
 TIMEOUT_FIX=900
 TIMEOUT_COMPOUND=600
-
-# Max fix loops
 
 # ── helpers (functions) ───────────────────────────────────────────────────────
 log()  { echo "[$(date +%H:%M:%S)] $*" | tee -a "${ISSUES_DIR}/orchestrator.log"; }
@@ -185,29 +184,82 @@ if [[ "$PHASE" == "read_issue" ]]; then
   # Copy run artifacts into worktree root (issue.md, plan.md etc. for agent access)
   cp -r "${ISSUES_DIR}/." "${WORKTREE_DIR}/" 2>/dev/null || true
 
-  PHASE="plan"
+  PHASE="plan-design"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
-# PHASE: plan
+# PHASE: plan-design — brainstorm using the brainstorming skill
 # ═══════════════════════════════════════════════════════════════════════════
-if [[ "$PHASE" == "plan" ]]; then
-  log "=== Phase: plan ==="
-  LAST_PHASE="plan"
+if [[ "$PHASE" == "plan-design" ]]; then
+  log "=== Phase: plan-design (brainstorm) ==="
+  LAST_PHASE="plan-design"
 
   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
 
-  PLAN_PROMPT="You are writing an implementation plan.
+  BRAINSTORM_PROMPT="You are analyzing a GitHub issue to produce a design document.
 
 ## CONTEXT
 You are working in: ${WORKTREE_DIR}
 Issue file: issue.md (contains the GitHub issue description)
 Comments file: issue-comments.md (contains issue comments)
-You are on branch: ${BRANCH}
 
 ## TASK
-Read issue.md and issue-comments.md.
-Write a complete implementation plan to ./plan.md.
+1. Load the brainstorming skill: say exactly '/skill brainstorming' to activate it.
+2. Read issue.md and issue-comments.md thoroughly.
+3. Analyze the codebase to understand the existing patterns, types, and architecture relevant to this issue.
+4. Using the brainstorming skill guidance, produce a design document at ./design.md covering:
+   - The problem being solved and why it matters
+   - Key design decisions and trade-offs considered
+   - Proposed approach with rationale
+   - Assumptions made (do not ask questions — state assumptions explicitly)
+   - What is in scope and what is explicitly out of scope
+   - Any risks or concerns identified from code analysis
+
+## CRITICAL RULES
+- Do NOT ask questions. Make reasonable assumptions and document them explicitly.
+- Do NOT rely on agent memory. Write everything to design.md.
+- Stop after writing design.md. Do not implement anything.
+
+Write design.md now."
+
+  echo "$BRAINSTORM_PROMPT" | run_agent_raw "plan-design" "$TIMEOUT_BRAINSTORM"
+
+  if [[ -f "${WORKTREE_DIR}/design.md" ]]; then
+    cp "${WORKTREE_DIR}/design.md" "${ISSUES_DIR}/design.md"
+    info "Design doc saved to ${ISSUES_DIR}/design.md"
+  else
+    orchestrator_fail "Design doc not found after plan-design phase"
+  fi
+
+  PHASE="plan-write"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PHASE: plan-write — write implementation plan using writing-plans skill
+# ═══════════════════════════════════════════════════════════════════════════
+if [[ "$PHASE" == "plan-write" ]]; then
+  log "=== Phase: plan-write (implementation plan) ==="
+  LAST_PHASE="plan-write"
+
+  WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
+
+  # Copy design.md into worktree if not already there
+  if [[ -f "${ISSUES_DIR}/design.md" && ! -f "${WORKTREE_DIR}/design.md" ]]; then
+    cp "${ISSUES_DIR}/design.md" "${WORKTREE_DIR}/design.md"
+  fi
+
+  PLAN_WRITE_PROMPT="You are writing an implementation plan.
+
+## CONTEXT
+You are working in: ${WORKTREE_DIR}
+Design doc: design.md (produced in the previous brainstorming step)
+Issue file: issue.md
+Comments file: issue-comments.md
+
+## TASK
+1. Load the writing-plans skill: say exactly '/skill writing-plans' to activate it.
+2. Read design.md, issue.md, and issue-comments.md.
+3. Using the writing-plans skill guidance, produce a complete implementation plan at ./plan.md.
 
 The plan MUST include:
 - goal
@@ -220,29 +272,19 @@ The plan MUST include:
 - stop conditions (what would cause you to abort instead of continue)
 
 ## CRITICAL RULES
-- Do NOT ask questions. If anything is unclear, make a reasonable assumption and document it.
+- Do NOT ask questions. Make reasonable assumptions and document them.
 - Do NOT rely on agent memory. Write everything to plan.md.
-- Write the plan file directly. Do NOT run any code yet.
-- Stop after writing plan.md.
+- Stop after writing plan.md. Do not implement anything.
 
 Write plan.md now."
 
-  echo "$PLAN_PROMPT" | run_agent_raw "plan" "$TIMEOUT_PLAN"
+  echo "$PLAN_WRITE_PROMPT" | run_agent_raw "plan-write" "$TIMEOUT_PLAN_WRITE"
 
-  # Copy plan from worktree back to issues dir
   if [[ -f "${WORKTREE_DIR}/plan.md" ]]; then
     cp "${WORKTREE_DIR}/plan.md" "${ISSUES_DIR}/plan.md"
     info "Plan saved to ${ISSUES_DIR}/plan.md"
-  elif [[ -f "${ISSUES_DIR}/plan.log" ]] && grep -l "plan.md" "${ISSUES_DIR}/plan.log" 2>/dev/null; then
-    # Agent may have written it elsewhere
-    PLAN_FILE=$(find "${WORKTREE_DIR}" -name "plan.md" 2>/dev/null | head -1)
-    if [[ -n "$PLAN_FILE" && -f "$PLAN_FILE" ]]; then
-      cp "$PLAN_FILE" "${ISSUES_DIR}/plan.md"
-    fi
-  fi
-
-  if [[ ! -f "${ISSUES_DIR}/plan.md" ]]; then
-    orchestrator_fail "Plan file not found after plan phase"
+  else
+    orchestrator_fail "Plan file not found after plan-write phase"
   fi
 
   PHASE="implement"
@@ -284,9 +326,6 @@ Make the code changes described in the plan.
 Start now."
 
   echo "$IMPLEMENT_PROMPT" | run_agent_raw "implement" "$TIMEOUT_IMPLEMENT"
-
-  # No blocked.json check here — agent already wrote implementation-log.md and committed.
-  # If the agent was blocked, it would have exited before writing the commit.
 
   PHASE="validate"
 fi
@@ -509,8 +548,6 @@ Write code-review.md now."
   if [[ -f "${WORKTREE_DIR}/code-review.md" ]]; then
     cp "${WORKTREE_DIR}/code-review.md" "${ISSUES_DIR}/review.md"
   fi
-
-  # Loop will re-evaluate critical_high_count and either break or continue
 done
 
 PHASE="compound"
@@ -534,6 +571,7 @@ if [[ "$PHASE" == "compound" ]]; then
 You are working in: ${WORKTREE_DIR}
 Issue: issue.md
 Plan: plan.md
+Design: design.md
 Implementation: implementation-log.md
 
 ## TASK
@@ -552,7 +590,7 @@ Format: markdown with clear sections. Be specific. Include actual code paths, no
 Rules:
 - Do NOT ask questions.
 - Write the document yourself. Do not delegate.
-- Do NOT create a PR or commit anything.
+- Do not create a PR or commit anything.
 
 Start now."
 

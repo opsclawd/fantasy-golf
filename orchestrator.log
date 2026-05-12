@@ -1,0 +1,5 @@
+
+[09:36:55] === Starting orchestrator for issue #51 ===
+[09:36:55] === Phase: read_issue ===
+[09:36:58] Issue #51: Fix leaderboard GET endpoint and docs to use true hole-by-hole best-ball
+[09:36:58] INFO: Creating branch: ai/issue-51

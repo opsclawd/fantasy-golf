@@ -27,8 +27,11 @@
 For each round, the entry's score is the **lowest `scoreToPar`** among all **active** golfers in the entry.
 
 ```
-Entry round score = min(scoreToPar of active golfers)
-Entry total score = sum(Entry round score for each completed round)
+For each regulation hole in each counted round:
+  1. Look at the selected golfers in the entry who are active.
+  2. Use the lowest score-to-par among golfers with a valid score for that hole.
+  3. Add that best hole score to the entry total.
+  4. Count birdies/eagles as scoreToPar < 0 for the best-ball hole result.
 ```
 
 **Source:** `src/lib/scoring/domain.ts:computeEntryScore`
