@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { getTournamentScores, getLeaderboard, getScorecard, getStats } from '@/lib/slash-golf/client'
+import { getTournamentScores, getLeaderboard, getScorecard } from '@/lib/slash-golf/client'
 
 describe('slash-golf client edge cases', () => {
   afterEach(() => {
@@ -170,21 +170,4 @@ describe('slash-golf client edge cases', () => {
     })
   })
 
-  describe('getStats', () => {
-    it('null worldRank and projectedOWGR → both returned as null', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          tournId: '014',
-          playerId: '22405',
-          worldRank: null,
-          projectedOWGR: null,
-        }),
-      }))
-
-      const result = await getStats('014', '22405', 2026)
-      expect(result.worldRank).toBeNull()
-      expect(result.projectedOWGR).toBeNull()
-    })
-  })
 })

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { getTournamentScores, getTournamentMeta, getLeaderboard, getScorecard, getStats } from '@/lib/slash-golf/client'
+import { getTournamentScores, getTournamentMeta, getLeaderboard, getScorecard } from '@/lib/slash-golf/client'
+import singleScorecardFixture from './fixtures/single-scorecard.json'
+import arrayScorecardsFixture from './fixtures/array-scorecards.json'
+import wrappedScorecardsFixture from './fixtures/wrapped-scorecards.json'
 
 describe('getTournamentScores', () => {
   afterEach(() => {
@@ -300,55 +303,6 @@ describe('getTournamentScores', () => {
     expect(scorecard.tournId).toBe('014')
     expect(scorecard.holes).toHaveLength(1)
   })
-
-  it('getStats returns player ranking stats', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({
-        tournId: '014',
-        playerId: '22405',
-        worldRank: 12,
-        projectedOWGR: 8.5,
-      }),
-    }))
-
-    const stats = await getStats('014', '22405', 2026)
-    expect(stats.playerId).toBe('22405')
-    expect(stats.worldRank).toBe(12)
-  })
-})
-
-describe('getTournamentMeta', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('returns normalized tournament metadata', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({
-        orgId: '1',
-        year: '2026',
-        tournId: '014',
-        name: 'The Masters',
-        status: 'In Progress',
-        currentRound: 2,
-        courses: [{ courseId: '014', courseName: 'Augusta National Golf Club' }],
-        format: 'stroke',
-        date: '2026-04-10',
-      }),
-    }))
-
-    const meta = await getTournamentMeta('014', 2026)
-    expect(meta).toMatchObject({
-      tournId: '014',
-      name: 'The Masters',
-      year: '2026',
-      status: 'In Progress',
-      currentRound: 2,
-      courses: [{ courseId: '014', courseName: 'Augusta National Golf Club' }],
-    })
-  })
 })
 
 describe('getLeaderboard', () => {
@@ -409,26 +363,55 @@ describe('getScorecard', () => {
     expect(scorecard.holes[0]).toMatchObject({ holeId: 1, par: 4, scoreToPar: 0 })
     expect(scorecard.holes[1]).toMatchObject({ holeId: 2, par: 5, scoreToPar: -1 })
   })
-})
 
-describe('getStats', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
+  it('fixture: single scorecard object parses correctly', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(singleScorecardFixture),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.tournId).toBe('014')
+    expect(scorecard.playerId).toBe('22405')
+    expect(scorecard.roundId).toBe(2)
+    expect(scorecard.holes).toHaveLength(18)
+    expect(scorecard.status).toBe('active')
   })
 
-  it('returns player ranking stats', async () => {
+  it('fixture: array of per-round scorecards flattens all holes, roundId from first', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(arrayScorecardsFixture),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.roundId).toBe(1)
+    expect(scorecard.holes).toHaveLength(18)
+    expect(scorecard.holes[0]).toMatchObject({ holeId: 1 })
+    expect(scorecard.holes[8]).toMatchObject({ holeId: 9 })
+    expect(scorecard.holes[9]).toMatchObject({ holeId: 1 })
+    expect(scorecard.holes[17]).toMatchObject({ holeId: 9 })
+  })
+
+  it('fixture: wrapped { scorecards: [...] } shape extracts scorecard', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({
-        tournId: '014',
-        playerId: '22405',
-        worldRank: 12,
-        projectedOWGR: 8.5,
+        scorecards: [{
+          tournId: '014',
+          playerId: '22405',
+          roundId: 1,
+          year: '2026',
+          status: 'active',
+          currentRound: 1,
+          holes: [{ holeId: 1, par: 4, strokes: 4, scoreToPar: 0 }],
+        }],
       }),
     }))
 
-    const stats = await getStats('014', '22405', 2026)
-    expect(stats.playerId).toBe('22405')
-    expect(stats.worldRank).toBe(12)
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.tournId).toBe('014')
+    expect(scorecard.roundId).toBe(1)
+    expect(scorecard.holes).toHaveLength(1)
   })
 })

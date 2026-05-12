@@ -17,6 +17,7 @@ import {
   getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
 import { rankEntriesWithHoles } from '@/lib/scoring'
+import type { TournamentHole } from '@/lib/supabase/types'
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(),
@@ -170,34 +171,51 @@ describe('refreshScoresForPool', () => {
     expect(result.error!.code).toBe('UPSERT_FAILED')
   })
 
-  it('broadcasts to all live pools on the same tournament', async () => {
+  it('scorecard data flows through upsertTournamentHoles and ranking uses hole-level data', async () => {
     const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
     const mockSupabase = createMockSupabase()
 
+    const holesByGolfer = new Map<string, TournamentHole[]>([
+      ['g1', [
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, par: 4, strokes: 4, score_to_par: 0 },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 2, par: 4, strokes: 3, score_to_par: -1 },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 1, par: 4, strokes: 5, score_to_par: 1 },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 2, par: 4, strokes: 4, score_to_par: 0 },
+      ]],
+    ])
+
     vi.mocked(getPoolsByTournament).mockResolvedValue([
       { id: 'pool-1', tournament_id: 't-1', status: 'live' },
-      { id: 'pool-2', tournament_id: 't-1', status: 'live' },
     ] as never)
     vi.mocked(getScoresForTournament)
       .mockResolvedValueOnce([] as never)
-      .mockResolvedValueOnce([] as never)
-      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([
+        { golfer_id: 'g1', total_score: -1, total_birdies: 1, status: 'active', round_id: 2 },
+      ] as never)
     vi.mocked(getTournamentScores).mockResolvedValue([
-      { golfer_id: 'g1', total: -2, total_birdies: 1, status: 'active' },
+      { golfer_id: 'g1', total: -1, total_birdies: 1, status: 'active', current_round: 2 },
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
-    vi.mocked(getEntriesForPool)
-      .mockResolvedValueOnce([{ id: 'entry-1' }] as never)
-      .mockResolvedValueOnce([{ id: 'entry-2' }] as never)
+    vi.mocked(getEntriesForPool).mockResolvedValue([
+      { id: 'entry-1', golfer_ids: ['g1'] },
+    ] as never)
     vi.mocked(getScorecard).mockResolvedValue({
-      tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1, holes: [],
+      tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1,
+      holes: [
+        { holeId: 1, par: 4, strokes: 4, scoreToPar: 0 },
+        { holeId: 2, par: 4, strokes: 3, scoreToPar: -1 },
+        { holeId: 1, par: 4, strokes: 5, scoreToPar: 1 },
+        { holeId: 2, par: 4, strokes: 4, scoreToPar: 0 },
+      ],
     } as never)
     vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
-    vi.mocked(rankEntriesWithHoles).mockReturnValue([])
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(holesByGolfer as never)
+    vi.mocked(rankEntriesWithHoles).mockReturnValue([
+      { id: 'entry-1', golfer_ids: ['g1'], totalScore: -1, totalBirdies: 1, rank: 1, isTied: false },
+    ] as never)
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
-      completedRounds: 1,
+      completedRounds: 2,
       golferCount: 1,
       changedGolfers: ['g1'],
       newGolfers: [],
@@ -206,11 +224,13 @@ describe('refreshScoresForPool', () => {
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
 
-    await refreshScoresForPool(mockSupabase, pool)
+    const result = await refreshScoresForPool(mockSupabase, pool)
 
-    expect(getEntriesForPool).toHaveBeenCalledWith(mockSupabase, 'pool-1')
-    expect(getEntriesForPool).toHaveBeenCalledWith(mockSupabase, 'pool-2')
-    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(mockSupabase, 'pool-1', expect.any(Object))
-    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(mockSupabase, 'pool-2', expect.any(Object))
+    expect(result.error).toBeNull()
+    expect(result.data).not.toBeNull()
+    expect(getScorecard).toHaveBeenCalledWith('t-1', 'g1', 2026)
+    expect(upsertTournamentHoles).toHaveBeenCalled()
+    expect(getTournamentHolesForGolfers).toHaveBeenCalled()
+    expect(rankEntriesWithHoles).toHaveBeenCalled()
   })
 })

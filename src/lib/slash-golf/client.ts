@@ -166,10 +166,7 @@ function parseHoleValue(value: unknown): number | null {
 }
 
 function normalizeGolferStatus(value: unknown): 'active' | 'withdrawn' | 'cut' | 'dq' | 'complete' {
-  if (value === 'withdrawn' || value === 'cut') return value
-  if (value === 'dq') return 'dq'
-  if (value === 'complete') return 'complete'
-  return 'active'
+  return normalizeSlashStatus(value)
 }
 
 function normalizeSlashStatus(value: unknown): SlashGolferStatus {
@@ -337,7 +334,11 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
   }
 
   const first = rawScorecards[0]!
-  const roundId = parseMongoNumber(rawScorecards.length > 1 ? (first as Record<string, unknown>).roundId : raw.roundId) ?? 1
+  const firstRoundId = (first as Record<string, unknown>).roundId
+  const fallbackRoundId = parseMongoNumber(raw.roundId) ?? 1
+  const roundId = rawScorecards.length > 1
+    ? (parseMongoNumber(firstRoundId) ?? fallbackRoundId)
+    : (parseMongoNumber(firstRoundId) ?? fallbackRoundId)
 
   const allHoles: SlashHole[] = []
   for (const sc of rawScorecards) {
@@ -372,24 +373,4 @@ function normalizeScorecardResponse(raw: unknown): Array<Record<string, unknown>
     return [raw as Record<string, unknown>]
   }
   return []
-}
-
-/**
- * @deprecated Out-of-scope for MVP. Slash Golf /stats endpoint contract is unused and unverified.
- * Remove or reimplement once stats are actually needed.
- */
-export async function getStats(tournamentId: string, golferId: string, year?: number): Promise<SlashStats> {
-  const params = new URLSearchParams({ orgId: '1', tournId: tournamentId, playerId: golferId, ...(year && { year: year.toString() }) })
-  const res = await fetch(`${BASE_URL}/stats?${params}`, {
-    headers: { 'X-RapidAPI-Key': process.env.SLASH_GOLF_API_KEY ?? '' },
-    cache: 'no-store'
-  })
-  if (!res.ok) throw new Error('Failed to fetch stats')
-  const raw = await res.json()
-  return {
-    tournId: typeof raw.tournId === 'string' ? raw.tournId : tournamentId,
-    playerId: typeof raw.playerId === 'string' ? raw.playerId : golferId,
-    worldRank: typeof raw.worldRank === 'number' ? raw.worldRank : null,
-    projectedOWGR: typeof raw.projectedOWGR === 'number' ? raw.projectedOWGR : null,
-  }
 }

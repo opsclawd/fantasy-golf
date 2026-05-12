@@ -1,24 +1,14 @@
 import { rankEntries as domainRankEntries, deriveCompletedRounds as domainDeriveCompletedRounds } from './scoring/domain'
 import type { GolferRoundScoresMap } from './scoring/domain'
-import { TournamentScore, TournamentHole, Entry, GolferStatus } from './supabase/types'
+import { TournamentScore, TournamentHole, Entry, GolferStatus } from '@/lib/supabase/types'
+
+export function deriveCompletedRounds(allScores: TournamentScore[]): number {
+  return domainDeriveCompletedRounds(allScores)
+}
 
 export function getRoundScore(score: TournamentScore): number | null {
   if (typeof score.total_score === 'number') return score.total_score
   return null
-}
-
-export function calculateEntryTotalScore(
-  golferScores: Map<string, TournamentScore>,
-  golferIds: string[],
-  _completedRounds: number
-): number {
-  const scores = golferIds
-    .map((id) => golferScores.get(id))
-    .filter((score): score is TournamentScore => Boolean(score))
-    .map(getRoundScore)
-    .filter((score): score is number => score !== null)
-
-  return scores.length > 0 ? Math.min(...scores) : 0
 }
 
 export function getEntryRoundScore(
@@ -37,26 +27,6 @@ export function getEntryRoundScore(
   }
 
   return scores.length > 0 ? Math.min(...scores) : null
-}
-
-export function calculateEntryBirdies(
-  golferScores: Map<string, TournamentScore>,
-  golferIds: string[]
-): number {
-  let totalBirdies = 0
-  
-  for (const id of golferIds) {
-    const golferScore = golferScores.get(id)
-    if (golferScore) {
-      totalBirdies += golferScore.total_birdies || 0
-    }
-  }
-  
-  return totalBirdies
-}
-
-export function deriveCompletedRounds(allScores: TournamentScore[]): number {
-  return domainDeriveCompletedRounds(allScores)
 }
 
 export function buildGolferRoundScoresMap(
@@ -82,6 +52,7 @@ export function buildGolferRoundScoresMap(
 /**
  * @deprecated Non-production. Converts round-level aggregate scores (holeId: 1) into GolferRoundScoresMap.
  * For hole-by-hole best-ball scoring, use rankEntriesWithHoles with data from tournament_holes instead.
+ * This function is only for audit tooling; live scoring must use rankEntriesWithHoles.
  */
 function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, TournamentScore>): GolferRoundScoresMap {
   const result: GolferRoundScoresMap = new Map()
@@ -96,6 +67,38 @@ function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, Tourn
   })
   return result
 }
+
+function calculateEntryTotalScore(
+  golferScores: Map<string, TournamentScore>,
+  golferIds: string[],
+  _completedRounds: number
+): number {
+  const scores = golferIds
+    .map((id) => golferScores.get(id))
+    .filter((score): score is TournamentScore => Boolean(score))
+    .map(getRoundScore)
+    .filter((score): score is number => score !== null)
+
+  return scores.length > 0 ? Math.min(...scores) : 0
+}
+
+function calculateEntryBirdies(
+  golferScores: Map<string, TournamentScore>,
+  golferIds: string[]
+): number {
+  let totalBirdies = 0
+
+  for (const id of golferIds) {
+    const golferScore = golferScores.get(id)
+    if (golferScore) {
+      totalBirdies += golferScore.total_birdies || 0
+    }
+  }
+
+  return totalBirdies
+}
+
+export { calculateEntryTotalScore, calculateEntryBirdies }
 
 export function rankEntries(
   entries: Entry[],
