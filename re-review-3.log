@@ -1,0 +1,721 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead review.md
+[0m
+[0m$ [0mgit diff origin/main...HEAD
+...output truncated...
+
+Full output saved to: /home/gary/.local/share/opencode/tool-output/tool_e1dae985b001TMoN1pIfp2FKXd
+
++ [32m✓[39m src/components/__tests__/CommissionerCommandCenter.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 51[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-refresh.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TrustStatusBar.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[32m 38[2mms[22m[39m
++ [32m✓[39m src/app/api/scoring/refresh/route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 37[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-queries.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 31[2mms[22m[39m
++[90mstderr[2m | src/lib/__tests__/slash-golf-client-edge-cases.test.ts[2m > [22m[2mslash-golf client edge cases[2m > [22m[2mgetTournamentScores[2m > [22m[2mAPI returns non-200 with JSON error body → throws Error with status
++[22m[39m[slash-golf] tournament score fetch failed {
++  status: [33m429[39m,
++  statusText: [32m'Too Many Requests'[39m,
++  body: [32m'{"message":"Rate limit exceeded"}'[39m
++}
++
++ [32m✓[39m src/lib/__tests__/slash-golf-client-edge-cases.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 40[2mms[22m[39m
++[90mstderr[2m | src/app/(auth)/sign-in/__tests__/SignIn.test.tsx[2m > [22m[2mSignIn page[2m > [22m[2mrenders Card container with green left-border accent
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at div
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignInForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-in/page.tsx:38:62)
++    at Suspense
++    at SignIn
++
++ [32m✓[39m src/app/(auth)/sign-in/__tests__/SignIn.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 35[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/StatusComponentsA11y.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 33[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 27[2mms[22m[39m
++ [32m✓[39m src/components/ui/__tests__/Button.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 35[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/golfer-detail.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 24[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardRow.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++[90mstderr[2m | src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22m[2mJoinPoolForm[2m > [22m[2mrenders a Button component with primary variant
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at JoinPoolForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/join/[inviteCode]/JoinPoolForm.tsx:13:25)
++
++ [32m✓[39m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 38[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/domain-scoring.test.ts [2m([22m[2m18 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 27[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/audit.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/app/__tests__/globals-css.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/app/api/cron/scoring/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 19[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/PicksFlowPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 22[2mms[22m[39m
++ [32m✓[39m src/components/ui/__tests__/Card.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-lock.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-refresh-edge-cases.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TieExplanationBadge.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/entry-queries.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/uiStyles.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-state-transitions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/freshness.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/refresh-telemetry.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-edge-cases.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/tournament-roster.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/design-tokens.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/data-alert-a11y.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/leaderboard.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-dispatch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/app/join/[inviteCode]/__tests__/page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
++
++[2m Test Files [22m [1m[32m65 passed[39m[22m[90m (65)[39m
++[2m      Tests [22m [1m[32m468 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (469)[39m
++[2m   Start at [22m 13:30:38
++[2m   Duration [22m 7.43s[2m (transform 3.68s, setup 8.01s, import 9.71s, tests 5.23s, environment 8.98s)[22m
++
+diff --git a/validation.md b/validation.md
+new file mode 100644
+index 0000000..05fc568
+--- /dev/null
++++ b/validation.md
+@@ -0,0 +1,561 @@
++=== pnpm install ===
++│   Run "pnpm approve-builds" to pick which dependencies should be allowed     │
++│   to run scripts.                                                            │
++│                                                                              │
++╰──────────────────────────────────────────────────────────────────────────────╯
++Done in 703ms using pnpm v10.33.0
++
++=== pnpm build ===
++
++> fantasy-golf@0.1.0 build /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
++> next build
++
++  ▲ Next.js 14.2.0
++
++   Creating an optimized production build ...
++ ✓ Compiled successfully
++   Linting and checking validity of types ...
++   Collecting page data ...
++   Generating static pages (0/12) ...
++   Generating static pages (3/12) 
++   Generating static pages (6/12) 
++   Generating static pages (9/12) 
++ ✓ Generating static pages (12/12)
++   Finalizing page optimization ...
++   Collecting build traces ...
++
++Route (app)                                         Size     First Load JS
++┌ ƒ /                                               140 B          87.1 kB
++├ ○ /_not-found                                     873 B          87.8 kB
++├ ƒ /api/cron/scoring                               0 B                0 B
++├ ƒ /api/leaderboard/[poolId]                       0 B                0 B
++├ ƒ /api/scoring                                    0 B                0 B
++├ ƒ /api/scoring/refresh                            0 B                0 B
++├ ƒ /api/tournaments                                0 B                0 B
++├ ƒ /commissioner                                   2.54 kB        96.3 kB
++├ ƒ /commissioner/pools/[poolId]                    7.07 kB         104 kB
++├ ƒ /commissioner/pools/[poolId]/audit              185 B          93.9 kB
++├ ƒ /commissioner/pools/[poolId]/audit/score-trace  185 B          93.9 kB
++├ ƒ /join/[inviteCode]                              671 B          94.4 kB
++├ ƒ /participant/picks/[poolId]                     4.37 kB        94.2 kB
++├ ƒ /participant/pools                              184 B          93.9 kB
++├ ○ /sign-in                                        1.69 kB        88.6 kB
++├ ○ /sign-up                                        1.55 kB        88.5 kB
++└ ƒ /spectator/pools/[poolId]                       67 kB           157 kB
+++ First Load JS shared by all                       87 kB
++  ├ chunks/622-526daf1dfe90626d.js                  31.4 kB
++  ├ chunks/8bfccd77-1c7bbfeb48f48591.js             53.7 kB
++  └ other shared chunks (total)                     1.94 kB
++
++
++○  (Static)   prerendered as static content
++ƒ  (Dynamic)  server-rendered on demand
++
++
++=== pnpm lint ===
++
++> fantasy-golf@0.1.0 lint /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
++> next lint
++
++✔ No ESLint warnings or errors
++
++=== pnpm typecheck ===
++undefined
++ ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL  Command "typecheck" not found
++[typecheck failed]
++
++=== pnpm test ===
++
++> fantasy-golf@0.1.0 test /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
++> vitest run
++
++
++[1m[30m[46m RUN [49m[39m[22m [36mv4.1.4 [39m[90m/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51[39m
++
++ [31m❯[39m src/lib/__tests__/scoring-edge-cases.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 16[2mms[22m[39m
++[31m       [31m×[31m all golfers have every round incomplete → totalScore 0, completedHoles 0[39m[32m 9[2mms[22m[39m
++       [32m✓[39m entry contains golfer ID not in score map → silently skipped[32m 1[2mms[22m[39m
++       [32m✓[39m entry has fewer than 4 golfers → computes valid score from available[32m 1[2mms[22m[39m
++       [32m✓[39m empty entries array → returns empty array without crash[32m 1[2mms[22m[39m
++[31m       [31m×[31m empty golferRoundScores map → all entries get totalScore 0[39m[32m 2[2mms[22m[39m
++ [31m❯[39m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 18[2mms[22m[39m
++[31m     [31m×[31m renders a Button component with primary variant[39m[32m 10[2mms[22m[39m
++[31m     [31m×[31m renders the submit button with w-full class[39m[32m 1[2mms[22m[39m
++[31m     [31m×[31m renders error text in red-600 when error is present[39m[32m 1[2mms[22m[39m
++[90mstderr[2m | src/app/api/scoring/route.test.ts[2m > [22m[2mPOST /api/scoring[2m > [22m[2muses golfer dataset size for audit details and preserves entryCount compatibility
++[22m[39mScoring update failed: Error: [vitest] No "getTournamentHolesForGolfers" export is defined on the "@/lib/scoring-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++
++    at VitestMocker.createError [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:62:17[90m)[39m
++    at Object.get [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:324:16[90m)[39m
++    at refreshScoresForPool [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/lib/scoring-refresh.ts:206:31[90m)[39m
++[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
++    at Module.POST [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.ts:57:20[90m)[39m
++    at [90m/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.test.ts:150:22
++    at [90mfile:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.1.4/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20 {
++  codeFrame: [32m'vi.mock(import("@/lib/scoring-queries"), async (importOriginal) => {\n'[39m +
++    [32m'  const actual = await importOriginal()\n'[39m +
++    [32m'  return {\n'[39m +
++    [32m'    ...actual,\n'[39m +
++    [32m'    // your mocked methods\n'[39m +
++    [32m'  }\n'[39m +
++    [32m'})'[39m
++}
++
++[90mstderr[2m | src/app/api/scoring/route.test.ts[2m > [22m[2mPOST /api/scoring[2m > [22m[2mfans out scoring metadata to every live pool on the same tournament
++[22m[39mScoring update failed: Error: [vitest] No "getTournamentHolesForGolfers" export is defined on the "@/lib/scoring-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++
++    at VitestMocker.createError [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:62:17[90m)[39m
++    at Object.get [90m(file:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/vitest@4.1.4_@types+node@20.19.39_@vitest+coverage-v8@4.1.4_jsdom@26.1.0_vite@8.0.8_@types+node@20.19.39_jiti@1.21.7_/node_modules/[4mvitest[24m/dist/chunks/startVitestModuleRunner.bRl2_oI_.js:324:16[90m)[39m
++    at refreshScoresForPool [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/lib/scoring-refresh.ts:206:31[90m)[39m
++[90m    at processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
++    at Module.POST [90m(/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.ts:57:20[90m)[39m
++    at [90m/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39msrc/app/api/scoring/route.test.ts:232:5
++    at [90mfile:///home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/[39mnode_modules/[4m.pnpm[24m/@vitest+runner@4.1.4/node_modules/[4m@vitest/runner[24m/dist/chunk-artifact.js:1903:20 {
++  codeFrame: [32m'vi.mock(import("@/lib/scoring-queries"), async (importOriginal) => {\n'[39m +
++    [32m'  const actual = await importOriginal()\n'[39m +
++    [32m'  return {\n'[39m +
++    [32m'    ...actual,\n'[39m +
++    [32m'    // your mocked methods\n'[39m +
++    [32m'  }\n'[39m +
++    [32m'})'[39m
++}
++
++ [31m❯[39m src/app/api/scoring/route.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 42[2mms[22m[39m
++[31m     [31m×[31m uses golfer dataset size for audit details and preserves entryCount compatibility[39m[32m 28[2mms[22m[39m
++[31m     [31m×[31m fans out scoring metadata to every live pool on the same tournament[39m[32m 6[2mms[22m[39m
++     [32m✓[39m fails refresh when any score upsert fails and records failure audit metadata[32m 6[2mms[22m[39m
++ [31m❯[39m src/lib/__tests__/scoring-refresh-edge-cases.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m6 failed[39m[2m)[22m[32m 22[2mms[22m[39m
++[31m     [31m×[31m API returns empty slashScores → NO_SCORES error[39m[32m 10[2mms[22m[39m
++[31m     [31m×[31m partial upsert failure: 3 golfers, 2 OK, 1 fails → UPSERT_FAILED[39m[32m 3[2mms[22m[39m
++[31m     [31m×[31m updatePoolRefreshMetadata fails on success path → INTERNAL_ERROR[39m[32m 2[2mms[22m[39m
++[31m     [31m×[31m insertAuditEvent fails on success path → INTERNAL_ERROR[39m[32m 1[2mms[22m[39m
++[31m     [31m×[31m getEntriesForPool returns empty array → broadcast sends with empty ranked array[39m[32m 1[2mms[22m[39m
++[31m     [31m×[31m deriveCompletedRounds === 0 (tournament not started) → returns success with completedRounds 0[39m[32m 3[2mms[22m[39m
++ [31m❯[39m src/components/__tests__/SpectatorLeaderboard.test.tsx [2m([22m[2m30 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 57[2mms[22m[39m
++       [32m✓[39m renders even par with stone-600[32m 9[2mms[22m[39m
++       [32m✓[39m renders over par with text-red-600[32m 1[2mms[22m[39m
++       [32m✓[39m renders under par with text-green-700[32m 6[2mms[22m[39m
++       [32m✓[39m applies font-mono tabular-nums to all score variants[32m 2[2mms[22m[39m
++[31m       [31m×[31m does not use gray-* tokens in source file[39m[32m 17[2mms[22m[39m
++       [32m✓[39m uses green-* tokens for current status (not emerald)[32m 1[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens for unknown status (not slate)[32m 1[2mms[22m[39m
++       [32m✓[39m replaces text-green-800/70 (not text-green-700/70) in sectionHeadingClasses call[32m 1[2mms[22m[39m
++       [32m✓[39m uses green-700 for eyebrow (not emerald-700)[32m 2[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens (not slate-*)[32m 2[2mms[22m[39m
++       [32m✓[39m uses stone border (not slate border)[32m 1[2mms[22m[39m
++       [32m✓[39m does not use emerald-* tokens in source[32m 1[2mms[22m[39m
++       [32m✓[39m does not use slate-* tokens in source[32m 1[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens for rank badge and entry name[32m 1[2mms[22m[39m
++       [32m✓[39m uses green-* tokens for active golfer pills[32m 1[2mms[22m[39m
++       [32m✓[39m uses amber-50/amber-800 for withdrawn golfer pills[32m 0[2mms[22m[39m
++       [32m✓[39m accepts rowIndex prop for alternating rows[32m 0[2mms[22m[39m
++       [32m✓[39m applies bg-stone-50/60 on odd rows[32m 0[2mms[22m[39m
++       [32m✓[39m applies bg-white on even rows[32m 0[2mms[22m[39m
++       [32m✓[39m does not use slate-* tokens in source[32m 0[2mms[22m[39m
++       [32m✓[39m uses stone-* tokens for table header[32m 0[2mms[22m[39m
++       [32m✓[39m uses text-stone-500 for loading state[32m 0[2mms[22m[39m
++       [32m✓[39m uses min-w-[28rem] for mobile optimization[32m 0[2mms[22m[39m
++       [32m✓[39m uses rounded-3xl for table border radius[32m 0[2mms[22m[39m
++       [32m✓[39m hides Birdies column on mobile with hidden sm:table-cell[32m 0[2mms[22m[39m
++       [32m✓[39m passes index as rowIndex to LeaderboardRow[32m 1[2mms[22m[39m
++       [32m✓[39m does not use slate-* tokens in source[32m 0[2mms[22m[39m
++       [32m✓[39m uses bg-primary-900 for dark green header[32m 0[2mms[22m[39m
++       [32m✓[39m uses text-white for pool name heading[32m 1[2mms[22m[39m
++       [32m✓[39m uses text-green-200 for secondary header text[32m 0[2mms[22m[39m
++ [31m❯[39m src/components/__tests__/LockBanner.test.tsx [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 72[2mms[22m[39m
++     [32m✓[39m renders the normalized lock instant for open pools[32m 44[2mms[22m[39m
++     [32m✓[39m renders archived lock message[32m 2[2mms[22m[39m
++     [32m✓[39m uses stone tokens for locked state (not slate)[32m 1[2mms[22m[39m
++     [32m✓[39m uses green tokens for open state (not emerald)[32m 2[2mms[22m[39m
++[31m     [31m×[31m renders with warning tone when pool is open and deadline is within 24 hours[39m[32m 13[2mms[22m[39m
++     [32m✓[39m renders with info tone when pool is open and deadline is more than 24 hours away[32m 2[2mms[22m[39m
++[31m     [31m×[31m shows secondary line with timezone when within 24 hours[39m[32m 6[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferStatesPresentation.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 189[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/ErrorStateBanner.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 163[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/DataAlert.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 211[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/ConfirmModal.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1301[2mms[22m[39m
++     [33m[2m✓[22m[39m confirm button activates after delay when confirmDelaySeconds is set [33m 1022[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferCatalogPanel.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 363[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferPickerTokenMigration.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 292[2mms[22m[39m
++[90mstderr[2m | src/app/(app)/participant/picks/[poolId]/PicksForm.test.tsx[2m > [22m[2mPicksForm[2m > [22m[2mrenders the edit flow and updates the saved picks summary in the client
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at PicksForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(app)/participant/picks/[poolId]/PicksForm.tsx:34:22)
++
++ [32m✓[39m src/app/(app)/participant/picks/[poolId]/PicksForm.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 288[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/tournament-roster-actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 57[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/golfer-catalog-actions.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 101[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/pool-lock-actions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 122[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 61[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/FreshnessChip.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 191[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardEmptyState.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 98[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/GolferPickerTournamentRoster.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 120[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/AdminButtonsModal.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 181[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/golfer-catalog.test.ts [2m([22m[2m39 tests[22m[2m)[22m[32m 69[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/picks.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 57[2mms[22m[39m
++ [32m✓[39m src/app/(app)/participant/picks/[poolId]/actions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 71[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/StatusChip.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 55[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/slash-golf-client.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 39[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/pool-delete-actions.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 64[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-queries.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 46[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/domain-scoring.test.ts [2m([22m[2m18 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 19[2mms[22m[39m
++ [32m✓[39m src/app/(app)/commissioner/pools/[poolId]/__tests__/CommissionerErrorBanner.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 49[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-queries.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/app/api/scoring/refresh/route.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 48[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TrustStatusBar.test.tsx [2m([22m[2m19 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/app/join/[inviteCode]/actions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 55[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardRow.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 19[2mms[22m[39m
++[90mstderr[2m | src/lib/__tests__/slash-golf-client-edge-cases.test.ts[2m > [22m[2mslash-golf client edge cases[2m > [22m[2mgetTournamentScores[2m > [22m[2mAPI returns non-200 with JSON error body → throws Error with status
++[22m[39m[slash-golf] tournament score fetch failed {
++  status: [33m429[39m,
++  statusText: [32m'Too Many Requests'[39m,
++  body: [32m'{"message":"Rate limit exceeded"}'[39m
++}
++
++ [32m✓[39m src/lib/__tests__/slash-golf-client-edge-cases.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/components/ui/__tests__/Button.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 30[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-refresh.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/CommissionerCommandCenter.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 68[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/StatusComponentsA11y.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[32m 33[2mms[22m[39m
++[90mstderr[2m | src/app/(auth)/sign-up/__tests__/SignUp.test.tsx[2m > [22m[2mSignUp page[2m > [22m[2mrenders Card container with green left-border accent
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at div
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignUp (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-up/page.tsx:17:62)
++
++ [32m✓[39m src/components/ui/__tests__/Card.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 18[2mms[22m[39m
++ [32m✓[39m src/app/(auth)/sign-up/__tests__/SignUp.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 23[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/golfer-detail.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/pool-state-transitions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 13[2mms[22m[39m
++[90mstderr[2m | src/app/(auth)/sign-in/__tests__/SignIn.test.tsx[2m > [22m[2mSignIn page[2m > [22m[2mrenders Card container with green left-border accent
++[22m[39mWarning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
++    at form
++    at div
++    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
++    at div
++    at SignInForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-in/page.tsx:38:62)
++    at Suspense
++    at SignIn
++
++ [32m✓[39m src/app/(auth)/sign-in/__tests__/SignIn.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 27[2mms[22m[39m
++ [32m✓[39m src/app/api/cron/scoring/route.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/app/api/leaderboard/[poolId]/route.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 45[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 21[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/LeaderboardPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 15[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/TieExplanationBadge.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 18[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/PicksFlowPresentation.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
++ [32m✓[39m src/app/__tests__/globals-css.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 17[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/audit.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 19[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/design-tokens.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 16[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-lock.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/refresh-telemetry.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/tournament-roster.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/freshness.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/entry-queries.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/uiStyles.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/leaderboard.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
++ [32m✓[39m src/components/__tests__/data-alert-a11y.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/lib/__tests__/scoring-dispatch.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 5[2mms[22m[39m
++ [32m✓[39m src/app/join/[inviteCode]/__tests__/page.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
++
++[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 16 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-edge-cases.test.ts[2m > [22mscoring edge cases[2m > [22mcomputeEntryScore[2m > [22mall golfers have every round incomplete → totalScore 0, completedHoles 0
++[31m[1mAssertionError[22m: expected null to be +0 // Object.is equality[39m
++
++[32m- Expected:[39m
++0
++
++[31m+ Received:[39m
++null
++
++[36m [2m❯[22m src/lib/__tests__/scoring-edge-cases.test.ts:[2m31:33[22m[39m
++    [90m 29|[39m       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'…
++    [90m 30|[39m
++    [90m 31|[39m       [34mexpect[39m(result[33m.[39mtotalScore)[33m.[39m[34mtoBe[39m([34m0[39m)
++    [90m   |[39m                                 [31m^[39m
++    [90m 32|[39m       [34mexpect[39m(result[33m.[39mcompletedHoles)[33m.[39m[34mtoBe[39m([34m0[39m)
++    [90m 33|[39m       [34mexpect[39m(result[33m.[39mtotalBirdies)[33m.[39m[34mtoBe[39m([34m0[39m)
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-edge-cases.test.ts[2m > [22mscoring edge cases[2m > [22mrankEntries[2m > [22mempty golferRoundScores map → all entries get totalScore 0
++[31m[1mAssertionError[22m: expected null to be +0 // Object.is equality[39m
++
++[32m- Expected:[39m
++0
++
++[31m+ Received:[39m
++null
++
++[36m [2m❯[22m src/lib/__tests__/scoring-edge-cases.test.ts:[2m81:36[22m[39m
++    [90m 79|[39m
++    [90m 80|[39m       [34mexpect[39m(ranked)[33m.[39m[34mtoHaveLength[39m([34m1[39m)
++    [90m 81|[39m       [34mexpect[39m(ranked[[34m0[39m][33m.[39mtotalScore)[33m.[39m[34mtoBe[39m([34m0[39m)
++    [90m   |[39m                                    [31m^[39m
++    [90m 82|[39m       [34mexpect[39m(ranked[[34m0[39m][33m.[39mrank)[33m.[39m[34mtoBe[39m([34m1[39m)
++    [90m 83|[39m     })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mAPI returns empty slashScores → NO_SCORES error
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m78:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mpartial upsert failure: 3 golfers, 2 OK, 1 fails → UPSERT_FAILED
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m108:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mupdatePoolRefreshMetadata fails on success path → INTERNAL_ERROR
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m143:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22minsertAuditEvent fails on success path → INTERNAL_ERROR
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m176:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mgetEntriesForPool returns empty array → broadcast sends with empty ranked array
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m212:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/lib/__tests__/scoring-refresh-edge-cases.test.ts[2m > [22mscoring refresh edge cases[2m > [22mderiveCompletedRounds === 0 (tournament not started) → returns success with completedRounds 0
++[31m[1mError[22m: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
++If you need to partially mock a module, you can use "importOriginal" helper inside:
++[39m
++vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
++  const actual = await importOriginal()
++  return {
++    ...actual,
++    // your mocked methods
++  }
++})
++
++[36m [2m❯[22m Module.refreshScoresForPool src/lib/scoring-refresh.ts:[2m79:9[22m[39m
++    [90m 77|[39m   [90m// Step 1: Record telemetry at attempt start[39m
++    [90m 78|[39m   [35mconst[39m attemptTime [33m=[39m [35mnew[39m [33mDate[39m()[33m.[39m[34mtoISOString[39m()
++    [90m 79|[39m   [35mawait[39m [34mupdatePoolRefreshTelemetry[39m(supabase[33m,[39m pool[33m.[39mid[33m,[39m {
++    [90m   |[39m         [31m^[39m
++    [90m 80|[39m     refresh_attempt_count[33m:[39m [32m'increment'[39m[33m,[39m
++    [90m 81|[39m     last_refresh_attempt_at[33m:[39m attemptTime[33m,[39m
++[90m [2m❯[22m src/lib/__tests__/scoring-refresh-edge-cases.test.ts:[2m247:20[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/components/__tests__/LockBanner.test.tsx[2m > [22mLockBanner warning tone near deadline[2m > [22mrenders with warning tone when pool is open and deadline is within 24 hours
++[31m[1mAssertionError[22m: expected '<div class="rounded-3xl border border…' to contain 'border-amber'[39m
++
++Expected: [32m"border-amber"[39m
++Received: [31m"<div class="rounded-3xl border border-white/60 bg-white/90 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4" role="status" aria-live="polite"><span aria-hidden="true" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg">🔓</span><div><p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-green-700/70 text-green-900">Tournament lock</p><p class="text-base font-semibold text-green-950">Picks are open</p><p class="text-sm text-green-800">Deadline: Thu, Apr 30, 12:00 AM EDT</p></div></div>"[39m
++
++[36m [2m❯[22m src/components/__tests__/LockBanner.test.tsx:[2m79:18[22m[39m
++    [90m 77|[39m       <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00…
++    [90m 78|[39m     )
++    [90m 79|[39m     [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'border-amber'[39m)
++    [90m   |[39m                  [31m^[39m
++    [90m 80|[39m     [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'bg-amber'[39m)
++    [90m 81|[39m   })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/components/__tests__/LockBanner.test.tsx[2m > [22mLockBanner warning tone near deadline[2m > [22mshows secondary line with timezone when within 24 hours
++[31m[1mAssertionError[22m: expected '<div class="rounded-3xl border border…' to contain 'America/New_York'[39m
++
++Expected: [32m"America/New_York"[39m
++Received: [31m"<div class="rounded-3xl border border-white/60 bg-white/90 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4" role="status" aria-live="polite"><span aria-hidden="true" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg">🔓</span><div><p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-green-700/70 text-green-900">Tournament lock</p><p class="text-base font-semibold text-green-950">Picks are open</p><p class="text-sm text-green-800">Deadline: Thu, Apr 30, 12:00 AM EDT</p></div></div>"[39m
++
++[36m [2m❯[22m src/components/__tests__/LockBanner.test.tsx:[2m95:18[22m[39m
++    [90m 93|[39m       <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00…
++    [90m 94|[39m     )
++    [90m 95|[39m     [34mexpect[39m(html)[33m.[39m[34mtoContain[39m([32m'America/New_York'[39m)
++    [90m   |[39m                  [31m^[39m
++    [90m 96|[39m   })
++    [90m 97|[39m })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/components/__tests__/SpectatorLeaderboard.test.tsx[2m > [22mSpectator leaderboard token migration (OPS-23)[2m > [22mScoreDisplay[2m > [22mdoes not use gray-* tokens in source file
++[31m[1mAssertionError[22m: expected [ 'gray-400' ] to be null[39m
++
++[32m- Expected:[39m
++null
++
++[31m+ Received:[39m
++[
++  "gray-400",
++]
++
++[36m [2m❯[22m src/components/__tests__/SpectatorLeaderboard.test.tsx:[2m51:27[22m[39m
++    [90m 49|[39m       [35mconst[39m source [33m=[39m fs[33m.[39m[34mreadFileSync[39m([33mSCORE_DISPLAY_PATH[39m[33m,[39m [32m'utf-8'[39m)
++    [90m 50|[39m       [35mconst[39m grayMatches [33m=[39m source[33m.[39m[34mmatch[39m([36m/gray-\d{2,3}/g[39m)
++    [90m 51|[39m       [34mexpect[39m(grayMatches)[33m.[39m[34mtoBeNull[39m()
++    [90m   |[39m                           [31m^[39m
++    [90m 52|[39m     })
++    [90m 53|[39m   })
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/app/api/scoring/route.test.ts[2m > [22mPOST /api/scoring[2m > [22muses golfer dataset size for audit details and preserves entryCount compatibility
++[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
++
++[32m- Expected[39m
++[31m+ Received[39m
++
++[32m- 200[39m
++[31m+ 500[39m
++
++[36m [2m❯[22m src/app/api/scoring/route.test.ts:[2m152:29[22m[39m
++    [90m150|[39m     [35mconst[39m response [33m=[39m [35mawait[39m [33mPOST[39m(request)
++    [90m151|[39m
++    [90m152|[39m     [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34mtoBe[39m([34m200[39m)
++    [90m   |[39m                             [31m^[39m
++    [90m153|[39m     [34mexpect[39m(createAdminClient)[33m.[39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)
++    [90m154|[39m     [34mexpect[39m(buildRefreshAuditDetails)[33m.[39m[34mtoHaveBeenCalledWith[39m(
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/app/api/scoring/route.test.ts[2m > [22mPOST /api/scoring[2m > [22mfans out scoring metadata to every live pool on the same tournament
++[31m[1mAssertionError[22m: expected "vi.fn()" to be called with arguments: [ Anything, 'pool-1' ][90m
++
++Number of calls: [1m0[22m
++[31m[39m
++[36m [2m❯[22m src/app/api/scoring/route.test.ts:[2m235:31[22m[39m
++    [90m233|[39m
++    [90m234|[39m     [34mexpect[39m(getTournamentScores)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m't-1'[39m[33m,[39m [34m2026[39m)
++    [90m235|[39m     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), …
++    [90m   |[39m                               [31m^[39m
++    [90m236|[39m     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), …
++    [90m237|[39m     expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anyt…
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯[22m[39m
++
++[41m[1m FAIL [22m[49m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22mJoinPoolForm[2m > [22mrenders a Button component with primary variant
++[41m[1m FAIL [22m[49m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22mJoinPoolForm[2m > [22mrenders the submit button with w-full class
++[41m[1m FAIL [22m[49m src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[2m > [22mJoinPoolForm[2m > [22mrenders error text in red-600 when error is present
++[31m[1mTypeError[22m: useFormState is not a function or its return value is not iterable[39m
++[36m [2m❯[22m JoinPoolForm src/app/join/[inviteCode]/JoinPoolForm.tsx:[2m14:31[22m[39m
++    [90m 12|[39m
++    [90m 13|[39m export default function JoinPoolForm({ inviteCode }: JoinPoolFormProps…
++    [90m 14|[39m   [35mconst[39m [state[33m,[39m formAction] [33m=[39m [34museFormState[39m(joinPool[33m,[39m initialState)
++    [90m   |[39m                               [31m^[39m
++    [90m 15|[39m
++    [90m 16|[39m   [35mreturn[39m (
++[90m [2m❯[22m renderWithHooks node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5662:16[22m[39m
++[90m [2m❯[22m renderIndeterminateComponent node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5736:15[22m[39m
++[90m [2m❯[22m renderElement node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m5961:7[22m[39m
++[90m [2m❯[22m renderNodeDestructiveImpl node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6119:11[22m[39m
++[90m [2m❯[22m renderNodeDestructive node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6091:14[22m[39m
++[90m [2m❯[22m retryTask node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6543:5[22m[39m
++[90m [2m❯[22m performWork node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6591:7[22m[39m
++[90m [2m❯[22m node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m6915:12[22m[39m
++[90m [2m❯[22m scheduleWork node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:[2m78:3[22m[39m
++
++[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯[22m[39m
++
++
++[2m Test Files [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m59 passed[39m[22m[90m (65)[39m
++[2m      Tests [22m [1m[31m16 failed[39m[22m[2m | [22m[1m[32m452 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (469)[39m
++[2m   Start at [22m 13:18:15
++[2m   Duration [22m 7.61s[2m (transform 4.04s, setup 8.26s, import 10.03s, tests 5.21s, environment 8.40s)[22m
++
++ ELIFECYCLE  Test failed. See above for more details.
++[test failed]
+[0m
+[0m→ [0mRead /home/gary/.local/share/opencode/tool-output/tool_e1dae985b001TMoN1pIfp2FKXd[90m [limit=500, offset=1][0m
+[0m
+[0m$ [0mgit diff origin/main...HEAD --stat
+README.md                                          |    2 +-
+ code-review.md                                     |  187 ++
+ design.md                                          |  199 ++
+ docs/rules-spec.md                                 |    7 +-
+ fix-review-1.log                                   | 1112 +++++++++++
+ fix-review-2.log                                   |  296 +++
+ fix-review-3.log                                   |  114 ++
+ implement-task-1.log                               | 2045 ++++++++++++++++++++
+ implement-task-2.log                               |   53 +
+ implement-task-3.log                               |   74 +
+ implement-task-4.log                               |   70 +
+ implementation-log.md                              |  996 ++++++++++
+ install-worktree.log                               |   55 +
+ issue-comments.md                                  |    2 +
+ issue.json                                         |    1 +
+ issue.md                                           |  130 ++
+ orchestrator.log                                   | 2031 +++++++++++++++++++
+ plan-design.log                                    |  687 +++++++
+ plan-write.log                                     |  124 ++
+ plan.md                                            |  178 ++
+ quality-review-task-1.log                          |  734 +++++++
+ quality-review-task-1.md                           |   55 +
+ quality-review-task-2.log                          |   43 +
+ quality-review-task-2.md                           |   45 +
+ quality-review-task-3.log                          |   48 +
+ quality-review-task-3.md                           |  101 +
+ quality-review-task-4.log                          |  786 ++++++++
+ quality-review-task-4.md                           |   80 +
+ re-review-1.log                                    |  676 +++++++
+ re-review-2.log                                    | 1592 +++++++++++++++
+ revalidate-1.log                                   |  174 ++
+ revalidate-2.log                                   |  174 ++
+ review-fix-log.md                                  |   94 +
+ review.log                                         |   28 +
+ review.md                                          |  187 ++
+ scripts/ai-run-issue-v2.sh                         |  659 ++++++-
+ scripts/brainstorm-issue.sh                        |   89 +
+ spec-review-task-1.log                             |   52 +
+ spec-review-task-1.md                              |   41 +
+ spec-review-task-2.log                             |   33 +
+ spec-review-task-2.md                              |   66 +
+ spec-review-task-3.log                             |   14 +
+ spec-review-task-3.md                              |   53 +
+ spec-review-task-4.log                             |   18 +
+ spec-review-task-4.md                              |   51 +
+ .../pools/[poolId]/audit/score-trace/page.tsx      |    4 +-
+ src/app/api/leaderboard/[poolId]/route.test.ts     |  203 +-
+ src/app/api/leaderboard/[poolId]/route.ts          |   47 +-
+ src/app/api/scoring/route.test.ts                  |   15 +-
+ .../[inviteCode]/__tests__/JoinPoolForm.test.tsx   |   13 +-
+ src/components/GolferContribution.tsx              |   10 +-
+ src/components/__tests__/LockBanner.test.tsx       |   20 +-
+ src/components/score-display.tsx                   |    2 +-
+ src/lib/__tests__/scoring-edge-cases.test.ts       |    8 +-
+ .../__tests__/scoring-refresh-edge-cases.test.ts   |   20 +-
+ src/lib/__tests__/scoring.test.ts                  |   56 +
+ src/lib/scoring-queries.ts                         |   12 -
+ src/lib/scoring.ts                                 |   28 -
+ tsconfig.tsbuildinfo                               |    2 +-
+ validate.log                                       |  561 ++++++
+ validation-1.md                                    |  174 ++
+ validation-2.md                                    |  174 ++
+ validation.md                                      |  561 ++++++
+ 63 files changed, 15967 insertions(+), 199 deletions(-)
+[0m
+[0m← [0mWrite code-review.md
+Wrote file successfully.
+[0m
+Written to `code-review.md`. The re-review confirms **16 failures unchanged** from the prior review. All critical issues remain unfixed or only partially fixed:
+
+- `scoring-edge-cases.test.ts`: assertions still say `.toBe(0)` instead of `.toBeNull()`
+- `scoring-refresh-edge-cases.test.ts`: mock missing `updatePoolRefreshTelemetry`
+- `route.test.ts`: cascading from the above
+- `JoinPoolForm.test.tsx`: `useFormState is not a function`
+- `SpectatorLeaderboard.test.tsx`: `gray-400` still in `score-display.tsx`
+- `LockBanner.test.tsx`: warning tone never implemented in the component

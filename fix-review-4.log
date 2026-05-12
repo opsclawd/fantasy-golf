@@ -1,0 +1,28 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead review.md
+Let me read the affected files to fix the critical findings.
+[0m→ [0mRead src/lib/__tests__/scoring-edge-cases.test.ts
+[0m→ [0mRead src/lib/__tests__/scoring-refresh-edge-cases.test.ts
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts
+Let me run the tests to see current state before fixing.
+[0m
+[0m$ [0mnpm test 2>&1 | tail -60
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+
+ Test Files  65 passed (65)
+      Tests  468 passed | 1 skipped (469)
+   Start at  13:34:45
+   Duration  7.31s (transform 3.34s, setup 8.00s, import 9.43s, tests 5.31s, environment 9.09s)
+[0m
+[0m→ [0mRead review-fix-log.md
