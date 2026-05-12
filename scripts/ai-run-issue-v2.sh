@@ -330,6 +330,9 @@ MEMORY.md
 AGENTS.md
 CLAUDE.md
 tsconfig.tsbuildinfo
+spec-review-task-*.md
+quality-review-task-*.md
+next-env.d.ts
 node_modules/
 .next/
 EOF
