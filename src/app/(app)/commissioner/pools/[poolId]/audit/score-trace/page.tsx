@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { ScoreDisplay } from '@/components/score-display'
 import { getPoolById } from '@/lib/pool-queries'
-import { deriveCompletedRounds, getEntryRoundScore, rankEntries } from '@/lib/scoring'
+import { deriveCompletedRounds, getEntryRoundScore, rankEntriesLegacy } from '@/lib/scoring'
 import { createClient } from '@/lib/supabase/server'
 import type { Entry, TournamentScore } from '@/lib/supabase/types'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
@@ -105,7 +105,7 @@ export default async function CommissionerPoolAuditScoreTracePage({
   }
 
   const completedRounds = deriveCompletedRounds(allScores)
-  const ranked = rankEntries(entries, golferScores, completedRounds)
+  const ranked = rankEntriesLegacy(entries, golferScores, completedRounds)
 
   return (
     <div className="space-y-6">

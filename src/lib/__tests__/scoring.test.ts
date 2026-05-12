@@ -7,6 +7,8 @@ import {
   deriveCompletedRounds,
   buildGolferRoundScoresMap,
 } from '../scoring'
+import { computeEntryScore } from '../scoring/domain'
+import type { GolferRoundScoresMap } from '../scoring/domain'
 import type { TournamentScore, Entry, GolferStatus, TournamentHole } from '../supabase/types'
 
 describe('scoring', () => {
@@ -168,6 +170,60 @@ describe('scoring', () => {
       expect(result.get('g1')?.length).toBe(2)
       expect(result.get('g1')?.[0]).toMatchObject({ roundId: 1, holeId: 1, scoreToPar: 0, isComplete: true })
       expect(result.get('g1')?.[1]).toMatchObject({ roundId: 1, holeId: 2, scoreToPar: -1, isComplete: true })
+    })
+  })
+
+  describe('computeEntryScore round-gating with overlapping holes', () => {
+    it('does not count a round unless ALL golfers have isComplete:true for that round', () => {
+      const golferRoundScores = new Map<string, { holeId: number; roundId: number; scoreToPar: number | null; status: GolferStatus; isComplete: boolean }[]>()
+      golferRoundScores.set('g1', [
+        { holeId: 1, roundId: 1, scoreToPar: -1, status: 'active', isComplete: true },
+        { holeId: 1, roundId: 2, scoreToPar: 0, status: 'active', isComplete: true },
+      ])
+      golferRoundScores.set('g2', [
+        { holeId: 1, roundId: 1, scoreToPar: 0, status: 'active', isComplete: true },
+        { holeId: 1, roundId: 2, scoreToPar: 1, status: 'active', isComplete: false },
+      ])
+
+      const result = computeEntryScore(golferRoundScores as GolferRoundScoresMap, ['g1', 'g2'])
+
+      expect(result.completedHoles).toBe(1)
+      expect(result.totalScore).toBe(-1)
+      expect(result.totalBirdies).toBe(1)
+    })
+
+    it('counts both rounds when all golfers complete all rounds', () => {
+      const golferRoundScores = new Map<string, { holeId: number; roundId: number; scoreToPar: number | null; status: GolferStatus; isComplete: boolean }[]>()
+      golferRoundScores.set('g1', [
+        { holeId: 1, roundId: 1, scoreToPar: -1, status: 'active', isComplete: true },
+        { holeId: 1, roundId: 2, scoreToPar: -1, status: 'active', isComplete: true },
+      ])
+      golferRoundScores.set('g2', [
+        { holeId: 1, roundId: 1, scoreToPar: 0, status: 'active', isComplete: true },
+        { holeId: 1, roundId: 2, scoreToPar: -1, status: 'active', isComplete: true },
+      ])
+
+      const result = computeEntryScore(golferRoundScores as GolferRoundScoresMap, ['g1', 'g2'])
+
+      expect(result.completedHoles).toBe(2)
+      expect(result.totalScore).toBe(-2)
+      expect(result.totalBirdies).toBe(2)
+    })
+
+    it('does not collapse overlapping hole IDs across rounds into one pseudo-hole', () => {
+      const golferRoundScores = new Map<string, { holeId: number; roundId: number; scoreToPar: number | null; status: GolferStatus; isComplete: boolean }[]>()
+      golferRoundScores.set('g1', [
+        { holeId: 1, roundId: 1, scoreToPar: -1, status: 'active', isComplete: true },
+        { holeId: 2, roundId: 1, scoreToPar: 0, status: 'active', isComplete: true },
+        { holeId: 1, roundId: 2, scoreToPar: -1, status: 'active', isComplete: true },
+        { holeId: 2, roundId: 2, scoreToPar: 0, status: 'active', isComplete: true },
+      ])
+
+      const result = computeEntryScore(golferRoundScores as GolferRoundScoresMap, ['g1'])
+
+      expect(result.completedHoles).toBe(4)
+      expect(result.totalScore).toBe(-2)
+      expect(result.totalBirdies).toBe(2)
     })
   })
 })

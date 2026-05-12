@@ -19,7 +19,6 @@ import {
 import {
   getScoresForTournament,
   upsertTournamentScore,
-  getTournamentScoreRounds,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -59,7 +58,6 @@ vi.mock('@/lib/pool-queries', () => ({
 vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
-  getTournamentScoreRounds: vi.fn(),
 }))
 
 const originalEnv = { ...process.env }
@@ -141,7 +139,7 @@ describe('POST /api/scoring', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    
     vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const request = new Request('http://localhost/api/scoring', {
@@ -223,7 +221,7 @@ describe('POST /api/scoring', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    
     vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const request = new Request('http://localhost/api/scoring', {

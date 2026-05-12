@@ -6,6 +6,7 @@ import { classifyFreshness } from '@/lib/freshness'
 import { deriveCompletedRounds, rankEntriesWithHoles } from '@/lib/scoring'
 import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
 import { getTournamentRosterGolfers } from '@/lib/tournament-roster/queries'
+import { rankEntries as domainRankEntries } from '@/lib/scoring/domain'
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(),
@@ -26,6 +27,11 @@ vi.mock('@/lib/scoring-queries', () => ({
 
 vi.mock('@/lib/tournament-roster/queries', () => ({
   getTournamentRosterGolfers: vi.fn(),
+}))
+
+vi.mock('@/lib/scoring/domain', () => ({
+  rankEntries: vi.fn(),
+  deriveCompletedRounds: vi.fn(),
 }))
 
 const originalEnv = {
@@ -386,5 +392,45 @@ describe('GET /api/leaderboard/[poolId]', () => {
     expect(getTournamentHolesForGolfers).toHaveBeenCalledWith(expect.any(Object), 't-1', expect.arrayContaining(['g1', 'g2', 'g3', 'g4']))
     expect(rankEntriesWithHoles).toHaveBeenCalledWith(entries, holesByGolfer, expect.any(Map), 2)
     expect(body.data.entries).toEqual(rankedEntries)
+  })
+
+  it('does NOT call rankEntries (round-level) from scoring domain — only rankEntriesWithHoles (hole-level)', async () => {
+    const pool = {
+      id: 'pool-1',
+      status: 'live',
+      refreshed_at: '2026-03-29T00:00:00.000Z',
+      last_refresh_error: null,
+      tournament_id: 't-1',
+    }
+    const entries = [{ id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1' }]
+    const rankedEntries = [
+      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: 0, totalBirdies: 0, isTied: false },
+    ]
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'pools') {
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: pool, error: null }) }) }) }
+        }
+        if (table === 'entries') {
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: entries }) }) }
+        }
+        if (table === 'tournament_scores') {
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [] }) }) }
+        }
+        throw new Error(`Unexpected table ${table}`)
+      }),
+    } as never)
+
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+
+    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
+      params: Promise.resolve({ poolId: 'pool-1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(rankEntriesWithHoles).toHaveBeenCalled()
+    expect(domainRankEntries).not.toHaveBeenCalled()
   })
 })

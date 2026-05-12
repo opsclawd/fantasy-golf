@@ -49,25 +49,6 @@ export function buildGolferRoundScoresMap(
   return result
 }
 
-/**
- * @deprecated Non-production. Converts round-level aggregate scores (holeId: 1) into GolferRoundScoresMap.
- * For hole-by-hole best-ball scoring, use rankEntriesWithHoles with data from tournament_holes instead.
- * This function is only for audit tooling; live scoring must use rankEntriesWithHoles.
- */
-function buildGolferRoundScoresMapFromScores(tournamentScores: Map<string, TournamentScore>): GolferRoundScoresMap {
-  const result: GolferRoundScoresMap = new Map()
-  Array.from(tournamentScores.entries()).forEach(([golferId, score]) => {
-    result.set(golferId, [{
-      holeId: 1,
-      roundId: score.round_id ?? 1,
-      scoreToPar: score.total_score ?? null,
-      status: score.status,
-      isComplete: true,
-    }])
-  })
-  return result
-}
-
 function calculateEntryTotalScore(
   golferScores: Map<string, TournamentScore>,
   golferIds: string[],
@@ -99,15 +80,6 @@ function calculateEntryBirdies(
 }
 
 export { calculateEntryTotalScore, calculateEntryBirdies }
-
-export function rankEntries(
-  entries: Entry[],
-  golferScores: Map<string, TournamentScore>,
-  completedRounds: number
-): (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[] {
-  const golferRoundScoresMap = buildGolferRoundScoresMapFromScores(golferScores)
-  return domainRankEntries(entries, golferRoundScoresMap, completedRounds) as (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[]
-}
 
 /**
  * @deprecated Non-production. Uses round-level aggregates (holeId: 1) instead of real hole-by-hole data.
