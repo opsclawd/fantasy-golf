@@ -719,3 +719,33 @@ Written to `code-review.md`. The re-review confirms **16 failures unchanged** fr
 - `JoinPoolForm.test.tsx`: `useFormState is not a function`
 - `SpectatorLeaderboard.test.tsx`: `gray-400` still in `score-display.tsx`
 - `LockBanner.test.tsx`: warning tone never implemented in the component
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m→ [0mRead review.md
+[0m→ [0mRead revalidate-3.log
+Now let me read the key source files to verify the fixes.
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [offset=320, limit=180][0m
+[0m→ [0mRead src/lib/scoring-queries.ts
+[0m→ [0mRead src/lib/scoring.ts[90m [offset=80, limit=50][0m
+Now let me verify the README, docs/rules-spec, and the test file imports for the mock issue:
+[0m→ [0mRead README.md[90m [limit=10][0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=50][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=30][0m
+Now I have all the information needed. Let me write the updated review.
+[0m
+[0m← [0mWrite code-review.md
+Wrote file successfully.
+[0m
+Written to `./code-review.md`.
+
+**Summary of findings:**
+- All 6 acceptance criteria: **FIXED**
+- All route.ts implementation items: **FIXED**
+- All 3 route.test.ts coverage tests: **FIXED**
+- Build PASS, Lint PASS, Tests PASS (468)
+- typecheck: FAIL — 64 errors, all in `design-tokens.test.ts` (pre-existing tailwind config typing issues, not a regression)
+- `rankEntriesLegacy` still in scoring.ts (Minor, pre-existing, low risk)
+- No new blocking issues introduced

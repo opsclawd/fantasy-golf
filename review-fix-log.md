@@ -1,3 +1,33 @@
+# Review Fix Log — issue #51 (loop 4)
+
+## Status: All Legitimate Findings Fixed
+
+All acceptance criteria verified FIXED in review.md:
+- GET /api/leaderboard/[poolId] ranks from tournament_holes ✓
+- No fake holeId: 1 records ✓
+- Both paths use same scoring model ✓
+- README updated ✓
+- docs/rules-spec.md updated ✓
+- Tests cover corrected path ✓
+
+## Minor Pre-Existing Issues (Not Fixed This Pass)
+
+### 1. rankEntriesLegacy still in scoring.ts
+- **File:** `src/lib/scoring.ts:88–121`
+- **Status:** NOT FIXED — intentionally preserved for audit tooling at `score-trace/page.tsx`
+- **Valid:** N/A (pre-existing, not a regression)
+- **Evidence:** `grep rankEntriesLegacy` shows active imports in `score-trace/page.tsx:5,108` and `scoring.test.ts:6`
+- **Risk:** Low — marked @deprecated, not used in any production scoring path
+
+### 2. typecheck failures in design-tokens.test.ts
+- **File:** `src/lib/__tests__/design-tokens.test.ts`
+- **Status:** NOT FIXED — pre-existing tailwind config typing issues
+- **Valid:** N/A (pre-existing, not a regression)
+- **Evidence:** 64 TypeScript errors, all confined to this test file
+- **Risk:** None — test file only, no production impact
+
+---
+
 # Review Fix Log — issue #51 (loop 3)
 
 ## Finding: route.test.ts missing TournamentHole import
