@@ -242,4 +242,70 @@ describe('refreshScoresForPool', () => {
     expect(getTournamentHolesForGolfers).toHaveBeenCalled()
     expect(rankEntriesWithHoles).toHaveBeenCalled()
   })
+
+  it('refreshScoresForPool persists holes from scorecard to tournament_holes', async () => {
+    const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
+    const mockSupabase = createMockSupabase()
+
+    vi.mocked(getPoolsByTournament).mockResolvedValue([
+      { id: 'pool-1', tournament_id: 't-1', status: 'live' },
+    ] as never)
+    vi.mocked(getScoresForTournament)
+      .mockResolvedValueOnce([] as never)
+      .mockResolvedValueOnce([
+        { golfer_id: 'g1', total_score: -1, total_birdies: 1, status: 'active', round_id: 1 },
+        { golfer_id: 'g2', total_score: 0, total_birdies: 2, status: 'active', round_id: 1 },
+      ] as never)
+    vi.mocked(getTournamentScores).mockResolvedValue([
+      { golfer_id: 'g1', total: -1, total_birdies: 1, status: 'active', current_round: 1 },
+      { golfer_id: 'g2', total: 0, total_birdies: 2, status: 'active', current_round: 1 },
+    ] as never)
+    vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
+    vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(getEntriesForPool).mockResolvedValue([
+      { id: 'entry-1', golfer_ids: ['g1', 'g2'] },
+    ] as never)
+    vi.mocked(getScorecard).mockResolvedValue({
+      tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1,
+      holes: [
+        { holeId: 1, par: 4, strokes: 4, scoreToPar: 0, roundId: 1 },
+        { holeId: 2, par: 4, strokes: 3, scoreToPar: -1, roundId: 1 },
+      ],
+    } as never)
+    vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([
+      ['g1', [
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, par: 4, strokes: 4, score_to_par: 0 },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 2, par: 4, strokes: 3, score_to_par: -1 },
+      ]],
+    ]) as never)
+    vi.mocked(rankEntriesWithHoles).mockReturnValue([
+      { id: 'entry-1', golfer_ids: ['g1', 'g2'], totalScore: -1, totalBirdies: 1, rank: 1, isTied: false },
+    ] as never)
+    vi.mocked(buildRefreshAuditDetails).mockReturnValue({
+      completedRounds: 1,
+      golferCount: 2,
+      changedGolfers: ['g1', 'g2'],
+      newGolfers: [],
+      droppedGolfers: [],
+      diffs: {},
+    })
+    vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
+
+    const result = await refreshScoresForPool(mockSupabase, pool)
+
+    expect(result.error).toBeNull()
+    expect(result.data).not.toBeNull()
+    expect(getScorecard).toHaveBeenCalledWith('t-1', 'g1', 2026)
+    expect(upsertTournamentHoles).toHaveBeenCalledWith(
+      mockSupabase,
+      expect.arrayContaining([
+        expect.objectContaining({ golfer_id: 'g1', round_id: 1, hole_id: 1, score_to_par: 0 }),
+        expect.objectContaining({ golfer_id: 'g1', round_id: 1, hole_id: 2, score_to_par: -1 }),
+      ])
+    )
+    expect(upsertTournamentHoles).toHaveBeenCalled()
+    expect(getTournamentHolesForGolfers).toHaveBeenCalledWith(mockSupabase, 't-1', expect.arrayContaining(['g1', 'g2']))
+    expect(rankEntriesWithHoles).toHaveBeenCalled()
+  })
 })
