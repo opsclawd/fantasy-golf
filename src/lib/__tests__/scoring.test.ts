@@ -6,6 +6,7 @@ import {
   rankEntriesLegacy as rankEntries,
   deriveCompletedRounds,
   buildGolferRoundScoresMap,
+  rankEntriesWithHoles,
 } from '../scoring'
 import type { TournamentScore, Entry, GolferStatus, TournamentHole } from '../supabase/types'
 
@@ -168,6 +169,35 @@ describe('scoring', () => {
       expect(result.get('g1')?.length).toBe(2)
       expect(result.get('g1')?.[0]).toMatchObject({ roundId: 1, holeId: 1, scoreToPar: 0, isComplete: true })
       expect(result.get('g1')?.[1]).toMatchObject({ roundId: 1, holeId: 2, scoreToPar: -1, isComplete: true })
+    })
+  })
+
+  describe('rankEntriesWithHoles vs rankEntries', () => {
+    it('produces different results than rankEntries (round-based) when given real hole data', () => {
+      const entries: Entry[] = [
+        { id: 'e1', pool_id: 'p1', user_id: 'u1', golfer_ids: ['g1', 'g2'], total_birdies: 0, created_at: '', updated_at: '' },
+      ]
+
+      const holesByGolfer = new Map<string, TournamentHole[]>()
+      holesByGolfer.set('g1', [
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 4, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 2, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 4, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
+        { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 2, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
+      ])
+      holesByGolfer.set('g2', [
+        { golfer_id: 'g2', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 5, par: 4, score_to_par: 1, updated_at: '2026-03-29T00:00:00.000Z' },
+        { golfer_id: 'g2', tournament_id: 't-1', round_id: 1, hole_id: 2, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
+        { golfer_id: 'g2', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 5, par: 4, score_to_par: 1, updated_at: '2026-03-29T00:00:00.000Z' },
+        { golfer_id: 'g2', tournament_id: 't-1', round_id: 2, hole_id: 2, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
+      ])
+
+      const golferStatuses = new Map<string, GolferStatus>()
+
+      const result = rankEntriesWithHoles(entries, holesByGolfer, golferStatuses, 2)
+
+      expect(result[0].totalScore).toBe(-2)
+      expect(result[0].totalBirdies).toBe(2)
     })
   })
 })
