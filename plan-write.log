@@ -1,0 +1,124 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "writing-plans"
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue-comments.md
+I'm using the writing-plans skill to create the implementation plan.
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/plan.md
+Wrote file successfully.
+[0m
+Plan complete and saved to `./plan.md`.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "writing-plans"
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue-comments.md
+I'm using the writing-plans skill to create the implementation plan.
+[0m→ [0mRead src/lib/scoring.ts
+[0m→ [0mRead src/lib/scoring-queries.ts
+[0m✱ [0mGlob "src/app/api/leaderboard/**/*.ts"[90m 2 matches[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts
+Now let me check usages of the deprecated functions and read the domain scoring file:
+[0m✱ [0mGrep "rankEntries\b"[90m 145 matches[0m
+[0m✱ [0mGrep "buildGolferRoundScoresMapFromScores"[90m 6 matches[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m 20 matches[0m
+[0m→ [0mRead src/lib/scoring/domain.ts
+[0m→ [0mRead src/app/(app)/commissioner/pools/[poolId]/audit/score-trace/page.tsx
+[0m→ [0mRead README.md[90m [limit=30, offset=70][0m
+[0m→ [0mRead docs/rules-spec.md
+Now I have everything I need. Let me write the plan.
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/plan.md
+Wrote file successfully.
+[0m
+Plan complete and saved to `./plan.md`. Two execution options:
+
+**1. Subagent-Driven (recommended)** — I dispatch a fresh subagent per task, review between tasks, fast iteration
+
+**2. Inline Execution** — Execute tasks in this session using executing-plans, batch execution with checkpoints
+
+**Which approach?**
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "writing-plans"
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue-comments.md
+I'm using the writing-plans skill to create the implementation plan.
+
+Let me verify the actual current state of the code before writing the plan, since there's a discrepancy between design.md (which claims the endpoint is already correct) and issue.md (which claims it needs fixing).
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m✱ [0mGrep "rankEntries"[90m in src/lib · 37 matches[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/lib/scoring · 0 matches[0m
+[0m→ [0mRead src/lib/scoring.ts
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/lib · 7 matches[0m
+[0m→ [0mRead README.md[90m [limit=40, offset=70][0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=60, offset=1][0m
+[0m→ [0mRead src/lib/scoring-queries.ts[90m [limit=40, offset=90][0m
+[0m→ [0mRead src/lib/__tests__/scoring.test.ts[90m [limit=50, offset=1][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts
+Now I have full context. The route is already correct. The work is cleanup + tests. Let me write the plan.
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/plan.md
+Wrote file successfully.
+[0m
+Plan complete and saved to `./plan.md`.
+
+**Key finding from Phase 0 verification:** The `route.ts` already uses `rankEntriesWithHoles` + `getTournamentHolesForGolfers` — the issue's "fix" description is already done. The actual work is:
+1. **Dead code removal** (`rankEntriesLegacy`, `buildGolferRoundScoresMapFromScores`, `getTournamentScoreRounds`)
+2. **Regression tests** (negative assertion + overlapping-holes fixture)
+
+**Two execution options:**
+
+1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks
+2. **Inline Execution** — execute tasks in this session using `executing-plans`
+
+Which approach?
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "writing-plans"
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue-comments.md
+I'm using the writing-plans skill to create the implementation plan.
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/plan.md
+Wrote file successfully.
+[0m
+Plan complete and saved to `./plan.md`.
+
+**Summary of findings:** The design doc confirms `route.ts` already uses the correct hole-level path (`tournament_holes` + `rankEntriesWithHoles`). The worktree state matches the target. This plan is verification-only plus one regression test for multi-round hole overlap.
+
+**Execution options:**
+
+**1. Subagent-Driven (recommended)** — dispatch a fresh subagent per task, review between tasks
+
+**2. Inline Execution** — execute tasks in this session using `executing-plans`
+
+Which approach?
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "writing-plans"
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue-comments.md
+[0m
+[0m← [0mWrite .ai-worktrees/issue-51/plan.md
+Wrote file successfully.
+[0m
+Plan complete and saved to `./plan.md`. Two execution options:
+
+**1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
+
+**2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
+
+**Which approach?**

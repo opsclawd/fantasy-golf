@@ -1,0 +1,734 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m$ [0mgit diff 41efd241d31a09a5a9eab996318b8ddb7288d7f6..4b97fdc3ab8887c0ffd0a99407299ca98d3bdc12 --stat
+src/app/api/leaderboard/[poolId]/route.test.ts | 58 ++++++++++++++++++++++++++
+ 1 file changed, 58 insertions(+)
+[0m
+[0m$ [0mgit diff 41efd241d31a09a5a9eab996318b8ddb7288d7f6..4b97fdc3ab8887c0ffd0a99407299ca98d3bdc12
+diff --git a/src/app/api/leaderboard/[poolId]/route.test.ts b/src/app/api/leaderboard/[poolId]/route.test.ts
+index e752f04..08d7572 100644
+--- a/src/app/api/leaderboard/[poolId]/route.test.ts
++++ b/src/app/api/leaderboard/[poolId]/route.test.ts
+@@ -433,4 +433,62 @@ describe('GET /api/leaderboard/[poolId]', () => {
+     expect(rankEntriesWithHoles).toHaveBeenCalled()
+     expect(domainRankEntries).not.toHaveBeenCalled()
+   })
++
++  it('does not collapse hole IDs across different rounds', async () => {
++    const pool = {
++      id: 'pool-1',
++      status: 'live',
++      refreshed_at: '2026-03-29T00:00:00.000Z',
++      last_refresh_error: null,
++      tournament_id: 't-1',
++    }
++    const entries = [{ id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1' }]
++    const rankedEntries = [
++      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: -1, totalBirdies: 1, isTied: false },
++    ]
++
++    vi.mocked(createClient).mockResolvedValue({
++      from: vi.fn().mockImplementation((table: string) => {
++        if (table === 'pools') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: pool, error: null }) }) }) }
++        }
++        if (table === 'entries') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: entries }) }) }
++        }
++        if (table === 'tournament_scores') {
++          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [{ golfer_id: 'g1', tournament_id: 't-1', status: 'active', total_score: 0, position: 1, total_birdies: 0, updated_at: '2026-03-29T00:00:00.000Z' }] }) }) }
++        }
++        throw new Error(`Unexpected table ${table}`)
++      }),
++    } as never)
++
++    const holesByGolfer = new Map<string, import('@/lib/supabase/types').TournamentHole[]>()
++    holesByGolfer.set('g1', [
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 3, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
++      { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
++    ])
++
++    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(holesByGolfer)
++    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
++    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
++    vi.mocked(deriveCompletedRounds).mockReturnValue(2)
++
++    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
++      params: Promise.resolve({ poolId: 'pool-1' }),
++    })
++
++    expect(response.status).toBe(200)
++    expect(rankEntriesWithHoles).toHaveBeenCalled()
++    const callArg = rankEntriesWithHoles.mock.calls[0]?.[1]
++    expect(callArg).toBeInstanceOf(Map)
++    const holesFromCall = callArg as Map<string, TournamentHole[]>
++    expect(holesFromCall.size).toBe(1)
++    const golferHoles = holesFromCall.get('g1')
++    expect(golferHoles).toBeDefined()
++    expect(golferHoles?.length).toBe(2)
++    const round1 = golferHoles?.find(h => h.round_id === 1)
++    const round2 = golferHoles?.find(h => h.round_id === 2)
++    expect(round1?.hole_id).toBe(1)
++    expect(round2?.hole_id).toBe(1)
++  })
+ })
+[0m
+Now let me run the tests and verifications as specified:
+[0m$ [0mnpm test -- src/app/api/leaderboard/\[poolId\]/route.test.ts --reporter=verbose 2>&1
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run src/app/api/leaderboard/[poolId]/route.test.ts --reporter=verbose
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > preserves ranked entries when no tournament scores are available 10ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > returns isRefreshing true and triggers background refresh when data is stale 3ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > surfaces refresh failures instead of a perpetual refreshing state 2ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does not trigger background refresh for archived pools 1ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds 2ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does NOT call rankEntries (round-level) from scoring domain — only rankEntriesWithHoles (hole-level) 1ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does not collapse hole IDs across different rounds 2ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  12:59:04
+   Duration  477ms (transform 85ms, setup 75ms, import 112ms, tests 22ms, environment 0ms)
+[0m
+[0m$ [0mrg 'tournament_score_rounds|getTournamentScoreRounds' src/app/api/leaderboard/\[poolId\]/route.ts
+(no output)
+[0m
+[0m$ [0mrg 'rankEntries[^W]|from.*scoring/domain' src/app/api/leaderboard/\[poolId\]/route.ts
+(no output)
+[0m
+[0m$ [0mrg 'tournament_holes|getTournamentHolesForGolfers' src/app/api/leaderboard/\[poolId\]/route.ts
+import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
+    const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, Array.from(allGolferIds))
+[0m
+[0m$ [0mrg 'round-by-round|round based|best-ball.*round|round.*best-ball' README.md
+A commissioner-first web app for running private golf pools with live round-by-round scoring.
+[0m
+[0m$ [0mrg 'Entry round score = min|sum.*round score|round-level' docs/rules-spec.md
+**Source:** `src/lib/scoring/domain.ts:computeEntryScore` (round-level `isComplete` gating at lines 90–95)
+Before writing current score data, the system archives all round-level data to `tournament_score_rounds`.
+[0m
+[0m$ [0mrg -n 'hole-by-hole|best-ball' README.md | head -20
+8:- **Participant Picks** — Submit 4-golfer best-ball entries with autocomplete search
+80:- **Hole-by-hole** best-ball (lowest score-to-par per hole among active golfers)
+[0m
+[0m→ [0mRead docs/rules-spec.md[90m [offset=1, limit=100][0m
+[0m
+[0m$ [0mnpm run lint 2>&1
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 lint
+> next lint
+
+✔ No ESLint warnings or errors
+[0m
+[0m$ [0mnpm test -- --reporter=verbose 2>&1
+...output truncated...
+
+Full output saved to: /home/gary/.local/share/opencode/tool-output/tool_e1d8f02300010G5UxdvWP2k2x2
+
+ ✓ src/lib/__tests__/picks.test.ts > returns true for archived pools 1ms
+ ✓ src/lib/__tests__/picks.test.ts > treats archived pools as commissioner-locked too 1ms
+ ✓ src/app/(app)/participant/picks/[poolId]/actions.test.ts > submitPicks > redirects unauthenticated users to sign in 60ms
+ ✓ src/components/__tests__/CommissionerCommandCenter.test.tsx > PoolStatusSection > renders Archived as its own status label 30ms
+ ✓ src/components/__tests__/CommissionerCommandCenter.test.tsx > PoolStatusSection > renders metrics as command-center cards with clear labels 3ms
+ ✓ src/components/__tests__/StatusChip.test.tsx > StatusChip with deadline > renders deadline when status is open and deadline is provided 52ms
+ ✓ src/components/__tests__/StatusChip.test.tsx > StatusChip with deadline > does not render deadline when status is live 2ms
+ ✓ src/components/__tests__/StatusChip.test.tsx > StatusChip with deadline > does not render deadline when status is complete 1ms
+ ✓ src/app/(app)/commissioner/pools/[poolId]/__tests__/pool-delete-actions.test.ts > deletePool > creates a tombstone and deletes an archived pool 50ms
+ ✓ src/app/(app)/commissioner/pools/[poolId]/__tests__/pool-delete-actions.test.ts > deletePool > refuses to delete a pool that is not archived 6ms
+ ✓ src/lib/__tests__/pool-queries.test.ts > getAuditEventsForPool > throws when the audit event query fails 7ms
+ ✓ src/lib/__tests__/pool-queries.test.ts > getAuditEventsForPool > does not apply invalid limit values 4ms
+ ✓ src/lib/__tests__/pool-queries.test.ts > getAuditEventsForPool > applies valid positive integer limits 2ms
+ ✓ src/lib/__tests__/pool-queries.test.ts > recordPoolDeletion > writes a tombstone row 2ms
+ ✓ src/lib/__tests__/pool-queries.test.ts > getOpenPoolsPastDeadline > keeps pools open until midnight in their configured timezone 27ms
+ ✓ src/app/(app)/commissioner/pools/[poolId]/__tests__/CommissionerErrorBanner.test.tsx > CommissionerErrorBanner > renders error message 69ms
+ ✓ src/app/(app)/commissioner/pools/[poolId]/__tests__/CommissionerErrorBanner.test.tsx > CommissionerErrorBanner > does not render when lastRefreshError is null 7ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > normalizes wrapped score responses 13ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > normalizes live leaderboard rows with round snapshots 4ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > preserves zero values from Mongo numeric wrappers 4ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > getTournamentMeta returns normalized tournament metadata 1ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > getLeaderboard returns normalized leaderboard with round status 2ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > getScorecard returns per-hole scorecard for a golfer 4ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > getScorecard handles array response (per-round scorecards) 1ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getTournamentScores > getScorecard handles wrapped { scorecards: [...] } response 1ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getLeaderboard > returns normalized leaderboard with round status 3ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getScorecard > returns per-hole scorecard for a golfer 5ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getScorecard > fixture: single scorecard object parses correctly 1ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getScorecard > fixture: array of per-round scorecards flattens all holes, roundId from first 2ms
+ ✓ src/lib/__tests__/slash-golf-client.test.ts > getScorecard > fixture: wrapped { scorecards: [...] } shape extracts scorecard 1ms
+ ✓ src/app/join/[inviteCode]/actions.test.ts > joinPool > rejects archived pools with an error 39ms
+stderr | src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > API returns non-200 with JSON error body → throws Error with status
+[slash-golf] tournament score fetch failed {
+  status: 429,
+  statusText: 'Too Many Requests',
+  body: '{"message":"Rate limit exceeded"}'
+}
+
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > API returns empty leaderboardRows → returns [] 7ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > API returns non-200 with JSON error body → throws Error with status 6ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > response wrapped in { data: [...] } shape → normalizes correctly 3ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > response wrapped in { scores: [...] } shape → normalizes correctly 1ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > response wrapped in { players: [...] } shape → normalizes correctly 1ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > total is "-" → row filtered from results (edge case: no parseable score) 2ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > total is "72*" → total_score is 72 (asterisk stripped) 1ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getTournamentScores > status is "dq" → preserved as-is from normalizeSlashStatus 2ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getLeaderboard > response missing roundId → uses falsy value (0 or null) 4ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getLeaderboard > response missing roundStatus → uses null 1ms
+ ✓ src/lib/__tests__/slash-golf-client-edge-cases.test.ts > slash-golf client edge cases > getScorecard > empty holes array → returns scorecard with empty holes 1ms
+ ✓ src/app/api/scoring/refresh/route.test.ts > POST /api/scoring/refresh > returns 401 without auth 10ms
+ ✓ src/app/api/scoring/refresh/route.test.ts > POST /api/scoring/refresh > returns 400 when poolId is missing 4ms
+ ✓ src/app/api/scoring/refresh/route.test.ts > POST /api/scoring/refresh > returns 400 for invalid JSON body 3ms
+ ✓ src/app/api/scoring/refresh/route.test.ts > POST /api/scoring/refresh > returns 404 when pool does not exist 2ms
+ ✓ src/app/api/scoring/refresh/route.test.ts > POST /api/scoring/refresh > returns 200 and refresh data on success 11ms
+ ✓ src/app/api/scoring/refresh/route.test.ts > POST /api/scoring/refresh > returns 409 when a refresh is already in progress 10ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > status component accessibility attributes > renders FreshnessChip with polite live region and accessible label 10ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > status component accessibility attributes > renders StatusChip with explicit pool-status aria-label 1ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > status component accessibility attributes > renders StatusChip with archived pool copy 1ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > status component accessibility attributes > renders an unmistakable confirmation heading and picks list 3ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > status component accessibility attributes > renders PickProgress with ready-to-submit copy and completed progress value 2ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > StatusChip token migration > uses green tokens for open status (not emerald) 1ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > StatusChip token migration > uses stone tokens for complete and archived status (not slate) 3ms
+ ✓ src/components/__tests__/StatusComponentsA11y.test.tsx > StatusChip token migration > uses green tokens for live status 2ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > renders a button element 12ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies primary variant classes by default 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies secondary variant classes 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies danger variant classes 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies ghost variant classes 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies md size classes by default 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies sm size classes 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies lg size classes 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > passes through HTML button attributes 7ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies focus-visible ring classes 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies hover state classes for primary variant 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies hover state classes for secondary variant 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > applies rounded class for consistent shape 1ms
+ ✓ src/components/ui/__tests__/Button.test.tsx > Button > merges additional className prop 0ms
+stderr | src/app/(auth)/sign-in/__tests__/SignIn.test.tsx > SignIn page > renders Card container with green left-border accent
+Warning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
+    at form
+    at div
+    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
+    at div
+    at SignInForm (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-in/page.tsx:38:62)
+    at Suspense
+    at SignIn
+
+ ✓ src/app/(auth)/sign-in/__tests__/SignIn.test.tsx > SignIn page > renders Card container with green left-border accent 15ms
+ ✓ src/app/(auth)/sign-in/__tests__/SignIn.test.tsx > SignIn page > renders section heading with green/sand styling 2ms
+ ✓ src/app/(auth)/sign-in/__tests__/SignIn.test.tsx > SignIn page > renders email and password inputs 2ms
+ ✓ src/app/(auth)/sign-in/__tests__/SignIn.test.tsx > SignIn page > renders primary Button for submit with green-700 1ms
+ ✓ src/app/(auth)/sign-in/__tests__/SignIn.test.tsx > SignIn page > renders footer link to sign-up 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > returns the shared heading copy for live pools 6ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > sets showFreshness to false for open pools 3ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > sets showFreshness to true for live pools 3ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > sets showFreshness to true for complete pools 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > returns locked + live messaging with current freshness details 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > returns open messaging with stale freshness warning 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > returns unknown freshness fallback messaging 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > prioritizes refresh errors over freshness status 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > renders a non-contradictory freshness label when a live pool has a refresh error 8ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > uses deadline-passed lock text when pool is locked while open 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > shows refreshing state when isRefreshing is true 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > returns archived lock messaging 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > getTrustStatusBarState > prioritizes isRefreshing over refresh error 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > TrustStatusBar stale pulsing indicator > shows pulsing amber indicator when pool status is live and freshness is stale 2ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > TrustStatusBar stale pulsing indicator > does not show pulsing indicator when freshness is current 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > TrustStatusBar stale pulsing indicator > shows refresh button when pool is live and stale 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > TrustStatusBar stale pulsing indicator > does not show refresh button when freshness is current 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > TrustStatusBar token migration > uses green/stone tokens for info tone (not emerald/slate) 1ms
+ ✓ src/components/__tests__/TrustStatusBar.test.tsx > TrustStatusBar token migration > uses stone-600 for freshness labels (not slate-500) 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > isActiveGolfer > returns true for active golfers 11ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > isActiveGolfer > returns false for withdrawn golfers 0ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > isActiveGolfer > returns false for cut golfers 0ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore > normal 4 active golfers, complete round 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore > one golfer cut — excluded post-cut 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore > one golfer WD mid-round — excluded post-WD 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore > partial round — only completed holes count 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore > tie on score, broken by birdies 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore > tie on score and birdies — shared rank 2ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore hole-level > normal round — best ball per hole summed 2ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore hole-level > round with missing golfer — partial scoring 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore edge cases > all golfers cut — score is null 1ms
+ ↓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore edge cases > shared rank when score AND birdies are equal — covered by existing rankEntries test
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > computeEntryScore edge cases > two rounds — only complete rounds count 0ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > deriveCompletedRounds > returns 0 when no scores 0ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > deriveCompletedRounds > returns highest round id 0ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > rankEntries > ranks by score then birdies 1ms
+ ✓ src/lib/__tests__/domain-scoring.test.ts > domain scoring > rankEntries > assigns shared rank when score and birdies are identical 1ms
+stderr | src/app/(auth)/sign-up/__tests__/SignUp.test.tsx > SignUp page > renders Card container with green left-border accent
+Warning: Invalid value for prop `action` on <form> tag. Either remove it from the element, or pass a string or number value to keep it in the DOM. For details, see https://reactjs.org/link/attribute-behavior 
+    at form
+    at div
+    at Card (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/components/ui/Card.tsx:10:17)
+    at div
+    at SignUp (/home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/src/app/(auth)/sign-up/page.tsx:17:62)
+
+ ✓ src/app/(auth)/sign-up/__tests__/SignUp.test.tsx > SignUp page > renders Card container with green left-border accent 19ms
+ ✓ src/app/(auth)/sign-up/__tests__/SignUp.test.tsx > SignUp page > renders section heading with green/sand styling 2ms
+ ✓ src/app/(auth)/sign-up/__tests__/SignUp.test.tsx > SignUp page > renders email and password inputs 2ms
+ ✓ src/app/(auth)/sign-up/__tests__/SignUp.test.tsx > SignUp page > renders primary Button for submit with green-700 2ms
+ ✓ src/app/(auth)/sign-up/__tests__/SignUp.test.tsx > SignUp page > renders footer link to sign-in 2ms
+ ✓ src/lib/__tests__/scoring-refresh.test.ts > refreshScoresForPool > happy path: fetches scores, upserts, broadcasts, returns { data, error: null } 11ms
+ ✓ src/lib/__tests__/scoring-refresh.test.ts > refreshScoresForPool > external API failure: returns { data: null, error: { code: "FETCH_FAILED" } } 5ms
+ ✓ src/lib/__tests__/scoring-refresh.test.ts > refreshScoresForPool > upsert failure: returns { data: null, error: { code: "UPSERT_FAILED" } } 1ms
+ ✓ src/lib/__tests__/scoring-refresh.test.ts > refreshScoresForPool > scorecard data flows through upsertTournamentHoles and ranking uses hole-level data 11ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > tournament_holes queries > getTournamentHolesForGolfers returns holes grouped by golfer 12ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > tournament_holes queries > upsertTournamentHoles writes multiple holes 3ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > upsertTournamentScore > archives each round before writing the current score row 16ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > upsertTournamentScore > does not write round_status to archive — Board-authorized no-retroactivity rule 7ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > upsertTournamentScore > upsertTournamentHoles persists hole records 2ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > upsertTournamentHoles > persists hole records 1ms
+ ✓ src/lib/__tests__/scoring-queries.test.ts > upsertTournamentHoles > returns early when holes array is empty 0ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > renders a div element with children 15ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > applies panelClasses by default 1ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > applies border-l-4 border-l-green-700 when accent is left 1ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > does not apply accent classes when accent is none 1ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > does not apply accent classes when accent is undefined 1ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > merges additional className prop 1ms
+ ✓ src/components/ui/__tests__/Card.test.tsx > Card > passes through HTML div attributes 1ms
+ ✓ src/lib/__tests__/refresh-telemetry.test.ts > refresh telemetry > updatePoolRefreshTelemetry > increments refresh_attempt_count and sets last_refresh_attempt_at 6ms
+ ✓ src/lib/__tests__/refresh-telemetry.test.ts > refresh telemetry > updatePoolRefreshTelemetry > only updates last_refresh_attempt_at when count is not incremented 1ms
+ ✓ src/lib/__tests__/refresh-telemetry.test.ts > refresh telemetry > updatePoolRefreshMetadata > sets refreshed_at and last_refresh_success_at on success 1ms
+ ✓ src/lib/__tests__/refresh-telemetry.test.ts > refresh telemetry > updatePoolRefreshMetadata > sets last_refresh_error on failure 1ms
+ ✓ src/components/__tests__/PicksFlowPresentation.test.tsx > SelectionSummaryCard > renders a compact review of selection progress and chosen golfers 13ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > getPoolsByTournament > returns pools filtered by tournament_id 6ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > getPoolsByTournament > returns empty array when no pools match 1ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > getPoolsByTournament > throws when query fails 3ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > getEntriesForPool > returns entries for a specific pool 1ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > getEntriesForPool > returns empty array when pool has no entries 1ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > updatePoolRefreshMetadata > calls pools.update() with refreshed_at on success 2ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > updatePoolRefreshMetadata > calls pools.update() with last_refresh_error on failure 1ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > updatePoolRefreshMetadata > throws on update failure 1ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > insertAuditEvent > calls audit_events.insert() with correct fields 2ms
+ ✓ src/lib/__tests__/pool-queries-for-scoring-refresh.test.ts > pool-queries (refresh pipeline deps) > insertAuditEvent > throws on insert failure 1ms
+ ✓ src/components/__tests__/TieExplanationBadge.test.tsx > TieExplanationBadge > renders when isTied is true 11ms
+ ✓ src/components/__tests__/TieExplanationBadge.test.tsx > TieExplanationBadge > does not render when isTied is false 2ms
+ ✓ src/components/__tests__/TieExplanationBadge.test.tsx > TieExplanationBadge > renders with correct birdie count 1ms
+ ✓ src/components/__tests__/TieExplanationBadge.test.tsx > TieExplanationBadge > renders entry name in badge 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > getEntryRoundScore > returns the lowest round score among active golfers 2ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > getEntryRoundScore > skips withdrawn golfers 0ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > getEntryRoundScore > returns null when no active scores exist 0ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > rankEntries > ranks by total score, then birdies for tiebreaker 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > rankEntries > assigns shared rank when entries have identical score and birdies 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > rankEntries > gives different ranks when birdies differ 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > rankEntries > handles withdrawn golfers correctly 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > calculateEntry helpers > sums birdies across all golfers 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > calculateEntry helpers > returns zero when no scores are present 0ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > deriveCompletedRounds > returns 0 when no golfers have started 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > deriveCompletedRounds > returns the highest completed round 0ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > buildGolferRoundScoresMap with hole data > maps tournament holes to PlayerHoleScore entries with holeId 2ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > computeEntryScore round-gating with overlapping holes > does not count a round unless ALL golfers have isComplete:true for that round 1ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > computeEntryScore round-gating with overlapping holes > counts both rounds when all golfers complete all rounds 0ms
+ ✓ src/lib/__tests__/scoring.test.ts > scoring > computeEntryScore round-gating with overlapping holes > does not collapse overlapping hole IDs across rounds into one pseudo-hole 1ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > computeScoreDiff > returns empty diff when scores are identical 4ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > computeScoreDiff > detects total score changes 0ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > computeScoreDiff > detects round id changes 0ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > computeScoreDiff > detects status changes 0ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > computeScoreDiff > detects birdie count changes 1ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > buildRefreshAuditDetails > summarizes diffs across multiple golfers 1ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > buildRefreshAuditDetails > returns empty diffs when nothing changed 0ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > buildRefreshAuditDetails > handles new golfers not in old scores 0ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > buildRefreshAuditDetails > detects golfers dropped from external feed 0ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > buildRefreshAuditDetails > dedupes changed golfers when duplicate incoming rows exist 1ms
+ ✓ src/lib/__tests__/audit.test.ts > audit > buildRefreshAuditDetails > dedupes new golfers when duplicate incoming rows exist 1ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > preserves ranked entries when no tournament scores are available 17ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > returns isRefreshing true and triggers background refresh when data is stale 6ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > surfaces refresh failures instead of a perpetual refreshing state 3ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does not trigger background refresh for archived pools 2ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds 6ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does NOT call rankEntries (round-level) from scoring domain — only rankEntriesWithHoles (hole-level) 3ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does not collapse hole IDs across different rounds 3ms
+ ✓ src/app/api/cron/scoring/route.test.ts > GET /api/cron/scoring > returns 500 when app URL env is missing 9ms
+ ✓ src/app/api/cron/scoring/route.test.ts > GET /api/cron/scoring > posts to /api/scoring using URL-safe construction and cron header 7ms
+ ✓ src/components/__tests__/LeaderboardRow.test.tsx > LeaderboardRow > renders rank badge 22ms
+ ✓ src/components/__tests__/LeaderboardRow.test.tsx > LeaderboardRow > renders tie prefix for tied entries 11ms
+ ✓ src/components/__tests__/LeaderboardRow.test.tsx > LeaderboardRow > does not render TieExplanationBadge when not tied 1ms
+ ✓ src/lib/__tests__/scoring-lock.test.ts > acquireRefreshLock > happy path: acquires lock when no existing lock 5ms
+ ✓ src/lib/__tests__/scoring-lock.test.ts > acquireRefreshLock > conflict: returns heldBy when lock exists and not expired 1ms
+ ✓ src/lib/__tests__/scoring-lock.test.ts > acquireRefreshLock > expiry: claims expired lock when no other holder 1ms
+ ✓ src/lib/__tests__/scoring-lock.test.ts > releaseRefreshLock > happy path: releases lock when lockId matches 3ms
+ ✓ src/lib/__tests__/scoring-lock.test.ts > releaseRefreshLock > error: returns error when release fails 1ms
+ ✓ src/lib/__tests__/pool-state-transitions.test.ts > pool state transitions > open -> live: transitions when deadline passes 6ms
+ ✓ src/lib/__tests__/pool-state-transitions.test.ts > pool state transitions > live -> complete: transitions when tournament ends 1ms
+ ✓ src/lib/__tests__/pool-state-transitions.test.ts > pool state transitions > complete -> archived: commissioner archives pool 2ms
+ ✓ src/lib/__tests__/pool-state-transitions.test.ts > pool state transitions > optimistic locking: rejects transition when status already changed 1ms
+ ✓ src/components/__tests__/LeaderboardPresentation.test.tsx > LeaderboardRow > renders rank, entry name, score, and birdies in a scan-friendly hierarchy 14ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferScorecard > returns round-level data for an active golfer 4ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferScorecard > returns zero total for a golfer with no round data 1ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferScorecard > includes status for withdrawn golfers 1ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getEntryGolferSummaries > returns a summary for each golfer in the entry 2ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getEntryGolferSummaries > handles golfer with no score data 2ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getEntryGolferSummaries > handles golfer not in golfers list 0ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferContribution > marks the golfer when their round matches the best ball 2ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferContribution > marks as contributing when golfer ties for best ball 0ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferContribution > returns non-contributing when golfer is withdrawn 2ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferContribution > handles golfer not found in scores map 1ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferContribution > counts total contributing rounds 3ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferPoolContext > finds all entries containing a given golfer 1ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferPoolContext > returns zero when no entries contain the golfer 0ms
+ ✓ src/lib/__tests__/golfer-detail.test.ts > golfer-detail > getGolferPoolContext > handles empty entries list 0ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config color tokens > defines primary color tokens 3ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config color tokens > defines surface color tokens 2ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config color tokens > defines action color tokens 1ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config color tokens > defines neutral color tokens 1ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config spacing tokens > defines 8px-base rhythm spacing 1ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config typography tokens > defines label font size 1ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config typography tokens > defines sans font family with Inter first 1ms
+ ✓ src/lib/__tests__/design-tokens.test.ts > tailwind config typography tokens > defines mono font family 0ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-primary-900 3ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-primary-700 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-primary-100 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-surface-warm 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-surface-base 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-action-warning 0ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-action-error 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-neutral-900 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-neutral-600 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --color-neutral-200 1ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --ring-brand 0ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > defines --fg-shell 0ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > updates --ring-brand to green-700 RGB value 0ms
+ ✓ src/app/__tests__/globals-css.test.ts > globals.css custom properties > updates --fg-shell to stone-900 RGB value 0ms
+ ✓ src/lib/__tests__/tournament-roster.test.ts > tournament roster queries > shares one tournament roster across multiple pools with the same tournament_id 4ms
+ ✓ src/lib/__tests__/tournament-roster.test.ts > tournament roster queries > allows tournament roster entries to exist before a pool references them 2ms
+ ✓ src/lib/__tests__/tournament-roster.test.ts > tournament_golfers RLS migration > enables public reads and commissioner-only writes 2ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > returns "unknown" when refreshedAt is null 3ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > returns "unknown" when refreshedAt is an invalid date string 0ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > returns "current" when refreshedAt is within the threshold 1ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > returns "stale" when refreshedAt is beyond the threshold 1ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > uses custom threshold when provided 1ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > returns "stale" at exact threshold boundary 1ms
+ ✓ src/lib/__tests__/freshness.test.ts > classifyFreshness > accepts explicit now parameter for deterministic testing 1ms
+ ✓ src/lib/__tests__/entry-queries.test.ts > getPoolsForMember > filters archived pools out of member pools 6ms
+ ✓ src/components/__tests__/uiStyles.test.ts > uiStyles > returns the gradient shell for upgraded app pages 3ms
+ ✓ src/components/__tests__/uiStyles.test.ts > uiStyles > returns the premium panel classes for default panels 1ms
+ ✓ src/components/__tests__/uiStyles.test.ts > uiStyles > returns metric card classes with compact hierarchy 0ms
+ ✓ src/components/__tests__/uiStyles.test.ts > uiStyles > returns the shared heading wrapper classes 1ms
+ ✓ src/components/__tests__/uiStyles.test.ts > uiStyles > returns visible focus classes for keyboard-scroll regions 1ms
+ ✓ src/components/__tests__/leaderboard.test.ts > shouldRenderLeaderboardTrustStatus > renders trust status in leaderboard header for live pools by default 3ms
+ ✓ src/components/__tests__/leaderboard.test.ts > shouldRenderLeaderboardTrustStatus > renders trust status in leaderboard header for complete pools by default 1ms
+ ✓ src/components/__tests__/leaderboard.test.ts > shouldRenderLeaderboardTrustStatus > does not render trust status in leaderboard header when hidden explicitly 1ms
+ ✓ src/components/__tests__/leaderboard.test.ts > shouldRenderLeaderboardTrustStatus > does not render trust status in leaderboard header for open pools 1ms
+ ✓ src/components/__tests__/leaderboard.test.ts > shouldRenderLeaderboardTrustStatus > renders trust status in leaderboard header for archived pools by default 0ms
+ ✓ src/components/__tests__/data-alert-a11y.test.ts > getDataAlertLiveRegion > returns assertive alert semantics for error 3ms
+ ✓ src/components/__tests__/data-alert-a11y.test.ts > getDataAlertLiveRegion > returns polite status semantics for warning and info 1ms
+ ✓ src/lib/__tests__/scoring-dispatch.test.ts > scoring dispatcher migration > schedules an hourly dispatcher that posts to the cron endpoint 2ms
+ ✓ src/app/join/[inviteCode]/__tests__/page.test.tsx > JoinPage token migration > no longer uses gray-* tokens in any rendered output 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 16 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/__tests__/scoring-edge-cases.test.ts > scoring edge cases > computeEntryScore > all golfers have every round incomplete → totalScore 0, completedHoles 0
+AssertionError: expected null to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+null
+
+ ❯ src/lib/__tests__/scoring-edge-cases.test.ts:31:33
+     29|       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'…
+     30|
+     31|       expect(result.totalScore).toBe(0)
+       |                                 ^
+     32|       expect(result.completedHoles).toBe(0)
+     33|       expect(result.totalBirdies).toBe(0)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-edge-cases.test.ts > scoring edge cases > rankEntries > empty golferRoundScores map → all entries get totalScore 0
+AssertionError: expected null to be +0 // Object.is equality
+
+- Expected:
+0
+
++ Received:
+null
+
+ ❯ src/lib/__tests__/scoring-edge-cases.test.ts:81:36
+     79|
+     80|       expect(ranked).toHaveLength(1)
+     81|       expect(ranked[0].totalScore).toBe(0)
+       |                                    ^
+     82|       expect(ranked[0].rank).toBe(1)
+     83|     })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-refresh-edge-cases.test.ts > scoring refresh edge cases > API returns empty slashScores → NO_SCORES error
+Error: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ Module.refreshScoresForPool src/lib/scoring-refresh.ts:79:9
+     77|   // Step 1: Record telemetry at attempt start
+     78|   const attemptTime = new Date().toISOString()
+     79|   await updatePoolRefreshTelemetry(supabase, pool.id, {
+       |         ^
+     80|     refresh_attempt_count: 'increment',
+     81|     last_refresh_attempt_at: attemptTime,
+ ❯ src/lib/__tests__/scoring-refresh-edge-cases.test.ts:78:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-refresh-edge-cases.test.ts > scoring refresh edge cases > partial upsert failure: 3 golfers, 2 OK, 1 fails → UPSERT_FAILED
+Error: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ Module.refreshScoresForPool src/lib/scoring-refresh.ts:79:9
+     77|   // Step 1: Record telemetry at attempt start
+     78|   const attemptTime = new Date().toISOString()
+     79|   await updatePoolRefreshTelemetry(supabase, pool.id, {
+       |         ^
+     80|     refresh_attempt_count: 'increment',
+     81|     last_refresh_attempt_at: attemptTime,
+ ❯ src/lib/__tests__/scoring-refresh-edge-cases.test.ts:108:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-refresh-edge-cases.test.ts > scoring refresh edge cases > updatePoolRefreshMetadata fails on success path → INTERNAL_ERROR
+Error: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ Module.refreshScoresForPool src/lib/scoring-refresh.ts:79:9
+     77|   // Step 1: Record telemetry at attempt start
+     78|   const attemptTime = new Date().toISOString()
+     79|   await updatePoolRefreshTelemetry(supabase, pool.id, {
+       |         ^
+     80|     refresh_attempt_count: 'increment',
+     81|     last_refresh_attempt_at: attemptTime,
+ ❯ src/lib/__tests__/scoring-refresh-edge-cases.test.ts:143:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-refresh-edge-cases.test.ts > scoring refresh edge cases > insertAuditEvent fails on success path → INTERNAL_ERROR
+Error: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ Module.refreshScoresForPool src/lib/scoring-refresh.ts:79:9
+     77|   // Step 1: Record telemetry at attempt start
+     78|   const attemptTime = new Date().toISOString()
+     79|   await updatePoolRefreshTelemetry(supabase, pool.id, {
+       |         ^
+     80|     refresh_attempt_count: 'increment',
+     81|     last_refresh_attempt_at: attemptTime,
+ ❯ src/lib/__tests__/scoring-refresh-edge-cases.test.ts:176:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-refresh-edge-cases.test.ts > scoring refresh edge cases > getEntriesForPool returns empty array → broadcast sends with empty ranked array
+Error: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ Module.refreshScoresForPool src/lib/scoring-refresh.ts:79:9
+     77|   // Step 1: Record telemetry at attempt start
+     78|   const attemptTime = new Date().toISOString()
+     79|   await updatePoolRefreshTelemetry(supabase, pool.id, {
+       |         ^
+     80|     refresh_attempt_count: 'increment',
+     81|     last_refresh_attempt_at: attemptTime,
+ ❯ src/lib/__tests__/scoring-refresh-edge-cases.test.ts:212:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/16]⎯
+
+ FAIL  src/lib/__tests__/scoring-refresh-edge-cases.test.ts > scoring refresh edge cases > deriveCompletedRounds === 0 (tournament not started) → returns success with completedRounds 0
+Error: [vitest] No "updatePoolRefreshTelemetry" export is defined on the "@/lib/pool-queries" mock. Did you forget to return it from "vi.mock"?
+If you need to partially mock a module, you can use "importOriginal" helper inside:
+
+vi.mock(import("@/lib/pool-queries"), async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    // your mocked methods
+  }
+})
+
+ ❯ Module.refreshScoresForPool src/lib/scoring-refresh.ts:79:9
+     77|   // Step 1: Record telemetry at attempt start
+     78|   const attemptTime = new Date().toISOString()
+     79|   await updatePoolRefreshTelemetry(supabase, pool.id, {
+       |         ^
+     80|     refresh_attempt_count: 'increment',
+     81|     last_refresh_attempt_at: attemptTime,
+ ❯ src/lib/__tests__/scoring-refresh-edge-cases.test.ts:247:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/16]⎯
+
+ FAIL  src/components/__tests__/LockBanner.test.tsx > LockBanner warning tone near deadline > renders with warning tone when pool is open and deadline is within 24 hours
+AssertionError: expected '<div class="rounded-3xl border border…' to contain 'border-amber'
+
+Expected: "border-amber"
+Received: "<div class="rounded-3xl border border-white/60 bg-white/90 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4" role="status" aria-live="polite"><span aria-hidden="true" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg">🔓</span><div><p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-green-700/70 text-green-900">Tournament lock</p><p class="text-base font-semibold text-green-950">Picks are open</p><p class="text-sm text-green-800">Deadline: Thu, Apr 30, 12:00 AM EDT</p></div></div>"
+
+ ❯ src/components/__tests__/LockBanner.test.tsx:79:18
+     77|       <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00…
+     78|     )
+     79|     expect(html).toContain('border-amber')
+       |                  ^
+     80|     expect(html).toContain('bg-amber')
+     81|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/16]⎯
+
+ FAIL  src/components/__tests__/LockBanner.test.tsx > LockBanner warning tone near deadline > shows secondary line with timezone when within 24 hours
+AssertionError: expected '<div class="rounded-3xl border border…' to contain 'America/New_York'
+
+Expected: "America/New_York"
+Received: "<div class="rounded-3xl border border-white/60 bg-white/90 shadow-[0_18px_60px_-24px_rgba(15,23,42,0.35)] backdrop-blur mb-4 flex items-center gap-3 border border-green-200 bg-green-100/90 p-4" role="status" aria-live="polite"><span aria-hidden="true" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-200 bg-white/75 text-lg">🔓</span><div><p class="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-green-700/70 text-green-900">Tournament lock</p><p class="text-base font-semibold text-green-950">Picks are open</p><p class="text-sm text-green-800">Deadline: Thu, Apr 30, 12:00 AM EDT</p></div></div>"
+
+ ❯ src/components/__tests__/LockBanner.test.tsx:95:18
+     93|       <LockBanner isLocked={false} deadline="2026-04-30T00:00:00+00:00…
+     94|     )
+     95|     expect(html).toContain('America/New_York')
+       |                  ^
+     96|   })
+     97| })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/16]⎯
+
+ FAIL  src/components/__tests__/SpectatorLeaderboard.test.tsx > Spectator leaderboard token migration (OPS-23) > ScoreDisplay > does not use gray-* tokens in source file
+AssertionError: expected [ 'gray-400' ] to be null
+
+- Expected:
+null
+
++ Received:
+[
+  "gray-400",
+]
+
+ ❯ src/components/__tests__/SpectatorLeaderboard.test.tsx:51:27
+     49|       const source = fs.readFileSync(SCORE_DISPLAY_PATH, 'utf-8')
+     50|       const grayMatches = source.match(/gray-\d{2,3}/g)
+     51|       expect(grayMatches).toBeNull()
+       |                           ^
+     52|     })
+     53|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/16]⎯
+
+ FAIL  src/app/api/scoring/route.test.ts > POST /api/scoring > uses golfer dataset size for audit details and preserves entryCount compatibility
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ ❯ src/app/api/scoring/route.test.ts:152:29
+    150|     const response = await POST(request)
+    151|
+    152|     expect(response.status).toBe(200)
+       |                             ^
+    153|     expect(createAdminClient).toHaveBeenCalledTimes(1)
+    154|     expect(buildRefreshAuditDetails).toHaveBeenCalledWith(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/16]⎯
+
+ FAIL  src/app/api/scoring/route.test.ts > POST /api/scoring > fans out scoring metadata to every live pool on the same tournament
+AssertionError: expected "vi.fn()" to be called with arguments: [ Anything, 'pool-1' ]
+
+Number of calls: 0
+
+ ❯ src/app/api/scoring/route.test.ts:235:31
+    233|
+    234|     expect(getTournamentScores).toHaveBeenCalledWith('t-1', 2026)
+    235|     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), …
+       |                               ^
+    236|     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), …
+    237|     expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anyt…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/16]⎯
+
+ FAIL  src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx > JoinPoolForm > renders a Button component with primary variant
+ FAIL  src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx > JoinPoolForm > renders the submit button with w-full class
+ FAIL  src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx > JoinPoolForm > renders error text in red-600 when error is present
+TypeError: useFormState is not a function or its return value is not iterable
+ ❯ JoinPoolForm src/app/join/[inviteCode]/JoinPoolForm.tsx:14:31
+     12|
+     13| export default function JoinPoolForm({ inviteCode }: JoinPoolFormProps…
+     14|   const [state, formAction] = useFormState(joinPool, initialState)
+       |                               ^
+     15|
+     16|   return (
+ ❯ renderWithHooks node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:5662:16
+ ❯ renderIndeterminateComponent node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:5736:15
+ ❯ renderElement node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:5961:7
+ ❯ renderNodeDestructiveImpl node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6119:11
+ ❯ renderNodeDestructive node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6091:14
+ ❯ retryTask node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6543:5
+ ❯ performWork node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6591:7
+ ❯ node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:6915:12
+ ❯ scheduleWork node_modules/.pnpm/react-dom@18.3.1_react@18.3.1/node_modules/react-dom/cjs/react-dom-server-legacy.node.development.js:78:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/16]⎯
+
+
+ Test Files  6 failed | 59 passed (65)
+      Tests  16 failed | 452 passed | 1 skipped (469)
+   Start at  12:59:25
+   Duration  8.49s (transform 4.48s, setup 9.12s, import 10.89s, tests 5.93s, environment 10.00s)
+[0m
+Now let me write the quality review:
+[0m← [0mWrite quality-review-task-1.md
+Wrote file successfully.
+[0m
+Review written to `quality-review-task-1.md`.
+
+**Summary:**
+- **All 7 route tests pass** (including the new regression test)
+- **Lint passes** with no errors
+- **Grep verifications pass** — `route.ts` uses only `tournament_holes`/`getTournamentHolesForGolfers`, zero stale `tournament_score_rounds` or bare `rankEntries` references
+- **16 pre-existing failures** in unrelated files (scoring-edge-cases, scoring-refresh-edge-cases, LockBanner, SpectatorLeaderboard, scoring/route, JoinPoolForm) — not introduced by this diff
+- **Assessment: APPROVED**

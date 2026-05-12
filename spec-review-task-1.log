@@ -1,0 +1,52 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=150, offset=300][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m✱ [0mGrep "tournament_score_rounds|getTournamentScoreRounds"[90m in src/app/api/leaderboard/[poolId]/route.ts · 0 matches[0m
+[0m✱ [0mGrep "rankEntries[^W]"[90m in src/app/api/leaderboard/[poolId]/route.ts · 0 matches[0m
+[0m✱ [0mGrep "tournament_holes|getTournamentHolesForGolfers"[90m in src/app/api/leaderboard/[poolId]/route.ts · 2 matches[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [offset=450][0m
+[0m✱ [0mGrep "round-by-round|round based|best-ball.*round|round.*best-ball"[90m in README.md · 1 match[0m
+[0m✱ [0mGrep "Entry round score = min|sum.*round score|round-level"[90m in docs/rules-spec.md · 2 matches[0m
+[0m→ [0mRead README.md[90m [limit=40, offset=70][0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=80, offset=50][0m
+[0m
+[0m$ [0mnpm test -- src/app/api/leaderboard/\[poolId\]/route.test.ts --reporter=verbose 2>&1 | tail -40
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run src/app/api/leaderboard/[poolId]/route.test.ts --reporter=verbose
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > preserves ranked entries when no tournament scores are available 9ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > returns isRefreshing true and triggers background refresh when data is stale 3ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > surfaces refresh failures instead of a perpetual refreshing state 2ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does not trigger background refresh for archived pools 1ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds 2ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does NOT call rankEntries (round-level) from scoring domain — only rankEntriesWithHoles (hole-level) 1ms
+ ✓ src/app/api/leaderboard/[poolId]/route.test.ts > GET /api/leaderboard/[poolId] > does not collapse hole IDs across different rounds 2ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  12:58:41
+   Duration  471ms (transform 76ms, setup 69ms, import 112ms, tests 22ms, environment 0ms)
+[0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=50, offset=1][0m
+[0m
+[0m← [0mWrite spec-review-task-1.md
+Wrote file successfully.
+[0m
+✅ Review written to `./spec-review-task-1.md`
+
+**Summary:**
+- **Implementation:** ✅ Fully compliant — route.ts uses `tournament_holes` + `rankEntriesWithHoles` only, no stale `tournament_score_rounds` references
+- **Tests:** ✅ All 7 pass including regression test for multi-round hole overlap
+- **Documentation:** ❌ 3 issues found
+  - `README.md:3` tagline says "round-by-round" but line 80 correctly says "hole-by-hole"
+  - `docs/rules-spec.md:56` references `domain.ts` which doesn't exist (should be `scoring.ts`)
+  - `docs/rules-spec.md:201` describes `tournament_score_rounds` as scoring source rather than archival sink

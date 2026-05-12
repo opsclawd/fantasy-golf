@@ -1,26 +1,45 @@
-# Quality Review: Regression Test for Hole-Level Scoring Path
+# Quality Review — Issue #51 Implementation
 
-## Test Results
-- **Command:** `npm test -- src/app/api/leaderboard/[poolId]/route.test.ts`
-- **Status:** All 5 tests pass
+**Files reviewed:** `src/app/api/leaderboard/[poolId]/route.ts`, `route.test.ts`, `README.md`, `docs/rules-spec.md`
+
+## Verification Results
+
+| Check | Result |
+|-------|--------|
+| No `tournament_score_rounds` refs in route.ts | PASS |
+| No bare `rankEntries` import in route.ts | PASS (only `rankEntriesWithHoles`) |
+| `tournament_holes`/`getTournamentHolesForGolfers` used | PASS |
+| Regression test present (line 437) | PASS |
+| rules-spec §2.1 describes hole-by-hole | PASS |
+| README no round-level aggregation language | PASS (minor note below) |
+
+---
 
 ## Strengths
-- Clean migration from `getTournamentScoreRounds` to `getTournamentHolesForGolfers` mock
-- Clean migration from `rankEntries` to `rankEntriesWithHoles` mock
-- New test (lines 322-389) properly validates hole-level scoring path with realistic data:
-  - Multiple rounds (round 1 and 2) for golfers g1 and g2
-  - Correct scoring data (strokes, par, score_to_par)
-  - Verification that `getTournamentHolesForGolfers` is called with correct golfer IDs
-  - Verification that `rankEntriesWithHoles` is called with expected arguments
-- All 4 existing tests correctly updated with new mocks
-- No残留 `getTournamentScoreRounds` references in mocks or imports
-- Consistent mock setup pattern across all tests
+
+- **route.ts** is clean — single responsibility for leaderboard API, correctly imports `rankEntriesWithHoles` only, calls `getTournamentHolesForGolfers` (not the legacy round-level query), no `tournament_score_rounds` references
+- **Regression test** at line 437 correctly exercises the `(roundId, holeId)` key uniqueness by verifying two rounds with `hole_id: 1` are both present in the golfer's hole array and distinguishable by `round_id`
+- **rules-spec.md §2.1** accurately describes the hole-by-hole best-ball algorithm with per-hole `scoreToPar` aggregation — no round-level `min()` language
+- **Two anti-regression tests** in route.test.ts guard against round-level scoring usage: line 328 (verifies `getTournamentHolesForGolfers` called) and line 397 (verifies `domainRankEntries` NOT called)
+
+---
 
 ## Issues
-None critical or important. Minor observations:
 
-- **Minor:** Line 121 and 387 use `expect.any(Map)` for round derivation map - loose but consistent with existing pattern in the test
-- **Minor:** `holesByGolfer` type annotation uses inline import (`import('@/lib/supabase/types').TournamentHole[])` at line 335 - could be moved to top-level import but works correctly
+### Minor — README "round-by-round" phrasing
 
-## Assessment
-**APPROVED** - Implementation correctly migrates the test suite to use hole-level scoring path. All requirements met: mocks updated, new test added with proper assertions, existing tests updated.
+**File:** `README.md` line ~80
+**Observation:** "live round-by-round scoring" — while not describing round-level aggregation, the phrase could be read as round-level scoring rather than hole-by-hole. The current phrasing describes the live nature of scoring (vs. end-of-tournament), not the granularity.
+**Severity:** Minor — the document at line ~80 already says "Hole-by-hole best-ball" which is accurate; the "round-by-round" phrase appears to describe real-time updates within a round, not aggregation level. No change required.
+
+---
+
+## Assessment: APPROVED
+
+All task requirements pass. The implementation correctly:
+1. Uses only `tournament_holes` (not `tournament_score_rounds`) for scoring
+2. Imports only `rankEntriesWithHoles` (not bare `rankEntries`)
+3. Includes regression coverage for multi-round hole ID overlap
+4. Documents hole-by-hole algorithm correctly in rules-spec
+
+No critical or important issues found.

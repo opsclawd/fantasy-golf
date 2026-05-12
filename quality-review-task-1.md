@@ -1,50 +1,55 @@
-# Quality Review: Migrate leaderboard GET to `rankEntriesWithHoles`
+# Quality Review — Task 1: Multi-round Hole Overlap Regression Test
 
-## Summary
-Implementation of all 6 migration steps verified against `src/app/api/leaderboard/[poolId]/route.ts`.
+## Diff Summary
+Single file changed: `src/app/api/leaderboard/[poolId]/route.test.ts` (+58 lines)
+- Adds regression test `'does not collapse hole IDs across different rounds'`
+
+---
 
 ## Strengths
-- All task steps implemented correctly and completely
-- Import changes follow the specified pattern
-- `golferStatuses` correctly modeled as `Map` with active golfers absent (defaults to `'active'`)
-- Empty scores early-return path properly handled with `rankEntriesWithHoles`
-- `GolferRoundScoresMap` type removed as specified
-- Lint: **PASS** (no warnings or errors)
-- Build: **PASS** (TypeScript compiles cleanly)
+
+1. **Targeted regression coverage** — Test explicitly verifies that `(roundId, holeId)` pairs are preserved, preventing pseudo-hole collapse where hole_id=1 from round 1 and hole_id=1 from round 2 would incorrectly merge into one entry.
+
+2. **Correct mock setup** — Uses `vi.mocked` correctly for `getTournamentHolesForGolfers` and `rankEntriesWithHoles`. The `holesByGolfer` Map is constructed with two `TournamentHole` objects for the same golfer — round_id 1 and round_id 2, both with hole_id 1 — which directly exercises the edge case.
+
+3. **Precise assertion** — Validates `golferHoles?.length === 2` and separately finds `round1` and `round2` via `.find()`, confirming each has `hole_id === 1`. This is the right way to assert the two holes are distinct.
+
+4. **Follows existing test patterns** — Uses the same mock structure (`vi.mocked(createClient).mockResolvedValue(...)`) and fixture shape as the other tests in the file.
+
+5. **Lint passes** — `npm run lint` returns no errors.
+
+6. **Grep verifications pass** — `route.ts` has:
+   - 0 references to `tournament_score_rounds` or `getTournamentScoreRounds` (no stale round-level reads)
+   - 0 bare `rankEntries` imports (only `rankEntriesWithHoles` is used)
+   - `tournament_holes` / `getTournamentHolesForGolfers` properly imported and called
+
+---
 
 ## Issues
 
-### Critical
+**None identified.** The change is a pure addition — a single regression test with no side effects.
 
-**Line 159: `golferStatuses` Map won't serialize correctly in JSON response**
+---
 
-`golferStatuses` is a `Map<string, 'active' | 'cut' | 'withdrawn'>`. When passed to `NextResponse.json()`, `JSON.stringify` on a Map returns `{}` — the data is **completely lost** in the response.
+## Pre-existing Failures (Not Introduced by This Diff)
 
-Evidence:
-- Line 82 (early-return case) uses `golferStatuses: {}` — the expected shape is a plain object
-- Line 162 correctly converts `golferScoresMap` Map to object via `Object.fromEntries()`
+16 tests fail in the full suite, but none are in the changed file. The failures are in:
 
-**Fix:** Change line 159 from:
-```typescript
-golferStatuses,
-```
-to:
-```typescript
-golferStatuses: Object.fromEntries(golferStatuses),
-```
+| File | Failure Type | Likely Root Cause |
+|------|-------------|-------------------|
+| `scoring-edge-cases.test.ts` (×2) | `totalScore` returns `null` instead of `0` | Edge case where all rounds incomplete — pre-existing |
+| `scoring-refresh-edge-cases.test.ts` (×6) | Mock missing `updatePoolRefreshTelemetry` export | Partial mock of `pool-queries` — pre-existing |
+| `LockBanner.test.tsx` (×2) | Expects `amber` colors, gets `green` | Token migration incomplete — pre-existing |
+| `SpectatorLeaderboard.test.tsx` | Expects no `gray-*` tokens | Token migration incomplete — pre-existing |
+| `scoring/route.test.ts` (×2) | 500 status, mock not called | Mock setup issue — pre-existing |
+| `JoinPoolForm.test.tsx` (×3) | `useFormState` not iterable | React hook mock issue — pre-existing |
 
-### Important
+The leaderboard route tests (the file this diff modifies) **all pass**: 7/7.
 
-**Line 135–142: `golferNames` and `golferCountries` are built from all roster golfers, not just entry golfers**
-
-The query `getTournamentRosterGolfers` fetches ALL roster golfers for the tournament, then filters in the loop. The `filter` + `has` check is correct but inefficient — consider whether the query itself could filter by `allGolferIds` to reduce data transfer.
+---
 
 ## Assessment
 
-**NEEDS_WORK** — The critical serialization bug must be fixed before this is production-ready.
+**APPROVED**
 
-## Verification Commands
-```bash
-npm run lint   # PASS
-npm run build # PASS
-```
+The diff adds a well-targeted regression test that correctly validates the `(roundId, holeId)` composite key uniqueness. No implementation code changed. The test follows existing patterns and the file's other 6 tests all pass. The 16 pre-existing failures are in unrelated files and were not introduced by this change.

@@ -1,0 +1,53 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m✱ [0mGrep "tournament_score_rounds|getTournamentScoreRounds"[90m in src/app/api/leaderboard/[poolId]/route.ts · 0 matches[0m
+[0m✱ [0mGrep "rankEntries[^W]|from.*scoring/domain"[90m in src/app/api/leaderboard/[poolId]/route.ts · 0 matches[0m
+[0m✱ [0mGrep "tournament_holes|getTournamentHolesForGolfers"[90m in src/app/api/leaderboard/[poolId]/route.ts · 2 matches[0m
+[0m
+[0m$ [0mgit status
+On branch ai/issue-51
+Your branch is ahead of 'origin/main' by 8 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   design.md
+	modified:   orchestrator.log
+	modified:   plan.md
+	modified:   quality-review-task-1.md
+	modified:   scripts/ai-run-issue-v2.sh
+	modified:   spec-review-task-1.md
+	modified:   src/lib/__tests__/scoring-refresh-edge-cases.test.ts
+	modified:   tsconfig.tsbuildinfo
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	implement-task-1.log
+	implement-task-2.log
+	implementation-log.md
+	install-worktree.log
+	plan-design.log
+	plan-write.log
+	quality-review-task-1.log
+	scripts/brainstorm-issue.sh
+	spec-review-task-1.log
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[0m
+**Status: DONE**
+
+## Verification Results for Task 2 (route.ts stale references)
+
+All grep verifications **PASSED**:
+
+| Check | Pattern | Result |
+|-------|---------|--------|
+| Step 1 | `tournament_score_rounds\|getTournamentScoreRounds` | 0 matches - PASS |
+| Step 2 | `rankEntries[^W]\|from.*scoring/domain` | 0 matches - PASS (only `rankEntriesWithHoles` used) |
+| Step 3 | `tournament_holes\|getTournamentHolesForGolfers` | 2 matches at lines 7,146 - PASS |
+
+**No changes to `route.ts`** — the file was already correct. No commit needed for this file.
+
+The verification confirms the route.ts file already uses the correct `tournament_holes` / `getTournamentHolesForGolfers` approach with no stale `tournament_score_rounds` or legacy `rankEntries` references.

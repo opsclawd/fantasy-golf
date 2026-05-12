@@ -13,7 +13,6 @@ import {
 import {
   upsertTournamentScore,
   getScoresForTournament,
-  getTournamentScoreRounds,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -43,7 +42,6 @@ vi.mock('@/lib/pool-queries', () => ({
 vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
-  getTournamentScoreRounds: vi.fn(),
 }))
 
 describe('scoring refresh edge cases', () => {
@@ -130,7 +128,7 @@ describe('scoring refresh edge cases', () => {
     vi.mocked(updatePoolRefreshMetadata)
       .mockResolvedValueOnce({ error: 'connection refused' })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([] as never)
+    
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -163,7 +161,7 @@ describe('scoring refresh edge cases', () => {
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: 'insert failed' })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([] as never)
+    
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -208,7 +206,7 @@ describe('scoring refresh edge cases', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    
     vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const result = await refreshScoresForPool(mockSupabase, pool)
@@ -243,7 +241,7 @@ describe('scoring refresh edge cases', () => {
       diffs: {},
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    
     vi.mocked(deriveCompletedRounds).mockReturnValue(0)
 
     const result = await refreshScoresForPool(mockSupabase, pool)

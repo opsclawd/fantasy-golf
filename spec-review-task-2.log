@@ -1,0 +1,33 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m✱ [0mGrep "round-by-round|round based|best-ball.*round|round.*best-ball"[90m in README.md · 1 match[0m
+[0m✱ [0mGrep "Entry round score = min|sum.*round score|round-level"[90m in docs/rules-spec.md · 2 matches[0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=50][0m
+[0m→ [0mRead README.md[90m [limit=100][0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=50, offset=50][0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [limit=50, offset=310][0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=30, offset=195][0m
+[0m✱ [0mGrep "domain\.ts|computeEntryScore"[90m in src/lib · 28 matches[0m
+[0m✱ [0mGlob "src/lib/scoring/**/*.ts"[90m 1 match[0m
+[0m✱ [0mGlob "src/lib/scoring/index.ts"[90m 0 matches[0m
+[0m→ [0mRead src/lib/scoring.ts
+Now I have all the information needed. Let me write the spec review.
+[0m
+[0m← [0mWrite spec-review-task-2.md
+Wrote file successfully.
+[0m
+Report written to `./spec-review-task-2.md`.
+
+**Summary:**
+
+| Task | Verdict | Issues |
+|------|---------|--------|
+| Task 2 | ✅ PASS | route.ts uses `tournament_holes` correctly |
+| Task 3 | ❌ ISSUE | README line 3 "round-by-round" inconsistent with hole-by-hole model; rules-spec `src/lib/scoring/domain.ts` path is wrong |
+| Task 4 | ❌ ISSUE | Proposed test shape (`Record<roundId,Record<holeId>>`) doesn't match what `buildGolferRoundScoresMap` actually produces |
+
+Key findings:
+- `src/lib/scoring.ts:123` — `rankEntriesWithHoles` calls `buildGolferRoundScoresMap` which structures data as `Map<golferId, rounds[]>` not `Record<roundId,Record<holeId>>`. The proposed test assertion `holeData[1].1` would never match.
+- The existing test at line 328 already covers overlapping holes for `g1` (round 1 hole 1 + round 2 hole 1), but doesn't explicitly assert the `(roundId, holeId)` key uniqueness the task description calls out.

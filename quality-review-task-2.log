@@ -1,0 +1,43 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m$ [0mgit diff 4b97fdc3ab8887c0ffd0a99407299ca98d3bdc12..4b97fdc3ab8887c0ffd0a99407299ca98d3bdc12
+(no output)
+[0m
+[0m$ [0mrg 'tournament_score_rounds|getTournamentScoreRounds' src/app/api/leaderboard/\[poolId\]/route.ts
+(no output)
+[0m
+[0m$ [0mrg 'rankEntries[^W]|from.*scoring/domain' src/app/api/leaderboard/\[poolId\]/route.ts
+(no output)
+[0m
+[0m$ [0mrg 'tournament_holes|getTournamentHolesForGolfers' src/app/api/leaderboard/\[poolId\]/route.ts
+import { getTournamentHolesForGolfers } from '@/lib/scoring-queries'
+    const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, Array.from(allGolferIds))
+[0m
+[0m$ [0mgit log --oneline -10
+4b97fdc test: add multi-round hole overlap regression coverage
+41efd24 feat: implement issue #51 task 1
+e38f073 docs: add design for issue #51 hole-by-hole scoring consistency
+dc4054c fix: review findings for issue #51 (loop 1)
+889d272 feat: implement issue #51 — all 4 tasks complete
+1cd2336 feat: implement issue #51 — all 4 tasks complete
+06af514 feat: implement issue #51 task 2
+3bbe69b feat: implement issue #51
+aa46902 fix: only count loop limit against critical/high findings
+4ee88af chore: cap fix-review loop at 10 iterations to prevent runaway loops
+[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m
+[0m$ [0mrg 'round-by-round|round based|best-ball.*round|round.*best-ball' README.md
+A commissioner-first web app for running private golf pools with live round-by-round scoring.
+[0m
+[0m$ [0mrg 'Entry round score = min|sum.*round score|round-level' docs/rules-spec.md
+**Source:** `src/lib/scoring/domain.ts:computeEntryScore` (round-level `isComplete` gating at lines 90–95)
+Before writing current score data, the system archives all round-level data to `tournament_score_rounds`.
+[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts
+[0m→ [0mRead docs/rules-spec.md[90m [limit=100][0m
+[0m
+[0m← [0mWrite quality-review-task-2.md
+Wrote file successfully.
+[0m
