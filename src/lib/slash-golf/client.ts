@@ -342,12 +342,14 @@ export async function getScorecard(tournamentId: string, golferId: string, year?
 
   const allHoles: SlashHole[] = []
   for (const sc of rawScorecards) {
+    const scRoundId = parseMongoNumber((sc as Record<string, unknown>).roundId) ?? 1
     const holes = Array.isArray((sc as Record<string, unknown>).holes)
       ? ((sc as Record<string, unknown>).holes as Record<string, unknown>[]).map((h) => ({
           holeId: parseMongoNumber(h.holeId) ?? 0,
           par: parseMongoNumber(h.par) ?? 0,
           strokes: parseMongoNumber(h.strokes) ?? 0,
           scoreToPar: parseMongoNumber(h.scoreToPar) ?? 0,
+          roundId: scRoundId,
         })).filter((h: SlashHole) => h.holeId > 0)
       : []
     allHoles.push(...holes)

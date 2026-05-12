@@ -37,12 +37,12 @@ export interface RefreshError {
 }
 
 function scorecardToTournamentHoles(
-  scorecard: { tournId: string; playerId: string; roundId: number; holes: Array<{ holeId: number; par: number; strokes: number; scoreToPar: number }> }
+  scorecard: { tournId: string; playerId: string; roundId: number; holes: Array<{ holeId: number; par: number; strokes: number; scoreToPar: number; roundId?: number }> }
 ): TournamentHole[] {
   return scorecard.holes.map(h => ({
     golfer_id: scorecard.playerId,
     tournament_id: scorecard.tournId,
-    round_id: scorecard.roundId,
+    round_id: h.roundId ?? scorecard.roundId,
     hole_id: h.holeId,
     par: h.par,
     strokes: h.strokes,

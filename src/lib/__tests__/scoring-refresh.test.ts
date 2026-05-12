@@ -203,10 +203,10 @@ describe('refreshScoresForPool', () => {
     vi.mocked(getScorecard).mockResolvedValue({
       tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1,
       holes: [
-        { holeId: 1, par: 4, strokes: 4, scoreToPar: 0 },
-        { holeId: 2, par: 4, strokes: 3, scoreToPar: -1 },
-        { holeId: 1, par: 4, strokes: 5, scoreToPar: 1 },
-        { holeId: 2, par: 4, strokes: 4, scoreToPar: 0 },
+        { holeId: 1, par: 4, strokes: 4, scoreToPar: 0, roundId: 1 },
+        { holeId: 2, par: 4, strokes: 3, scoreToPar: -1, roundId: 1 },
+        { holeId: 1, par: 4, strokes: 5, scoreToPar: 1, roundId: 2 },
+        { holeId: 2, par: 4, strokes: 4, scoreToPar: 0, roundId: 2 },
       ],
     } as never)
     vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
@@ -229,6 +229,15 @@ describe('refreshScoresForPool', () => {
     expect(result.error).toBeNull()
     expect(result.data).not.toBeNull()
     expect(getScorecard).toHaveBeenCalledWith('t-1', 'g1', 2026)
+    expect(upsertTournamentHoles).toHaveBeenCalledWith(
+      mockSupabase,
+      expect.arrayContaining([
+        expect.objectContaining({ golfer_id: 'g1', round_id: 1, hole_id: 1, score_to_par: 0 }),
+        expect.objectContaining({ golfer_id: 'g1', round_id: 1, hole_id: 2, score_to_par: -1 }),
+        expect.objectContaining({ golfer_id: 'g1', round_id: 2, hole_id: 1, score_to_par: 1 }),
+        expect.objectContaining({ golfer_id: 'g1', round_id: 2, hole_id: 2, score_to_par: 0 }),
+      ])
+    )
     expect(upsertTournamentHoles).toHaveBeenCalled()
     expect(getTournamentHolesForGolfers).toHaveBeenCalled()
     expect(rankEntriesWithHoles).toHaveBeenCalled()

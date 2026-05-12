@@ -105,6 +105,7 @@ export interface SlashHole {
   par: number
   strokes: number
   scoreToPar: number
+  roundId?: number
 }
 
 export interface SlashScorecard {
