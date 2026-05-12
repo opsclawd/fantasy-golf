@@ -696,3 +696,53 @@ Now let me check issue #7 and verify the high findings.
 Wrote file successfully.
 [0m
 Written `./code-review.md`. All 6 critical findings are **fixed**, the test suite is fully green (468 passed), and build/lint pass. Issue #8 (`rankEntriesWithHoles` mock) was a false positive — the mock was already present. Issue #7 (`golferNames`/`golferCountries`) had no failing-test evidence and is marked **invalid**.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m→ [0mRead review.md
+[0m→ [0mRead revalidate-1.log
+Now let me verify each finding by reading the actual source files:
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m→ [0mRead README.md
+[0m→ [0mRead docs/rules-spec.md
+[0m
+[0m← [0mWrite code-review.md
+Wrote file successfully.
+[0m
+Written to `./code-review.md`. All 7 original findings are addressed — 5 fixed, 2 not applicable in current state. One pre-existing config gap (missing `typecheck` npm script) noted but not a code defect. Build, lint, and all 468 tests pass. Ready to merge.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mSkill "requesting-code-review"
+[0m→ [0mRead review.md
+[0m→ [0mRead revalidate-1.log
+Now let me read the key files to verify each finding.
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.ts
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [offset=320, limit=150][0m
+[0m→ [0mRead README.md
+[0m→ [0mRead docs/rules-spec.md
+Now let me verify the removed functions in scoring-queries.ts and scoring.ts:
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/lib/scoring-queries.ts · 0 matches[0m
+[0m✱ [0mGrep "buildGolferRoundScoresMapFromScores|rankEntries[^W]"[90m in src/lib/scoring.ts · 2 matches[0m
+[0m✱ [0mGrep "export.*rankEntries[^W]"[90m in src/lib · 2 matches[0m
+[0m→ [0mRead src/app/api/leaderboard/[poolId]/route.test.ts[90m [offset=1, limit=30][0m
+[0m→ [0mRead src/lib/scoring.ts[90m [offset=1, limit=30][0m
+[0m→ [0mRead src/lib/scoring-queries.ts[90m [offset=1, limit=20][0m
+[0m→ [0mRead src/lib/scoring.ts[90m [offset=80, limit=60][0m
+[0m→ [0mRead src/lib/scoring-queries.ts[90m [offset=60, limit=60][0m
+[0m→ [0mRead src/lib/scoring-queries.ts[90m [offset=119, limit=30][0m
+Now I have all the information needed to write the updated review.
+[0m
+[0m← [0mWrite code-review.md
+Wrote file successfully.
+[0m
+Written to `./code-review.md`.
+
+**Summary of findings:**
+
+- All 6 original acceptance criteria: **FIXED**
+- Build/Lint/Tests: PASS (468 passed, 1 skipped)
+- `pnpm typecheck`: FAIL — `typecheck` script missing from package.json (pre-existing issue from original review)
+- **New issue flagged:** `rankEntriesLegacy` at `scoring.ts:88–121` — deprecated round-level function still exported. Low risk (marked `@deprecated`, not used by leaderboard), but should be removed or verified safe.
+- **typecheck not configured** — Medium concern; pre-existing but prevents TypeScript verification.
