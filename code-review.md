@@ -1,11 +1,11 @@
-# Code Review: ai/issue-51 — Fifth Revalidation
+# Code Review: ai/issue-51 — Sixth Revalidation
 
 ## Review Basis
 
 - **Branch:** ai/issue-51
 - **Base:** origin/main
 - **Issue:** #51 — Align leaderboard GET with hole-by-hole best-ball
-- **Revalidation of:** ./review.md (fourth revalidation), ./revalidate-5.log
+- **Revalidation of:** ./review.md (fifth revalidation), ./revalidate-6.log
 
 ---
 
@@ -20,7 +20,7 @@
 
 ### typecheck Errors
 
-64 errors, **all** in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues unrelated to this PR. Error types: `possibly undefined` on `tailwindConfig.theme`, `property does not exist` on `ResolvableTo<...>` types. No implementation files have type errors.
+64 errors, **all** in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues unrelated to this PR. No implementation files have type errors.
 
 ---
 

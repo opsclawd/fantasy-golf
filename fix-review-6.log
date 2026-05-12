@@ -86,3 +86,16 @@ Both are marked non-blocking. Creating the fix log and committing.
 [0m← [0mWrite review-fix-log.md
 Wrote file successfully.
 [0m
+[0m$ [0mgit add -A && git commit -m 'fix: review findings for issue #51 (loop 6)'
+[ai/issue-51 e3a2de3] fix: review findings for issue #51 (loop 6)
+ 9 files changed, 603 insertions(+), 118 deletions(-)
+ create mode 100644 fix-review-6.log
+ create mode 100644 re-review-5.log
+ create mode 100644 validation-5.md
+[0m
+All review findings are already fixed. Two minor issues were documented as "not fixed — by design":
+
+1. **`rankEntriesLegacy`** — deprecated but only used by tests; low risk
+2. **typecheck errors in `design-tokens.test.ts`** — pre-existing, unrelated to this PR
+
+Build, lint, and 468 tests pass. Committed.

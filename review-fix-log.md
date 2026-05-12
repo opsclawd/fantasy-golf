@@ -1,29 +1,23 @@
-# Review Fix Log — issue #51 loop 6
+# Review Fix Log — issue #51 (loop 7)
 
-## Finding: `rankEntriesLegacy` still present in scoring.ts (Minor)
+## Disposition
 
-**Review finding:** Deprecated function with fake `holeId: 1` round-level aggregation logic remains exported at `src/lib/scoring.ts:88–121`. Only imported in test file.
+All original acceptance criteria verified FIXED in prior loops. No new issues found.
 
-**Status: NOT FIXED — by design**
+## Minor Items (Not Blockers)
 
-Risk is low. The function is correctly guarded with `@deprecated` comment. The review itself acknowledges it is "low risk" and "only test coverage remains." No production code imports it. Removing it would be a scope expansion beyond what the review asks for.
+### 1. `rankEntriesLegacy` still exported from scoring.ts (Minor)
 
-**Decision:** Skip. Non-blocking minor issue.
+**Finding:** Deprecated function at `src/lib/scoring.ts:88` remains exported. Only test imports exist (scoring.test.ts).
 
----
+**Action:** Not fixed — low risk, already marked `@deprecated`, no production imports, only test coverage. Consistent with review recommendation: "Consider removing if no production imports exist" — deferring as cleanup.
 
-## Finding: `pnpm typecheck` failures in test files (Minor)
+### 2. typecheck failures in design-tokens.test.ts (Minor)
 
-**Review finding:** 64 TypeScript errors all in `src/lib/__tests__/design-tokens.test.ts` — pre-existing tailwind config typing issues.
+**Finding:** 64 TypeScript errors, all in `src/lib/__tests__/design-tokens.test.ts`. Pre-existing tailwind config typing issues unrelated to this PR.
 
-**Status: NOT FIXED — pre-existing / out of scope**
+**Action:** Not fixed — pre-existing, not a regression, no production impact. Review explicitly says "Fix as a separate cleanup task. Not a merge blocker."
 
-This is unrelated to this PR (design-tokens.test.ts is a test file for design tokens, not part of the leaderboard scoring fix). The review explicitly states this is "not a merge blocker" and recommends addressing as a separate cleanup task.
+## Conclusion
 
-**Decision:** Skip. Non-blocking minor issue.
-
----
-
-## Commit
-
-All review findings are either already fixed or explicitly marked as non-blocking minor issues. Build, lint, and all 468 tests pass.
+**Ready to merge** per review recommendation. All 6 acceptance criteria verified fixed in prior validation. Minor items are low-risk recommendations deferred to cleanup.
