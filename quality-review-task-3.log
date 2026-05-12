@@ -1,0 +1,48 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead docs/rules-spec.md[90m [limit=50][0m
+[0m
+[0m$ [0mgit diff 4b97fdc3ab8887c0ffd0a99407299ca98d3bdc12..f627545c80f0a680db5520aeddcf475eefd08a16
+...output truncated...
+
+Full output saved to: /home/gary/.local/share/opencode/tool-output/tool_e1d9dbbe5001BPq66nFsSQDky2
+
+\ No newline at end of file
+[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/app/api · 0 matches[0m
+[0m
+[0m$ [0mnpm test -- src/app/api/leaderboard/\[poolId\]/route.test.ts 2>&1
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run src/app/api/leaderboard/[poolId]/route.test.ts
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  13:15:42
+   Duration  607ms (transform 94ms, setup 82ms, import 123ms, tests 25ms, environment 0ms)
+[0m
+[0m→ [0mRead /home/gary/.local/share/opencode/tool-output/tool_e1d9dbbe5001BPq66nFsSQDky2
+[0m
+[0m← [0mWrite quality-review-task-3.md
+Wrote file successfully.
+[0m
+Quality review written to `quality-review-task-3.md`.
+
+**Result: APPROVED**
+
+Key findings:
+- `rules-spec.md` Section 2 already describes hole-by-hole correctly — no changes needed
+- Leaderboard test suite passes (7/7)
+- `getTournamentScoreRounds` has zero live API path references
+- Deprecated code (`buildGolferRoundScoresMapFromScores`, `rankEntries`) correctly removed
+- Negative regression test added to prevent round-level path reintroduction
+
+**One minor issue:** `implement-task-1.log` (2045-line build artifact) was committed — should be removed and added to `.gitignore`.

@@ -1,0 +1,32 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead issue.md
+[0m→ [0mRead design.md
+[0m→ [0mRead plan.md
+[0m
+[0m$ [0mnpm test -- src/app/api/leaderboard/\[poolId\]/route.test.ts
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run src/app/api/leaderboard/[poolId]/route.test.ts
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  13:16:26
+   Duration  454ms (transform 77ms, setup 70ms, import 105ms, tests 22ms, environment 0ms)
+[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/app/api · 0 matches[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/app/api · 0 matches[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/app/api/leaderboard · 0 matches[0m
+[0m✱ [0mGrep "getTournamentScoreRounds"[90m in src/app/api/leaderboard · 0 matches[0m
+[0m
+[0m$ [0mrg "getTournamentScoreRounds" src/app/api/
+(no output)
+[0m

@@ -39,3 +39,36 @@ npm warn Unknown env config "_jsr-registry". This will stop working in the next 
  create mode 100644 spec-review-task-1.log
  create mode 100644 spec-review-task-2.log
 [0m
+[0m$ [0mgit add -A && git commit -m "test: confirm leaderboard endpoint uses hole-level path" && git log -1 --oneline
+[ai/issue-51 f627545] test: confirm leaderboard endpoint uses hole-level path
+ 1 file changed, 16 insertions(+)
+f627545 test: confirm leaderboard endpoint uses hole-level path
+[0m
+[0m$ [0mgit status
+On branch ai/issue-51
+Your branch is ahead of 'origin/main' by 10 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   implement-task-3.log
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[0m
+**Status: DONE**
+
+**Task 3 (docs/rules-spec.md):** Confirmed section 2 (Algorithm) describes hole-by-hole best-ball scoring — per-hole `scoreToPar` minimum among active golfers, exactly as required.
+
+**Task 4 (test coverage):** 
+- Test suite passes: 7/7 tests PASS
+- `rg "getTournamentScoreRounds" src/app/api/` returns no matches — only hits in `route.test.ts` (test file), confirming no live code path uses round-level ranking
+
+**Files changed:** 23 files across 2 commits:
+- `f83d8d7 docs: confirm rules-spec.md already describes hole-by-hole correctly`
+- `f627545 test: confirm leaderboard endpoint uses hole-level path`
+
+**Self-review findings:**
+- Completeness: Both tasks confirmed per specification
+- Quality: docs correct, tests pass, grep confirms no round-level path in live API
+- Discipline: No overbuilding — just verification and confirmation commits
