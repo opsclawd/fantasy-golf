@@ -1,32 +1,51 @@
-# Spec Review: Task 4
+# spec-review-task-4
 
-## Requirement
-Modify `docs/rules-spec.md` — replace pseudo-code block at lines 29–32 with a new version that correctly describes hole-by-hole best-ball scoring (not round-level min).
+## Review: Confirm leaderboard endpoint uses hole-level scoring path
 
-## Verification
+### Files Reviewed
+- `src/app/api/leaderboard/[poolId]/route.ts` (179 lines)
+- `src/app/api/leaderboard/[poolId]/route.test.ts` (494 lines)
 
-**File:** `docs/rules-spec.md`
+---
 
-**Lines 29–35 (current):**
-```
-For each regulation hole in each counted round:
-  1. Look at the selected golfers in the entry who are active.
-  2. Use the lowest score-to-par among golfers with a valid score for that hole.
-  3. Add that best hole score to the entry total.
-  4. Count birdies/eagles as scoreToPar < 0 for the best-ball hole result.
-```
+## Step 1: Run leaderboard test suite
 
-**Required replacement:**
-```
-For each regulation hole in each counted round:
-  1. Look at the selected golfers in the entry who are active.
-  2. Use the lowest score-to-par among golfers with a valid score for that hole.
-  3. Add that best hole score to the entry total.
-  4. Count birdies/eagles as scoreToPar < 0 for the best-ball hole result.
-```
+**Command:** `npm test -- src/app/api/leaderboard/[poolId]/route.test.ts`
+**Result:** ✅ PASS — 7 passed (7)
 
-## Result
+The test at line 328 (`ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds`) validates the correct behavior. Additional tests cover:
+- Stale data refresh triggering (line 133)
+- Refresh error surfacing (line 210)
+- No refresh for archived pools (line 287)
+- Round disambiguation across holes (line 437)
 
-✅ **Spec compliant** — The pseudo-code at lines 29–35 already matches the required replacement text exactly. No changes were needed; the file was correct before task execution was attempted.
+---
 
-The conceptual description above (lines 27–28) reads "For each round, the entry's score is the **lowest `scoreToPar`** among all **active** golfers in the entry" — which describes round-level aggregation, but the pseudo-code that follows correctly shows hole-by-hole iteration. This was already fixed.
+## Step 2: Confirm no `getTournamentScoreRounds` in live API path
+
+**Command:** `rg "getTournamentScoreRounds" src/app/api/`
+**Result:** ✅ No matches in `src/app/api/`
+
+The route uses:
+- `getTournamentHolesForGolfers` (from `@/lib/scoring-queries`) — hole-level data
+- `rankEntriesWithHoles` (from `@/lib/scoring`) — hole-level ranking function
+
+`getTournamentScoreRounds` is not imported or called anywhere in the live API path.
+
+---
+
+## Step 3: Commit confirmation
+
+**Command:** `git log -1 --stat`
+**Result:** ✅ Commit `df83cb9` exists with message "test: confirm leaderboard endpoint uses hole-level path"
+
+---
+
+## Verdict
+
+✅ **Spec compliant**
+
+- No use of round-level `getTournamentScoreRounds` in the leaderboard API path
+- Uses hole-level `getTournamentHolesForGolfers` + `rankEntriesWithHoles` as required
+- Tests pass and cover the correct ranking path
+- Commit confirmed

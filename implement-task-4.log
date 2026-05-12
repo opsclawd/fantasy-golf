@@ -30,3 +30,41 @@ npm warn Unknown env config "_jsr-registry". This will stop working in the next 
 [0m$ [0mrg "getTournamentScoreRounds" src/app/api/
 (no output)
 [0m
+[0m$ [0mgit add -A && git commit -m "test: confirm leaderboard endpoint uses hole-level path"
+[ai/issue-51 df83cb9] test: confirm leaderboard endpoint uses hole-level path
+ 8 files changed, 647 insertions(+), 25 deletions(-)
+ create mode 100644 implement-task-4.log
+ create mode 100644 quality-review-task-3.log
+ create mode 100644 spec-review-task-3.log
+[0m
+[0m$ [0mgit log -1 --stat
+commit df83cb9f1603a4a144d685697d53e81d236e9d66
+Author: opsclawd <opsclawd@gmail.com>
+Date:   Tue May 12 13:16:51 2026 -0600
+
+    test: confirm leaderboard endpoint uses hole-level path
+
+ implement-task-3.log      |  33 ++++++
+ implement-task-4.log      |  32 ++++++
+ implementation-log.md     | 127 +++++++++++++++++++++++
+ orchestrator.log          | 253 ++++++++++++++++++++++++++++++++++++++++++++++
+ quality-review-task-3.log |  48 +++++++++
+ quality-review-task-3.md  | 103 ++++++++++++++++---
+ spec-review-task-3.log    |  14 +++
+ spec-review-task-3.md     |  62 +++++++++---
+ 8 files changed, 647 insertions(+), 25 deletions(-)
+[0m
+**Status: DONE**
+
+**What I implemented:**
+- Step 1: Ran leaderboard test suite — all 7 tests PASSED
+- Step 2: Confirmed `getTournamentScoreRounds` is not used in any live API path — grep returned no hits in `src/app/api/`
+- Step 3: Committed confirmation
+
+**Files changed:**
+- Committed: `implement-task-4.log`, `implementation-log.md`, `orchestrator.log`, and quality/spec review logs from previous tasks
+
+**Self-review findings:**
+- Test suite passes confirming the hole-level path is correct
+- `getTournamentScoreRounds` has zero hits in live API code (only would appear in test file if it tested the old path, which it doesn't)
+- Commit includes some artifact logs from prior task execution in this worktree
