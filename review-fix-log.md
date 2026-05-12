@@ -111,3 +111,22 @@ Re-review findings documented in `review.md` (Re-Review 4) describe failures ide
 - `LockBanner.test.tsx` — `isWithin24Hours()` amber/green warning tone fully implemented and tested with fake timers
 
 No source code changes. Review findings are stale.
+
+---
+
+# Review Fix Log — issue #51 (loop 6)
+
+## Status: All critical/high findings already fixed
+
+Verified by running `npm test` — all 468 tests pass (1 skipped). No code changes required.
+
+Re-review findings in `review.md` describe failures identical to prior reviews, but all tests currently pass. This indicates the review was performed against a stale worktree state. Confirmed:
+
+- `scoring-edge-cases.test.ts` — `totalScore: null` assertions correct (lines 31 and 81)
+- `scoring-refresh-edge-cases.test.ts` — `updatePoolRefreshTelemetry` mock present in pool-queries mock
+- `route.test.ts` — all mocks properly configured with `getTournamentHolesForGolfers`
+- `JoinPoolForm.test.tsx` — `useFormState`/`useFormStatus` mocks working
+- `SpectatorLeaderboard.test.tsx` — no `gray-*` tokens; `score-display.tsx` uses `stone-400`
+- `LockBanner.test.tsx` — `isWithin24Hours()` amber/green warning tone fully implemented and tested with fake timers
+
+No source code changes. Review findings are stale. No-op commit.

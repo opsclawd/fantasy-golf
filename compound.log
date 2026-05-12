@@ -1,0 +1,26 @@
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead .ai-worktrees/issue-51/implementation-log.md
+Let me also read the issue and design to fully understand the context.
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/design.md
+Now I have the full picture. Let me write the solution document.
+[0m
+[0m← [0mWrite docs/solutions/issue-51-stale-description-2026-05-12.md
+Wrote file successfully.
+[0m
+Written to `docs/solutions/issue-51-stale-description-2026-05-12.md`.
+
+**Summary of what the doc captures:**
+
+- The issue claimed the leaderboard GET used round-level scoring (`getTournamentScoreRounds`), but the code was already correct — the issue was based on pre-work state
+- `AGENTS.md`'s "Migrated from hole-by-hole to round-based scoring model" note describes a **data model** change (archive table), not an algorithm change — this caused the misdiagnosis
+- The only `getTournamentScoreRounds` references are in audit tooling and test files; 0 matches exist in live API code
+- Key code paths: `route.ts:149` → `rankEntriesWithHoles`, `route.ts:147` → `getTournamentHolesForGolfers`
+- `tournament_holes` is the live scoring source; `tournament_score_rounds` is an archive written by cron but never read by GET
+- Negative regression test at `route.test.ts:328` guards against round-level path reintroduction
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead .ai-worktrees/issue-51/implementation-log.md

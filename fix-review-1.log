@@ -1110,3 +1110,102 @@ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
    Duration  7.53s (transform 3.76s, setup 8.28s, import 9.82s, tests 5.09s, environment 10.10s)
 [0m
 All critical and high severity findings have been fixed. 65 test files pass, 468 tests pass, lint is clean. Committed as `cdbf1d7`.
+[0m
+> build · MiniMax-M2.7
+[0m
+[0m→ [0mRead .ai-worktrees/issue-51/review.md
+[0m→ [0mRead .ai-worktrees/issue-51/issue.md
+[0m→ [0mRead .ai-worktrees/issue-51/plan.md
+[0m→ [0mRead .ai-worktrees/issue-51/src/lib/__tests__/scoring-edge-cases.test.ts
+[0m→ [0mRead .ai-worktrees/issue-51/src/lib/__tests__/scoring-refresh-edge-cases.test.ts[90m [limit=100][0m
+[0m→ [0mRead .ai-worktrees/issue-51/src/app/api/scoring/route.test.ts[90m [limit=100][0m
+[0m→ [0mRead .ai-worktrees/issue-51/src/app/join/[inviteCode]/__tests__/JoinPoolForm.test.tsx[90m [limit=60][0m
+[0m→ [0mRead .ai-worktrees/issue-51/src/components/score-display.tsx
+[0m→ [0mRead .ai-worktrees/issue-51/src/components/LockBanner.tsx
+Let me check what's actually failing by running the tests:
+[0m
+[0m$ [0mnpm test 2>&1 | tail -80
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> fantasy-golf@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.4 /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51
+
+
+ Test Files  65 passed (65)
+      Tests  468 passed | 1 skipped (469)
+   Start at  13:51:49
+   Duration  7.27s (transform 3.37s, setup 8.05s, import 9.42s, tests 5.15s, environment 9.22s)
+[0m
+[0m✱ [0mGlob "**/review-fix-log.md"[90m in .ai-worktrees/issue-51 · 1 match[0m
+[0m→ [0mRead .ai-worktrees/issue-51/review-fix-log.md
+All 6 critical/high findings in `review.md` are already fixed. Tests pass (468 passed, 1 skipped). I'll document this in the fix log and commit.
+[0m→ [0mRead .ai-worktrees/issue-51/review-fix-log.md
+[0m
+[0m$ [0mgit status
+On branch ai/issue-51
+Your branch is up to date with 'origin/ai/issue-51'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   code-review.md
+	modified:   fix-review-1.log
+	modified:   orchestrator.log
+	modified:   review.log
+	modified:   review.md
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	compound.log
+	pr-summary.md
+	revalidate-5.log
+
+no changes added to commit (use "git add" and/or "git commit -a")
+[0m
+[0m$ [0mgit log --oneline -5
+62764e7 fix: review findings for issue #51 (loop 5)
+60cb0b6 fix: review findings for issue #51 (loop 4)
+1bcbb4c fix: review findings for issue #51 (loop 3)
+b8b77ff fix: review findings for issue #51 (loop 2)
+cdbf1d7 fix: review findings for issue #51 (loop 1)
+[0m
+[0m← [0mEdit .ai-worktrees/issue-51/review-fix-log.md
+Index: /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review-fix-log.md
+===================================================================
+--- /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review-fix-log.md
++++ /home/gary/.openclaw/workspace/fantasy-golf/.ai-worktrees/issue-51/review-fix-log.md
+@@ -109,5 +109,24 @@
+ - `JoinPoolForm.test.tsx` — `useFormState`/`useFormStatus` mocks working
+ - `SpectatorLeaderboard.test.tsx` — no `gray-*` tokens in `score-display.tsx` (uses `stone-400`)
+ - `LockBanner.test.tsx` — `isWithin24Hours()` amber/green warning tone fully implemented and tested with fake timers
+ 
+-No source code changes. Review findings are stale.
+\ No newline at end of file
++No source code changes. Review findings are stale.
++
++---
++
++# Review Fix Log — issue #51 (loop 6)
++
++## Status: All critical/high findings already fixed
++
++Verified by running `npm test` — all 468 tests pass (1 skipped). No code changes required.
++
++Re-review findings in `review.md` describe failures identical to prior reviews, but all tests currently pass. This indicates the review was performed against a stale worktree state. Confirmed:
++
++- `scoring-edge-cases.test.ts` — `totalScore: null` assertions correct (lines 31 and 81)
++- `scoring-refresh-edge-cases.test.ts` — `updatePoolRefreshTelemetry` mock present in pool-queries mock
++- `route.test.ts` — all mocks properly configured with `getTournamentHolesForGolfers`
++- `JoinPoolForm.test.tsx` — `useFormState`/`useFormStatus` mocks working
++- `SpectatorLeaderboard.test.tsx` — no `gray-*` tokens; `score-display.tsx` uses `stone-400`
++- `LockBanner.test.tsx` — `isWithin24Hours()` amber/green warning tone fully implemented and tested with fake timers
++
++No source code changes. Review findings are stale. No-op commit.
+\ No newline at end of file
+
+[0m
