@@ -1,136 +1,195 @@
-# Design: Align Leaderboard with Hole-by-Hole Best-Ball Scoring
+# Issue #51 — Hole-by-Hole Scoring Consistency Design
 
-## Problem
+## Context
 
-The `GET /api/leaderboard/[poolId]` endpoint and documentation contradict the hole-by-hole best-ball model implemented in the refresh path.
+Issue #48 was closed after migrating the refresh/broadcast path to use hole-level scoring via `tournament_holes`. Issue #51 identifies that the main leaderboard GET endpoint and documentation may still reference round-based scoring, creating a split-brain scoring model where different paths produce inconsistent results.
 
-### Split-brain scoring
-
-The scoring architecture now has two divergent paths:
-
-| Path | Data source | Scoring model |
-|------|-------------|---------------|
-| Refresh/broadcast | `tournament_holes` via `getTournamentHolesForGolfers` | True hole-by-hole best-ball |
-| **Leaderboard GET** | `tournament_score_rounds` via `getTournamentScoreRounds` | Round-level pseudo-hole (`holeId: 1`) |
-
-This split causes the most user-visible endpoint to display different scores than what the refresh path produces.
-
-### Evidence
-
-1. **`route.ts` lines 148–161**: Builds `golferRoundScoresMap` from `getTournamentScoreRounds`, mapping every round to a single fake hole (`holeId: 1`). Calls `rankEntries`, not `rankEntriesWithHoles`.
-
-2. **README line 80**: "Round-based best-ball (lowest score among 4 golfers per completed round)" — contradicts the hole-by-hole spec.
-
-3. **`docs/rules-spec.md` line 30–31**: Defines scoring as round-level min aggregation, not hole-by-hole.
-
-4. **`scoring.ts` line 53–55**: `buildGolferRoundScoresMapFromScores` is marked `@deprecated Non-production`. The live leaderboard still uses it.
+**Code analysis finding:** The current `src/app/api/leaderboard/[poolId]/route.ts` (lines 147-149) already calls `getTournamentHolesForGolfers()` and `rankEntriesWithHoles()`, using `tournament_holes` for ranking. The issue description reflects the pre-#48 state of the codebase.
 
 ---
 
-## Why It Matters
+## Problem Statement
 
-A commissioner running a live pool sees different rankings depending on which path their client hits. Participants see different scores on the leaderboard than what the broadcast refresh produces. The documentation misrepresents the product to new users and during handoff.
+The core risk is **split-brain scoring**: different code paths computing different scores for the same entry. Specifically:
+
+- Refresh/broadcast path: hole-by-hole via `tournament_holes` + `rankEntriesWithHoles`
+- Normal leaderboard fetch path: potentially round-based via `tournament_score_rounds` + deprecated `rankEntries`
+
+This would cause spectators to see different leaderboard positions depending on how they loaded the page.
 
 ---
 
-## Design Decision: Migrate Leaderboard GET to Hole-by-Hole
+## Key Design Decisions
 
-### Option A: Migrate leaderboard GET to `rankEntriesWithHoles` (recommended)
+### 1. Single Scoring Source of Truth
 
-Fetch `tournament_holes` for rostered golfers via `getTournamentHolesForGolfers`, build `golferStatuses` from `tournament_scores`, call `rankEntriesWithHoles`.
+Both the leaderboard GET endpoint and the refresh broadcast path must rank entries using the same function and data source:
 
-**Trade-offs:**
-- ✅ Consistent with refresh path — same data source, same scoring function
-- ✅ Uses the production-deployed `tournament_holes` table
-- ✅ `rankEntriesWithHoles` already exists and is tested
-- ⚠️ Requires `tournament_holes` to be populated — depends on refresh path populating it
+- **Scoring function:** `rankEntriesWithHoles` from `src/lib/scoring.ts`
+- **Data source:** `tournament_holes` via `getTournamentHolesForGolfers(supabase, tournamentId, golferIds)`
+- **Deprecated path:** `rankEntries` + `buildGolferRoundScoresMapFromScores` must not be called by any live scoring path
 
-### Option B: Dual-mode fallback
+The current code already satisfies this requirement. The route uses `rankEntriesWithHoles` with `tournament_holes`.
 
-If `tournament_holes` is empty for a golfer, fall back to `tournament_score_rounds`. Keep both paths.
+### 2. Response Contract Stability
 
-**Trade-offs:**
-- ✅ More resilient if `tournament_holes` is partially populated
-- ⚠️ Maintains two code paths, doubling future regression risk
-- ⚠️ Hides data quality issues instead of surfacing them
+The existing leaderboard response shape must be preserved:
 
-### Option C: Do nothing
+| Field | Type | Notes |
+|-------|------|-------|
+| `entries` | `Entry[]` | Ranked entries with `totalScore`, `totalBirdies`, `rank`, `isTied` |
+| `completedRounds` | `number` | Derived from `tournament_scores` `round_id` max |
+| `refreshedAt` | `string` | ISO timestamp from `pool.refreshed_at` |
+| `freshness` | `'current' \| 'stale' \| 'unknown'` | From `classifyFreshness` |
+| `isRefreshing` | `boolean` | True when stale + live + no last error |
+| `poolStatus` | `string` | Pool status |
+| `lastRefreshError` | `string \| null` | Error from last refresh |
+| `golferStatuses` | `Record<string, 'active' \| 'cut' \| 'withdrawn'>` | From `tournament_scores` |
+| `golferNames` | `Record<string, string>` | From `getTournamentRosterGolfers` |
+| `golferCountries` | `Record<string, string>` | From `getTournamentRosterGolfers` |
+| `golferScores` | `Record<string, TournamentScore>` | From `tournament_scores` |
 
-Keep round-level scoring for leaderboard, add hole-level display on picks page only.
+No new fields should be added in this issue.
 
-**Trade-offs:**
-- ⚠️ Split-brain persists on the most visible endpoint
-- ⚠️ Does not address the stated goal of "consistent" paths
+### 3. `tournament_holes` as Primary Data
 
-**Decision: Option A.** The refresh path already populates `tournament_holes`. The leaderboard should use it.
+`TournamentHole` records are the authoritative source for hole-by-hole scoring. `tournament_score_rounds` remains the append-only per-round archive (useful for detailed round views and auditing) but is **not** used for live leaderboard ranking.
+
+### 4. `completedRounds` Derivation
+
+`completedRounds` is computed from `tournament_scores` rows (max `round_id`), not from `tournament_holes`. This is already the current behavior.
 
 ---
 
 ## Proposed Approach
 
-### A. Fix `GET /api/leaderboard/[poolId]`
+### Phase A: Verify Current Implementation
 
-1. Remove `getTournamentScoreRounds` import and call
-2. Keep `tournament_scores` query — still needed for `golferStatuses` and `golferScores`
-3. After fetching entries, collect all rostered `golfer_ids`
-4. Call `getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)` to get real hole data
-5. Build `golferStatuses` map from `allScores`
-6. Call `rankEntriesWithHoles(entries, holesByGolfer, golferStatuses, completedRounds)` instead of `rankEntries`
-7. Keep response contract intact — all existing fields preserved
+Inspect `src/app/api/leaderboard/[poolId]/route.ts` to confirm:
 
-Key impl note: `rankEntriesWithHoles` takes `golferStatuses` as a `Map<string, GolferStatus>` (not a plain object), so build it as `Map<string, 'active' | 'cut' | 'withdrawn'>`.
+1. It imports `rankEntriesWithHoles` (not `rankEntries`) from `@/lib/scoring`
+2. It calls `getTournamentHolesForGolfers` with rostered golfer IDs
+3. It passes the returned `holesByGolfer` map to `rankEntriesWithHoles`
+4. It does **not** call `getTournamentScoreRounds` or use round-level pseudo-hole `holeId: 1` records
 
-### B. Update documentation
+**Current state:** All four conditions are met. The route was already updated in a prior commit.
 
-- **README.md line 80**: Replace "Round-based best-ball (lowest score among 4 golfers per completed round)" with "Hole-by-hole best-ball (lowest score-to-par per hole among active golfers)"
-- **docs/rules-spec.md section 2.1**: The conceptual description in lines 25–32 is already correct (says "Best Ball, Hole-by-Hole") but the pseudo-code block contradicts it. Fix the pseudo-code block to reflect hole-level computation.
+### Phase B: Verify Test Coverage
 
-### C. Add regression tests
+Confirm `route.test.ts` contains a test that:
 
-In `route.test.ts`:
-- Add mock for `getTournamentHolesForGolfers`
-- Assert that with a fixture of two rounds with overlapping hole IDs, the endpoint produces ranked entries from `tournament_holes`, not from `tournament_score_rounds`
-- Assert `getTournamentHolesForGolfers` is called (not `getTournamentScoreRounds`)
+1. Provides a `holesByGolfer` fixture with **multiple rounds and overlapping hole IDs** (e.g., round 1 holes 1-2, round 2 hole 1)
+2. Asserts `getTournamentHolesForGolfers` is called with correct arguments
+3. Asserts `rankEntriesWithHoles` receives the `holesByGolfer` map directly
+4. Asserts entries are ranked from hole-level data, not collapsed into one pseudo-hole per round
+
+**Current state:** Test at line 322 "ranks entries from tournament_holes via rankEntriesWithHoles, not tournament_score_rounds" exists. Fixture has g1 with round 1 holes 1-2 and round 2 hole 1, validating multi-round behavior.
+
+### Phase C: Documentation Audit
+
+Verify `README.md` and `docs/rules-spec.md` correctly describe hole-by-hole best-ball:
+
+**README.md (current):**
+- Line 80: "Hole-by-hole best-ball (lowest score-to-par per hole among active golfers)" — **Correct**
+
+**docs/rules-spec.md (current):**
+- Section 2.1: "Best Ball, Hole-by-Hole" with correct algorithm description — **Correct**
+
+**Finding:** Documentation is already correct.
+
+### Phase D: Identify Residual Issues
+
+After inspecting all paths, the following residual items should be addressed:
+
+1. **Deprecated function cleanup:** `buildGolferRoundScoresMapFromScores` in `src/lib/scoring.ts` (lines 57-69) is marked `@deprecated Non-production`. Its only consumer was the old leaderboard path. Confirm no live code calls it and remove it if confirmed dead.
+2. **`getTournamentScoreRounds` import presence:** The leaderboard route no longer imports `getTournamentScoreRounds`. The issue's concern about the old path is addressed.
 
 ---
 
 ## Assumptions
 
-1. **`tournament_holes` is populated** by the refresh path before the leaderboard GET is called. If `tournament_holes` is empty (no refresh has run yet), the leaderboard returns entries with `totalScore: null` — acceptable fallback behavior.
+1. **The `tournament_holes` table is populated** by the Slash Golf refresh path. If `tournament_holes` is empty for a tournament, `rankEntriesWithHoles` receives an empty map and all entries get `null` scores — this is correct behavior (no data yet).
 
-2. **`scoring-refresh.ts` correctly populates `tournament_holes`** — verified separately in existing tests.
+2. **`getTournamentHolesForGolfers` returns only completed holes.** Incomplete holes (round in progress) are filtered or have `isComplete: false`. The `computeEntryScore` function in `domain.ts` gates scoring on `roundCompleteness` — only rounds where all golfers have `isComplete: true` contribute to the score.
 
-3. **`rankEntriesWithHoles` output shape matches the leaderboard response contract** — it returns `Entry & { totalScore, totalBirdies, rank, isTied }` which is compatible with the existing `entries` field in the response.
+3. **Cut/WD status is determined from `tournament_scores`** (not `tournament_holes`). The `golferStatuses` map is built from `tournament_scores` rows where `status !== 'active'`.
 
-4. **`completedRounds` can be derived from `tournament_holes` data** — if the leaderboard has only `tournament_holes` and no `tournament_scores`, use `deriveCompletedRounds` on holes instead of scores. The refresh path uses a separate `completedRounds` derivation; the leaderboard should match that behavior.
-
-5. **`tournament_holes` table exists and `getTournamentHolesForGolfers` is implemented** — per `supabase/migrations/20260425190000_create_tournament_holes.sql` and `scoring-queries.ts:133`.
+4. **`tournament_score_rounds` remains an append-only archive.** It is written by `upsertTournamentScore` during refresh but is never read by the leaderboard GET path for ranking purposes.
 
 ---
 
 ## In Scope
 
-- `src/app/api/leaderboard/[poolId]/route.ts` — migrate to hole-level ranking
-- `README.md` — update scoring model description
-- `docs/rules-spec.md` — fix contradictory pseudo-code
-- `src/app/api/leaderboard/[poolId]/route.test.ts` — add regression coverage
+- Ensuring `GET /api/leaderboard/[poolId]` uses `tournament_holes` via `rankEntriesWithHoles`
+- Ensuring no live scoring path uses round-level pseudo-hole `holeId: 1` aggregation
+- Verifying tests confirm the correct scoring path
+- Confirming documentation accurately describes hole-by-hole best-ball
+- Confirming the deprecated `buildGolferRoundScoresMapFromScores` is unused by live code
+
+---
 
 ## Out of Scope
 
-- Replacing Slash Golf API
-- Season-long scoring
-- UI redesign
-- Modifying refresh lock behavior
-- Changing `scoring-refresh.ts` (already correct)
-- Creating new migration (table already exists)
+- Replacing Slash Golf API integration
+- Adding season-long or all-tournament scoring
+- Large UI redesign or new features
+- Changing refresh lock behavior
+- Payments or commissioner monetization
+- Creating or modifying database migrations (schema is already in place)
+- Modifying `tournament_score_rounds` archive behavior
+- Modifying the refresh/broadcast path (already correct per issue #48)
 
 ---
 
 ## Risks and Concerns
 
-| Risk | Likelihood | Mitigation |
-|------|------------|------------|
-| `tournament_holes` not populated yet (fresh DB) → leaderboard shows null scores | Medium | Acceptable; refresh must run first to populate holes |
-| `getTournamentHolesForGolfers` performance with large golfer sets | Low | Query uses `.in('golfer_id', golferIds)` with index; 4 golfers per entry is small |
-| `rankEntriesWithHoles` signature mismatch with existing response fields | Low | Function returns `Entry & { totalScore, totalBirdies, rank, isTied }` — matches existing contract |
-| Tests rely on `tournament_score_rounds` mocks — will break on change | High | Tests will be updated to mock `getTournamentHolesForGolfers` instead |
+### Risk 1: `tournament_holes` May Not Be Populated for All Golfers
+
+If the Slash Golf refresh path writes to `tournament_scores` but fails to write `tournament_holes` for some golfers, those golfers' holes would be missing from the leaderboard calculation. The current code would treat missing holes as no contribution.
+
+**Mitigation:** The refresh path (`scoring-refresh.ts`) writes `tournament_holes` via `getTournamentHolesForGolfers` being populated during the same refresh cycle. Verify the refresh path writes both `tournament_scores` and `tournament_holes` in the same operation.
+
+### Risk 2: `completedRounds` Derived from `tournament_scores` May Diverge from Actual Completed Holes
+
+`completedRounds` is the max `round_id` from `tournament_scores`, which tracks the latest completed round. But if a round is partially complete (some golfers finished, some not), `tournament_holes` for that round may be incomplete. The scoring algorithm handles this via `roundCompleteness` gating in `computeEntryScore`, so entries don't accumulate score for incomplete rounds.
+
+### Risk 3: `buildGolferRoundScoresMapFromScores` Is Still Present
+
+This deprecated function could be accidentally used by future code. It should be confirmed unused and removed.
+
+**Mitigation:** Search for any call sites of `buildGolferRoundScoresMapFromScores`. If none exist, remove it from `scoring.ts`.
+
+### Risk 4: Documentation May Drift Again
+
+README and rules-spec may describe the correct model today but drift in future changes.
+
+**Mitigation:** Add a note in `docs/rules-spec.md` referencing `src/lib/scoring/domain.ts:computeEntryScore` as the authoritative algorithm. This creates a direct traceability path.
+
+---
+
+## Verification
+
+1. **Code path verification:**
+   ```bash
+   rg 'getTournamentScoreRounds' src/app/api/leaderboard/
+   # Should return no matches
+
+   rg 'rankEntries\b' src/app/api/leaderboard/
+   # Should return no matches (only rankEntriesWithHoles)
+   ```
+
+2. **Test existence:**
+   ```bash
+   rg 'tournament_holes.*rankEntriesWithHoles|rankEntriesWithHoles.*tournament_holes' src/
+   # Should find test confirming the correct path
+   ```
+
+3. **Response shape verification:**
+   - Fetch `GET /api/leaderboard/[poolId]` and confirm `entries` contain `totalScore`, `totalBirdies`, `rank`, `isTied` from `rankEntriesWithHoles`
+   - No `holeId: 1` pseudo-hole records should appear in any response field
+
+4. **Deprecated function check:**
+   ```bash
+   rg 'buildGolferRoundScoresMapFromScores' src/
+   # Only occurrences should be the function definition and its @deprecated JSDoc
+   ```
