@@ -433,4 +433,62 @@ describe('GET /api/leaderboard/[poolId]', () => {
     expect(rankEntriesWithHoles).toHaveBeenCalled()
     expect(domainRankEntries).not.toHaveBeenCalled()
   })
+
+  it('does not collapse hole IDs across different rounds', async () => {
+    const pool = {
+      id: 'pool-1',
+      status: 'live',
+      refreshed_at: '2026-03-29T00:00:00.000Z',
+      last_refresh_error: null,
+      tournament_id: 't-1',
+    }
+    const entries = [{ id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1' }]
+    const rankedEntries = [
+      { id: 'entry-1', golfer_ids: ['g1'], user_id: 'u1', rank: 1, totalScore: -1, totalBirdies: 1, isTied: false },
+    ]
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'pools') {
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: pool, error: null }) }) }) }
+        }
+        if (table === 'entries') {
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: entries }) }) }
+        }
+        if (table === 'tournament_scores') {
+          return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [{ golfer_id: 'g1', tournament_id: 't-1', status: 'active', total_score: 0, position: 1, total_birdies: 0, updated_at: '2026-03-29T00:00:00.000Z' }] }) }) }
+        }
+        throw new Error(`Unexpected table ${table}`)
+      }),
+    } as never)
+
+    const holesByGolfer = new Map<string, import('@/lib/supabase/types').TournamentHole[]>()
+    holesByGolfer.set('g1', [
+      { golfer_id: 'g1', tournament_id: 't-1', round_id: 1, hole_id: 1, strokes: 3, par: 4, score_to_par: -1, updated_at: '2026-03-29T00:00:00.000Z' },
+      { golfer_id: 'g1', tournament_id: 't-1', round_id: 2, hole_id: 1, strokes: 4, par: 4, score_to_par: 0, updated_at: '2026-03-29T00:00:00.000Z' },
+    ])
+
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(holesByGolfer)
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+    vi.mocked(getTournamentRosterGolfers).mockResolvedValue([])
+    vi.mocked(deriveCompletedRounds).mockReturnValue(2)
+
+    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
+      params: Promise.resolve({ poolId: 'pool-1' }),
+    })
+
+    expect(response.status).toBe(200)
+    expect(rankEntriesWithHoles).toHaveBeenCalled()
+    const callArg = rankEntriesWithHoles.mock.calls[0]?.[1]
+    expect(callArg).toBeInstanceOf(Map)
+    const holesFromCall = callArg as Map<string, TournamentHole[]>
+    expect(holesFromCall.size).toBe(1)
+    const golferHoles = holesFromCall.get('g1')
+    expect(golferHoles).toBeDefined()
+    expect(golferHoles?.length).toBe(2)
+    const round1 = golferHoles?.find(h => h.round_id === 1)
+    const round2 = golferHoles?.find(h => h.round_id === 2)
+    expect(round1?.hole_id).toBe(1)
+    expect(round2?.hole_id).toBe(1)
+  })
 })
