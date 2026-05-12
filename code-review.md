@@ -1,11 +1,11 @@
-# Code Review: ai/issue-51 — Sixth Revalidation
+# Code Review: ai/issue-51 — Seventh Revalidation
 
 ## Review Basis
 
 - **Branch:** ai/issue-51
 - **Base:** origin/main
 - **Issue:** #51 — Align leaderboard GET with hole-by-hole best-ball
-- **Revalidation of:** ./review.md (fifth revalidation), ./revalidate-6.log
+- **Revalidation of:** ./review.md (sixth revalidation), ./revalidate-7.log
 
 ---
 
@@ -41,7 +41,7 @@
 
 ### route.ts — `GET /api/leaderboard/[poolId]`
 
-All original findings verified against current source:
+All original findings verified against current source at line references from the previous review:
 
 | Line | Finding | Status |
 |------|---------|--------|
@@ -71,10 +71,6 @@ All original findings verified against current source:
 | Finding | Status |
 |---------|--------|
 | `getTournamentScoreRounds` removed (was round-level aggregation) | **FIXED** — file ends at line 143, function not present |
-
-### README.md
-
-README.md line 3 reads "hole-by-hole scoring" — correctly updated from round-based description.
 
 ---
 

@@ -42,3 +42,9 @@
 [14:51:55] INFO: 1 finding(s) still unresolved. Continuing fix loop.
 [14:51:55] === Phase: fix-review (loop 7) ===
 [14:51:55] Running agent for phase 'fix-review-7' (timeout=900s)...
+[14:52:43] === Re-validating after fix (loop 7) ===
+[14:53:12] === Re-reviewing after fix (loop 7) ===
+[14:53:12] Running agent for phase 're-review-7' (timeout=600s)...
+[14:53:57] INFO: 1 finding(s) still unresolved. Continuing fix loop.
+[14:53:57] === Phase: fix-review (loop 8) ===
+[14:53:57] Running agent for phase 'fix-review-8' (timeout=900s)...
