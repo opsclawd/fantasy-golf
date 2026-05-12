@@ -1,4 +1,4 @@
-import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus, SlashScorecard, SlashHole, SlashStats } from './types'
+import type { Tournament, GolferScore, GolferScoreRound, SlashTournamentMeta, SlashLeaderboard, SlashGolferStatus, SlashScorecard, SlashHole } from './types'
 
 const BASE_URL = 'https://live-golf-data.p.rapidapi.com'
 

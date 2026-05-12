@@ -118,9 +118,4 @@ export interface SlashScorecard {
   holes: SlashHole[]
 }
 
-export interface SlashStats {
-  tournId: string
-  playerId: string
-  worldRank: number | null
-  projectedOWGR: number | null
-}
+
