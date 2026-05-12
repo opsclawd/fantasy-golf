@@ -418,6 +418,10 @@ while [[ "$PHASE" == "fix-review" ]]; do
     CRITICAL_HIGH_COUNT=$(grep -cE "^## Severity: (critical|high)" "${ISSUES_DIR}/review.md" 2>/dev/null || echo 0)
   fi
 
+  if [[ $FIX_LOOP_COUNT -gt 10 && "$CRITICAL_HIGH_COUNT" -eq 0 ]]; then
+    info "Fix loop limit (10) reached with no critical/high findings. Moving on."
+    break
+  fi
   if [[ "$CRITICAL_HIGH_COUNT" -eq 0 ]]; then
     info "No critical/high findings in review. Skipping fix loop."
     break
