@@ -120,12 +120,35 @@ $(cat "${ISSUES_DIR}/pr-diff.diff")
 ${COMMENT_TEXT}
 
 ## TASK
-For each review comment:
-1. Read issue.md, design.md, and plan.md from the issue archive to understand the original requirements and design intent.
-2. Make a judgement call: is the comment technically valid against that design? If yes, implement the fix. If no, explain why the current approach is correct per the issue requirements.
-3. For valid comments: fix the code, run git add -A and git commit -m 'fix: address PR review feedback', then git push origin ${PR_BRANCH}.
-4. For invalid comments: reply with technical reasoning explaining why the current approach is correct per the design.
-5. For fixed/actioned comments: reply in the thread using: gh api repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments/{comment_id}/replies --field body='Chosen approach: <what was done>. Options considered: <other approaches and why not chosen>. Reasoning: <why this decision aligns with the design>'
+
+### Step 1: Understand the design context
+Read issue.md, design.md, and plan.md from the issue archive to understand the original requirements and design intent.
+
+### Step 2: Assess each comment
+For each review comment, make a judgement call: is it technically valid against the design? Note your reasoning.
+
+### Step 3: Fix the code
+Fix the code for any comments you assessed as valid. Then run:
+```
+git add -A
+git commit -m 'fix: address PR review feedback'
+git push origin ${PR_BRANCH}
+```
+
+### Step 4: Reply to all threads
+Using the comment IDs from comments.json, reply to EVERY thread (both valid and invalid comments):
+```
+cat comments.json | jq -r '.[] | .id' | while read id; do
+  gh api repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments/$id/replies --method POST --raw-field "body=Chosen approach: <what was done>. Options considered: <other approaches and why not chosen>. Reasoning: <why this decision aligns with the design>"
+done
+```
+Use the actual comment IDs from the JSON file. Replace the `<...>` placeholders with real content describing your reasoning.
+
+### Step 5: Verify
+Confirm your replies were posted:
+```
+gh pr view ${PR_NUMBER} --json comments --jq 'length'
+```
 
 ## RULES
 - Follow the receiving-code-review skill strictly.
