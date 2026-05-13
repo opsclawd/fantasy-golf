@@ -206,10 +206,10 @@ export async function refreshScoresForPool(
   const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)
   const golfersWithHoles = allGolferIds.filter(id => (holesByGolfer.get(id)?.length ?? 0) > 0)
   const coverageRatio = golfersWithHoles.length / allGolferIds.length
-  if (coverageRatio < 0.5 && scorecardFailures.length > 0) {
+  if (coverageRatio < 0.5) {
     await supabase
       .from('pools')
-      .update({ last_refresh_error: `Scorecard data incomplete for ${scorecardFailures.length} golfers` })
+      .update({ last_refresh_error: `Scorecard data incomplete: coverage=${Math.round(coverageRatio * 100)}%, failures=${scorecardFailures.length}` })
       .eq('id', pool.id)
   }
 

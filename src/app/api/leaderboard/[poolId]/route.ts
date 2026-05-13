@@ -108,7 +108,6 @@ export async function GET(
           isRefreshing,
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
-          scoringDataStatus: 'incomplete',
           golferStatuses: {},
           golferNames: {},
           golferCountries: {},
