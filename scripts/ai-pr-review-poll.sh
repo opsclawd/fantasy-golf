@@ -123,7 +123,12 @@ process_reviews() {
     echo '## TASK'
     echo ''
     echo '### Step 1: Understand the design context'
-    echo 'Read issue.md, design.md, and plan.md from the issue archive to understand the original requirements and design intent.'
+    echo "The issue archive (issue.md, design.md, plan.md) exists only on \`main\` branch. Read it via:"
+    echo '```'
+    echo "git show main:ai/issues/${ISSUE_NUM}/issue.md"
+    echo "git show main:ai/issues/${ISSUE_NUM}/design.md"
+    echo "git show main:ai/issues/${ISSUE_NUM}/plan.md"
+    echo '```'
     echo ''
     echo '### Step 2: Assess each comment'
     echo 'For each review comment, make a judgement call: is it technically valid against the design? Note your reasoning.'
