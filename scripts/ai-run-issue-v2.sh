@@ -34,6 +34,7 @@ TIMEOUT_IMPLEMENT=1800
 TIMEOUT_VALIDATE=300
 TIMEOUT_REVIEW=600
 TIMEOUT_FIX=900
+TIMEOUT_PR_FIX=1200
 TIMEOUT_COMPOUND=600
 
 # All artifacts live in the worktree (no cross-directory permission needed for sub-agents)
@@ -1106,7 +1107,7 @@ Rules:
 
 Start now."
 
-  echo "$FIX_PROMPT" | run_agent_raw "fix-review-${FIX_LOOP_COUNT}" "$TIMEOUT_FIX"
+  echo "$FIX_PROMPT" | run_agent_raw "fix-review-${FIX_LOOP_COUNT}" "$TIMEOUT_PR_FIX"
   check_branch_after_agent
 
   # ── re-validate ────────────────────────────────────────────────────────────
