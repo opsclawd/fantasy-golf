@@ -79,6 +79,119 @@ check_branch_after_agent() {
   fi
 }
 
+# ── result resolution helpers ───────────────────────────────────────────────
+#
+# Hybrid result extraction: agent writes .result file (primary), extractor
+# agent reads .md file (fallback), conservative default (tertiary).
+
+# validate_result_file: returns 0 if file exists and contains an allowed value
+validate_result_file() {
+  local result_file="$1"; shift
+  local allowed_values=("$@")
+  local val
+
+  if [[ ! -f "$result_file" ]]; then
+    return 1
+  fi
+
+  val=$(cat "$result_file" 2>/dev/null | head -1 | tr -d '[:space:]')
+  if [[ -z "$val" ]]; then
+    return 1
+  fi
+
+  local match=false
+  for allowed in "${allowed_values[@]}"; do
+    if [[ "$val" == "$allowed" ]]; then
+      match=true
+      break
+    fi
+  done
+
+  if $match; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# extract_result: focused extractor agent that reads source .md and writes .result
+extract_result() {
+  local phase="$1"
+  local result_file="$2"
+  local source_file="$3"; shift 3
+  local allowed_values=("$@")
+  local allowed_regex
+  allowed_regex=$(printf '|%s' "${allowed_values[@]}")
+  allowed_regex="${allowed_regex:1}"
+
+  log "  Extractor: reading ${source_file} for ${phase} result..."
+
+  EXTRACTOR_PROMPT="You are a result extractor. Read the file below and determine the outcome.
+
+## Source File
+$(cat "$source_file" 2>/dev/null || echo "File not found: ${source_file}")
+
+## Allowed Values
+${allowed_regex}
+
+## Your Task
+Read the source file and determine which allowed value best describes the outcome.
+Write EXACTLY ONE of the allowed values to the result file — nothing else, no explanation.
+
+Result file: ${result_file}
+
+Write the result now."
+
+  echo "$EXTRACTOR_PROMPT" | run_agent_raw "extract-${phase}" 60
+
+  if validate_result_file "$result_file" "${allowed_values[@]}"; then
+    log "  Extractor: successfully resolved ${phase} result"
+    return 0
+  else
+    log "  Extractor: failed to resolve ${phase} result"
+    return 1
+  fi
+}
+
+# resolve_result: try .result file → extractor agent → fallback default
+# Usage: resolve_result RESULT_FILE SOURCE_FILE ALLOWED_VAL1 ... ALLOWED_VALN FALLBACK
+resolve_result() {
+  local result_file="$1"
+  local source_file="$2"; shift 2
+  # Last arg is fallback, rest are allowed values
+  local all_args=("$@")
+  local fallback="${all_args[-1]}"
+  local allowed_arr=("${all_args[@]:0:$(( ${#all_args[@]} - 1 ))}")
+
+  # Primary: valid .result file
+  if validate_result_file "$result_file" "${allowed_arr[@]}"; then
+    local val
+    val=$(cat "$result_file" | head -1 | tr -d '[:space:]')
+    log "  Result (file): ${val}"
+    echo "$val"
+    return 0
+  fi
+
+  log "  Result file missing or invalid, trying extractor..."
+
+  # Fallback: extractor agent reads .md file
+  if [[ -f "$source_file" ]]; then
+    if extract_result "$(basename "$result_file" .result)" "$result_file" "$source_file" "${allowed_arr[@]}"; then
+      local val
+      val=$(cat "$result_file" | head -1 | tr -d '[:space:]')
+      log "  Result (extractor): ${val}"
+      echo "$val"
+      return 0
+    fi
+  fi
+
+  # Tertiary: conservative fallback default
+  log "  Result (fallback): ${fallback}"
+  echo "$fallback" > "$result_file" 2>/dev/null || true
+  echo "$fallback"
+  return 1
+}
+
 run_agent_raw() {
   local phase="$1"
   local timeout_sec="$2"
@@ -612,25 +725,20 @@ Report back with:
 - Self-review findings
 - Any questions or concerns
 
-Stop after reporting.
+## MANDATORY RESULT FILE
+After reporting, write EXACTLY ONE of these values to ./implement-task-${task_n}.result:
+- DONE
+- DONE_WITH_CONCERNS
+- BLOCKED
+- NEEDS_CONTEXT
+No other content in the file — just the status word.
+
+Stop after writing the result file.
 
 CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$IMPLEMENTER_PROMPT" | run_agent_raw "implement-task-${task_n}" "$TIMEOUT_IMPLEMENT"
     check_branch_after_agent
-    if grep -qi "Status:.*BLOCKED" "$output_log" 2>/dev/null; then
-      impl_status="BLOCKED"
-    elif grep -qi "Status:.*NEEDS_CONTEXT" "$output_log" 2>/dev/null; then
-      impl_status="NEEDS_CONTEXT"
-    elif grep -qi "Status:.*DONE_WITH_CONCERNS" "$output_log" 2>/dev/null; then
-      impl_status="DONE_WITH_CONCERNS"
-    elif grep -qi "Status:.*DONE" "$output_log" 2>/dev/null; then
-      impl_status="DONE"
-    else
-      impl_status="DONE"
-    fi
-
-    echo "$impl_status" > "${ISSUES_DIR}/implement-task-${task_n}.result"
   }
 
   # Run spec reviewer for a single task; writes result to file (not stdout)
@@ -666,19 +774,18 @@ implementer's word for what was built.
 - ✅ Spec compliant (if everything matches)
 - ❌ Issues found: [list specifically with file:line references]
 
-Stop after writing your review to ./spec-review-task-${task_n}.md.
+## MANDATORY RESULT FILE
+After writing your review, write EXACTLY ONE of these values to ./spec-review-task-${task_n}.result:
+- SPEC_PASS
+- SPEC_FAIL
+No other content in the file — just the status word.
+
+Stop after writing both files.
 
 CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$SPEC_REVIEWER_PROMPT" | run_agent_raw "spec-review-task-${task_n}" "$TIMEOUT_REVIEW"
     check_branch_after_agent
-
-    local spec_result="SPEC_FAIL"
-    if grep -q "✅ Spec compliant" "$output_log" 2>/dev/null; then
-      spec_result="SPEC_PASS"
-    fi
-    echo "$spec_result" > "${ISSUES_DIR}/spec-review-task-${task_n}.result"
-    log "  Task ${task_n} spec review: ${spec_result}"
   }
 
   # Run quality reviewer for a single task; writes result to file (not stdout)
@@ -712,23 +819,22 @@ Review the diff for:
 - Single responsibility per file
 
 ## Report Format
-- Strengths: [what was done done well]
+- Strengths: [what was done well]
 - Issues: [Critical | Important | Minor]
 - Assessment: APPROVED | NEEDS_WORK
 
-Stop after writing your review to ./quality-review-task-${task_n}.md.
+## MANDATORY RESULT FILE
+After writing your review, write EXACTLY ONE of these values to ./quality-review-task-${task_n}.result:
+- QUALITY_PASS
+- QUALITY_FAIL
+No other content in the file — just the status word.
+
+Stop after writing both files.
 
 CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$QUALITY_REVIEWER_PROMPT" | run_agent_raw "quality-review-task-${task_n}" "$TIMEOUT_REVIEW"
     check_branch_after_agent
-
-    local quality_result="QUALITY_FAIL"
-    if grep -qi "Assessment:.*APPROVED" "$output_log" 2>/dev/null; then
-      quality_result="QUALITY_PASS"
-    fi
-    echo "$quality_result" > "${ISSUES_DIR}/quality-review-task-${task_n}.result"
-    log "  Task ${task_n} quality review: ${quality_result}"
   }
 
   # Run fix-review: agent reads both review reports and fixes findings
@@ -781,22 +887,19 @@ Report back with:
 - What you intentionally skipped and why
 - Any remaining concerns
 
-Stop after reporting.
+## MANDATORY RESULT FILE
+After reporting, write EXACTLY ONE of these values to ./fix-review-task-${task_n}.result:
+- DONE
+- DONE_NO_FIXES_NEEDED
+- BLOCKED
+No other content in the file — just the status word.
+
+Stop after writing the result file.
 
 CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$FIX_REVIEW_PROMPT" | run_agent_raw "fix-review-task-${task_n}" "$TIMEOUT_FIX"
     check_branch_after_agent
-
-    local output_log="${ISSUES_DIR}/fix-review-task-${task_n}.log"
-    local fix_status="DONE"
-    if grep -qi "Status:.*BLOCKED" "$output_log" 2>/dev/null; then
-      fix_status="BLOCKED"
-    elif grep -qi "Status:.*DONE_NO_FIXES_NEEDED" "$output_log" 2>/dev/null; then
-      fix_status="DONE_NO_FIXES_NEEDED"
-    fi
-    echo "$fix_status" > "${ISSUES_DIR}/fix-review-task-${task_n}.result"
-    log "  Task ${task_n} fix review: ${fix_status}"
   }
 
   # ── main task loop ─────────────────────────────────────────────────────────
@@ -866,7 +969,11 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
     # Step 1: Implement
     if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" == "implement" || -z "$RESUME_STAGE" ]]; then
       run_implementer "$TASK_NUM" "$task_title" "$TASK_TEXT"
-      IMPL_STATUS=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}.result" 2>/dev/null || echo "DONE")
+      IMPL_STATUS=$(resolve_result \
+        "${ISSUES_DIR}/implement-task-${TASK_NUM}.result" \
+        "${WORKTREE_DIR}/implement-task-${TASK_NUM}.md" \
+        DONE DONE_WITH_CONCERNS BLOCKED NEEDS_CONTEXT \
+        "DONE")
       log "  Implementer status: ${IMPL_STATUS}"
 
       if [[ "$IMPL_STATUS" == "BLOCKED" || "$IMPL_STATUS" == "NEEDS_CONTEXT" ]]; then
@@ -890,7 +997,11 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
         log "  Review-fix loop ${REVIEW_LOOPS}/5 for task ${TASK_NUM}"
 
         run_fix_review "$TASK_NUM" "$task_title" "$TASK_TEXT"
-        FIX_STATUS=$(cat "${ISSUES_DIR}/fix-review-task-${TASK_NUM}.result" 2>/dev/null || echo "DONE")
+        FIX_STATUS=$(resolve_result \
+          "${ISSUES_DIR}/fix-review-task-${TASK_NUM}.result" \
+          "${WORKTREE_DIR}/fix-review-task-${TASK_NUM}.md" \
+          DONE DONE_NO_FIXES_NEEDED BLOCKED \
+          "DONE")
 
         if [[ "$FIX_STATUS" == "BLOCKED" ]]; then
           orchestrator_fail "Task ${TASK_NUM} fix review is blocked. Fix the blocker and re-run."
@@ -912,9 +1023,17 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
         run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT"
         run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA"
 
-        # Check if reviews now pass — read result files
-        SPEC_STATUS=$(cat "${ISSUES_DIR}/spec-review-task-${TASK_NUM}.result" 2>/dev/null || echo "SPEC_FAIL")
-        QUALITY_STATUS=$(cat "${ISSUES_DIR}/quality-review-task-${TASK_NUM}.result" 2>/dev/null || echo "QUALITY_FAIL")
+        # Check if reviews now pass — resolve from result files
+        SPEC_STATUS=$(resolve_result \
+          "${ISSUES_DIR}/spec-review-task-${TASK_NUM}.result" \
+          "${WORKTREE_DIR}/spec-review-task-${TASK_NUM}.md" \
+          SPEC_PASS SPEC_FAIL \
+          "SPEC_FAIL")
+        QUALITY_STATUS=$(resolve_result \
+          "${ISSUES_DIR}/quality-review-task-${TASK_NUM}.result" \
+          "${WORKTREE_DIR}/quality-review-task-${TASK_NUM}.md" \
+          QUALITY_PASS QUALITY_FAIL \
+          "QUALITY_FAIL")
 
         if [[ "$SPEC_STATUS" == "SPEC_PASS" && "$QUALITY_STATUS" == "QUALITY_PASS" ]]; then
           log "  Task ${TASK_NUM}: both reviews pass after fixes"
@@ -1151,14 +1270,19 @@ If a finding was pre-existing (not introduced by this branch), note it as **CARR
 Write an updated review to ./code-review.md.
 Verify your assertions by reading actual file contents.
 
+## MANDATORY RESULT FILE
+After writing code-review.md, write EXACTLY ONE of these values to ./review-findings-status.txt:
+- ALL_RESOLVED  (if every finding is fixed, carried forward, or invalid)
+- HAS_UNRESOLVED (if any finding is not fixed or partially fixed)
+No other content in the file — just the status word.
+
 ## CRITICAL RULES
 - Do NOT ask questions.
 - Do NOT expand scope.
 - Do not flag new issues beyond the original review.
 - Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
-- Stop after writing updated code-review.md.
 
-Write code-review.md now."
+Write code-review.md and review-findings-status.txt now."
 
   echo "$RE_REVIEW_PROMPT" | run_agent_raw "re-review-${FIX_LOOP_COUNT}" "$TIMEOUT_REVIEW"
 
@@ -1167,13 +1291,18 @@ Write code-review.md now."
     cp "${WORKTREE_DIR}/code-review.md" "${ISSUES_DIR}/review.md"
   fi
 
-  # Check if all findings are resolved (exit loop)
-  UNRESOLVED_COUNT=$(grep -iE "\*\*(not fixed|partially fixed)\*\*" "${ISSUES_DIR}/review.md" 2>/dev/null | grep -vi "pre-existing" | wc -l || true)
-  if [[ $UNRESOLVED_COUNT -eq 0 ]]; then
+  # Check if all findings are resolved using resolve_result (primary: .result file, fallback: extractor, tertiary: assume unresolved)
+  REVIEW_STATUS=$(resolve_result \
+    "${WORKTREE_DIR}/review-findings-status.txt" \
+    "${ISSUES_DIR}/review.md" \
+    ALL_RESOLVED HAS_UNRESOLVED \
+    "HAS_UNRESOLVED")
+
+  if [[ "$REVIEW_STATUS" == "ALL_RESOLVED" ]]; then
     info "All findings resolved. Exiting fix loop."
     break
   fi
-  info "$UNRESOLVED_COUNT finding(s) still unresolved. Continuing fix loop."
+  info "Review status: ${REVIEW_STATUS}. Continuing fix loop."
 done
 
 PHASE="compound"
