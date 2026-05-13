@@ -102,63 +102,61 @@ process_reviews() {
 
   COMMENT_TEXT=$(echo "$COMMENTS" | jq -r '.[] | "- \(.path):\(.line) — \(.body)"')
 
-  PROMPT="Load the receiving-code-review skill first.
-
-## CONTEXT
-PR Number: #${PR_NUMBER}
-Branch: ${PR_BRANCH}
-Repository: ${OWNER_REPO}
-Your working directory: ${REPO_ROOT}
-Issue Archive: ${REPO_ROOT}/ai/issues/${ISSUE_NUM}/ (issue.md, design.md, plan.md)
-
-## PR DIFF
-\`\`\`
-$(cat "${ISSUES_DIR}/pr-diff.diff")
-\`\`\`
-
-## REVIEW COMMENTS
-${COMMENT_TEXT}
-
-## TASK
-
-### Step 1: Understand the design context
-Read issue.md, design.md, and plan.md from the issue archive to understand the original requirements and design intent.
-
-### Step 2: Assess each comment
-For each review comment, make a judgement call: is it technically valid against the design? Note your reasoning.
-
-### Step 3: Fix the code
-Fix the code for any comments you assessed as valid. Then run:
-```
-git add -A
-git commit -m 'fix: address PR review feedback'
-git push origin ${PR_BRANCH}
-```
-
-### Step 4: Reply to all threads
-Using the comment IDs from comments.json, reply to EVERY thread (both valid and invalid comments):
-```
-cat comments.json | jq -r '.[] | .id' | while read id; do
-  gh api repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments/$id/replies --method POST --raw-field "body=Chosen approach: <what was done>. Options considered: <other approaches and why not chosen>. Reasoning: <why this decision aligns with the design>"
-done
-```
-Use the actual comment IDs from the JSON file. Replace the `<...>` placeholders with real content describing your reasoning.
-
-### Step 5: Verify
-Confirm your replies were posted:
-```
-gh pr view ${PR_NUMBER} --json comments --jq 'length'
-```
-
-## RULES
-- Follow the receiving-code-review skill strictly.
-- No performative agreement (no 'thanks', 'great point', etc.).
-- Reply factually: state the chosen approach, options considered, and reasoning.
-- If truly ambiguous, note the ambiguity, pick the safest default that preserves existing behavior, and explain your reasoning.
-- Do NOT expand scope beyond comments.
-- Do NOT create a new PR."
-
-  echo "$PROMPT" | run_agent "process-review-p${POLL_COUNT}" 600
+  (
+    echo 'Load the receiving-code-review skill first.'
+    echo ''
+    echo '## CONTEXT'
+    echo "PR Number: #${PR_NUMBER}"
+    echo "Branch: ${PR_BRANCH}"
+    echo "Repository: ${OWNER_REPO}"
+    echo "Your working directory: ${REPO_ROOT}"
+    echo "Issue Archive: ${REPO_ROOT}/ai/issues/${ISSUE_NUM}/ (issue.md, design.md, plan.md)"
+    echo ''
+    echo '## PR DIFF'
+    echo '```'
+    cat "${ISSUES_DIR}/pr-diff.diff"
+    echo '```'
+    echo ''
+    echo '## REVIEW COMMENTS'
+    echo "${COMMENT_TEXT}"
+    echo ''
+    echo '## TASK'
+    echo ''
+    echo '### Step 1: Understand the design context'
+    echo 'Read issue.md, design.md, and plan.md from the issue archive to understand the original requirements and design intent.'
+    echo ''
+    echo '### Step 2: Assess each comment'
+    echo 'For each review comment, make a judgement call: is it technically valid against the design? Note your reasoning.'
+    echo ''
+    echo '### Step 3: Fix the code'
+    echo 'Fix the code for any comments you assessed as valid. Then run:'
+    echo '```'
+    echo 'git add -A'
+    echo "git commit -m 'fix: address PR review feedback'"
+    echo "git push origin ${PR_BRANCH}"
+    echo '```'
+    echo ''
+    echo '### Step 4: Reply to all threads'
+    echo "Using comment IDs from ${ISSUES_DIR}/comments.json, reply to EVERY thread (both valid and invalid comments):"
+    echo '```'
+    echo "jq -r '.[] | \"gh api repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments/\(.id)/replies --method POST --raw-field body=Chosen approach: <what was done>. Options considered: <other approaches and why not chosen>. Reasoning: <why this decision aligns with the design>\"' ${ISSUES_DIR}/comments.json | bash"
+    echo '```'
+    echo 'Use the actual comment IDs from the JSON file. Replace the <...> placeholders with real content describing your reasoning.'
+    echo ''
+    echo '### Step 5: Verify'
+    echo 'Confirm your replies were posted:'
+    echo '```'
+    echo "gh pr view ${PR_NUMBER} --json comments --jq 'length'"
+    echo '```'
+    echo ''
+    echo '## RULES'
+    echo '- Follow the receiving-code-review skill strictly.'
+    echo '- No performative agreement (no \"thanks\", \"great point\", etc.).'
+    echo '- Reply factually: state the chosen approach, options considered, and reasoning.'
+    echo '- If truly ambiguous, note the ambiguity, pick the safest default that preserves existing behavior, and explain your reasoning.'
+    echo '- Do NOT expand scope beyond comments.'
+    echo '- Do NOT create a new PR.'
+  ) | run_agent "process-review-p${POLL_COUNT}" 600
 }
 
 # ── Main loop ──────────────────────────────────────────────────────────────
