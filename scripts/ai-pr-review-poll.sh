@@ -69,6 +69,216 @@ else
 fi
 log "Working directory: $(pwd)"
 
+# ── Result resolution (three-tier: .result file → extractor agent → fallback) ──
+validate_result_file() {
+  local result_file="$1"; shift
+  local allowed_values=("$@")
+  local val
+
+  if [[ ! -f "$result_file" ]]; then
+    return 1
+  fi
+
+  val=$(cat "$result_file" 2>/dev/null | head -1 | tr -d '[:space:]')
+  if [[ -z "$val" ]]; then
+    return 1
+  fi
+
+  local match=false
+  for allowed in "${allowed_values[@]}"; do
+    if [[ "$val" == "$allowed" ]]; then
+      match=true
+      break
+    fi
+  done
+
+  if $match; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+extract_result() {
+  local phase="$1"
+  local result_file="$2"
+  local source_file="$3"; shift 3
+  local allowed_values=("$@")
+  local allowed_regex
+  allowed_regex=$(printf '|%s' "${allowed_values[@]}")
+  allowed_regex="${allowed_regex:1}"
+
+  log "  Extractor: reading ${source_file} for ${phase} result..."
+
+  local extractor_prompt
+  extractor_prompt="You are a result extractor. Read the file below and determine the outcome.
+
+## Source File
+$(cat "$source_file" 2>/dev/null || echo "File not found: ${source_file}")
+
+## Allowed Values
+${allowed_regex}
+
+## Your Task
+Read the source file and determine which allowed value best describes the outcome.
+Write EXACTLY ONE of the allowed values to the result file — nothing else, no explanation.
+
+Result file: ${result_file}
+
+Write the result now."
+
+  local extractor_ec
+  echo "$extractor_prompt" | run_agent "extract-${phase}" 60
+  extractor_ec=$?
+
+  if [[ $extractor_ec -ne 0 ]]; then
+    warn "  Extractor: agent exited with code ${extractor_ec}"
+  fi
+
+  if validate_result_file "$result_file" "${allowed_values[@]}"; then
+    log "  Extractor: successfully resolved ${phase} result"
+    return 0
+  else
+    warn "  Extractor: failed to resolve ${phase} result"
+    return 1
+  fi
+}
+
+resolve_result() {
+  local result_file="$1"
+  local source_file="$2"; shift 2
+  local all_args=("$@")
+  local fallback="${all_args[-1]}"
+  local allowed_arr=("${all_args[@]:0:$(( ${#all_args[@]} - 1 ))}")
+
+  if validate_result_file "$result_file" "${allowed_arr[@]}"; then
+    local val
+    val=$(cat "$result_file" | head -1 | tr -d '[:space:]')
+    log "  Result (file): ${val}"
+    echo "$val"
+    return 0
+  fi
+
+  log "  Result file missing or invalid, trying extractor..."
+
+  if [[ -f "$source_file" ]]; then
+    if extract_result "$(basename "$result_file" .result)" "$result_file" "$source_file" "${allowed_arr[@]}"; then
+      local val
+      val=$(cat "$result_file" | head -1 | tr -d '[:space:]')
+      log "  Result (extractor): ${val}"
+      echo "$val"
+      return 0
+    fi
+  fi
+
+  log "  Result (fallback): ${fallback}"
+  echo "$fallback" > "$result_file" 2>/dev/null || true
+  echo "$fallback"
+  return 1
+}
+
+# ── Verification functions ──────────────────────────────────────────────────
+verify_commits_pushed() {
+  local pre_sha="$1"
+  local branch="$2"
+  local new_commits
+
+  new_commits=$(git log "${pre_sha}..origin/${branch}" --oneline 2>/dev/null) || true
+
+  if [[ -n "$new_commits" ]]; then
+    log "  verify_commits: new commits detected on origin/${branch}:"
+    echo "$new_commits" | while IFS= read -r line; do log "    $line"; done
+    return 0
+  fi
+
+  local local_commits
+  local_commits=$(git log "${pre_sha}..HEAD" --oneline 2>/dev/null) || true
+  if [[ -n "$local_commits" ]]; then
+    warn "  verify_commits: commits exist locally but not on remote. Attempting push..."
+    git push origin "$branch" 2>&1 | tee -a "${ISSUES_DIR}/poll.log" || {
+      warn "  verify_commits: push failed"
+      return 1
+    }
+
+    new_commits=$(git log "${pre_sha}..origin/${branch}" --oneline 2>/dev/null) || true
+    if [[ -n "$new_commits" ]]; then
+      log "  verify_commits: push succeeded, commits now on remote"
+      return 0
+    fi
+  fi
+
+  warn "  verify_commits: no new commits found (neither local nor remote)"
+  return 1
+}
+
+verify_replies_posted() {
+  local comment_ids_file="${ISSUES_DIR}/comments.json"
+  if [[ ! -f "$comment_ids_file" ]]; then
+    warn "  verify_replies: no comments.json found, cannot verify replies"
+    return 1
+  fi
+
+  local expected_ids
+  expected_ids=$(jq -r '.[].id' "$comment_ids_file" 2>/dev/null) || {
+    warn "  verify_replies: failed to parse comments.json"
+    return 1
+  }
+
+  if [[ -z "$expected_ids" ]]; then
+    log "  verify_replies: no comment IDs to verify"
+    return 0
+  fi
+
+  local all_replies
+  all_replies=$(gh api "repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments" --jq '[.[] | select(.in_reply_to_id != null) | .in_reply_to_id]' 2>/dev/null) || {
+    warn "  verify_replies: failed to fetch PR comments for verification"
+    return 1
+  }
+
+  local missing=0
+  local total=0
+  for cid in $expected_ids; do
+    total=$((total + 1))
+    local has_reply
+    has_reply=$(echo "$all_replies" | jq --argjson cid "$cid" '[.[] | select(. == $cid)] | length' 2>/dev/null || echo "0")
+    if [[ "$has_reply" -eq 0 ]]; then
+      warn "  verify_replies: comment ${cid} has no reply"
+      missing=$((missing + 1))
+    fi
+  done
+
+  if [[ $missing -eq 0 ]]; then
+    log "  verify_replies: all ${total} threads have replies"
+    return 0
+  else
+    warn "  verify_replies: ${missing}/${total} threads missing replies"
+    return 1
+  fi
+}
+
+verify_build_passes() {
+  log "  verify_build: running lint + build + test..."
+  local build_log="${ISSUES_DIR}/build-verify-p${POLL_COUNT}.log"
+
+  if ! npm run lint > "$build_log" 2>&1; then
+    warn "  verify_build: lint failed (see ${build_log})"
+    return 1
+  fi
+
+  if ! npm run build >> "$build_log" 2>&1; then
+    warn "  verify_build: build failed (see ${build_log})"
+    return 1
+  fi
+
+  if ! npm test >> "$build_log" 2>&1; then
+    warn "  verify_build: tests failed (see ${build_log})"
+    return 1
+  fi
+
+  log "  verify_build: lint + build + test all passed"
+  return 0
+}
+
 # ── Agent runner ───────────────────────────────────────────────────────────
 run_agent() {
   local phase="$1"
@@ -172,7 +382,16 @@ process_reviews() {
   local comment_text
   comment_text=$(echo "$comments" | jq -r '.[] | "- \(.path):\(.line) — \(.body)"')
 
-  (
+  # Record pre-agent commit SHA for verification
+  local pre_sha
+  pre_sha=$(git rev-parse HEAD 2>/dev/null || echo "")
+  log "  Pre-agent SHA: ${pre_sha:-unknown}"
+
+  # Build prompt to temp file so we can capture run_agent exit code
+  local prompt_file
+  prompt_file=$(mktemp)
+
+  {
     echo 'Load the receiving-code-review skill first.'
     echo ''
     echo '## CONTEXT'
@@ -224,6 +443,15 @@ process_reviews() {
     echo "gh pr view ${PR_NUMBER} --json comments --jq 'length'"
     echo '```'
     echo ''
+    echo '## MANDATORY RESULT FILE'
+    echo 'When you are done, write EXACTLY ONE of these values to the file below (nothing else, no explanation):'
+    echo '- ALL_DONE — All valid comments addressed, code fixed and pushed, replies posted'
+    echo '- NO_FIXES_NEEDED — All comments assessed as invalid, no code changes needed, replies posted explaining why'
+    echo '- PARTIAL — Some comments addressed but could not complete all (state which in your output)'
+    echo '- BLOCKED — Cannot proceed (need info, conflicting constraints, etc.)'
+    echo ''
+    echo "Result file: ${ISSUES_DIR}/process-review-p${POLL_COUNT}.result"
+    echo ''
     echo '## RULES'
     echo '- Follow the receiving-code-review skill strictly.'
     echo '- No performative agreement (no "thanks", "great point", etc.).'
@@ -232,7 +460,57 @@ process_reviews() {
     echo '- Do NOT expand scope beyond comments.'
     echo '- Do NOT create a new PR.'
     echo '- Do NOT merge the PR (no gh pr merge). Only commit, push, and reply.'
-  ) | run_agent "process-review-p${POLL_COUNT}" 600
+  } > "$prompt_file"
+
+  run_agent "process-review-p${POLL_COUNT}" 600 < "$prompt_file"
+  local agent_ec=$?
+  rm -f "$prompt_file"
+
+  if [[ $agent_ec -ne 0 ]]; then
+    warn "Agent exited with code ${agent_ec}"
+  fi
+
+  # Resolve structured result from agent output
+  local review_result
+  review_result=$(resolve_result \
+    "${ISSUES_DIR}/process-review-p${POLL_COUNT}.result" \
+    "${ISSUES_DIR}/process-review-p${POLL_COUNT}.log" \
+    ALL_DONE NO_FIXES_NEEDED PARTIAL BLOCKED \
+    PARTIAL)
+
+  log "Review result: ${review_result}"
+
+  # ── Verification chain ──────────────────────────────────────────────────
+  local verify_ok=true
+
+  if [[ "$review_result" == "NO_FIXES_NEEDED" ]]; then
+    log "Agent reports no fixes needed. Skipping commit/build verification."
+    verify_replies_posted || verify_ok=false
+  elif [[ "$review_result" == "ALL_DONE" ]]; then
+    verify_commits_pushed "$pre_sha" "$PR_BRANCH" || verify_ok=false
+    verify_replies_posted || verify_ok=false
+    verify_build_passes || verify_ok=false
+  elif [[ "$review_result" == "PARTIAL" ]]; then
+    verify_commits_pushed "$pre_sha" "$PR_BRANCH" || verify_ok=false
+    verify_replies_posted || verify_ok=false
+    verify_build_passes || verify_ok=false
+  elif [[ "$review_result" == "BLOCKED" ]]; then
+    warn "Agent is blocked. No verification possible."
+    verify_ok=false
+  else
+    warn "Unknown result '${review_result}'. Running full verification."
+    verify_commits_pushed "$pre_sha" "$PR_BRANCH" || verify_ok=false
+    verify_replies_posted || verify_ok=false
+    verify_build_passes || verify_ok=false
+  fi
+
+  if $verify_ok; then
+    log "All verifications passed."
+    return 0
+  else
+    warn "Some verifications failed — see logs above."
+    return 2
+  fi
 }
 
 # ── Main loop ──────────────────────────────────────────────────────────────
@@ -242,11 +520,15 @@ while [[ $POLL_COUNT -lt $MAX_POLLS ]]; do
   POLL_COUNT=$((POLL_COUNT + 1))
   log "=== Poll $POLL_COUNT/$MAX_POLLS ==="
 
-  if process_reviews; then
-    log "Reviews processed successfully."
-  else
-    log "No reviews to process (poll $POLL_COUNT/$MAX_POLLS)."
-  fi
+  review_ec=0
+  process_reviews || review_ec=$?
+
+  case $review_ec in
+    0) log "Reviews processed and verified successfully." ;;
+    1) log "No new reviews to process (poll $POLL_COUNT/$MAX_POLLS)." ;;
+    2) warn "Reviews processed but some verifications failed (poll $POLL_COUNT/$MAX_POLLS)." ;;
+    *) warn "process_reviews exited with unexpected code ${review_ec}" ;;
+  esac
 
   if [[ $POLL_COUNT -ge $MAX_POLLS ]]; then
     break
