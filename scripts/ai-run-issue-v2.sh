@@ -753,6 +753,11 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
 
     SPEC_REVIEWER_PROMPT="You are reviewing whether an implementation matches its specification.
 
+## Design Context
+Read these files for full context on what was intended:
+- Design: ./design.md
+- Implementation plan: ./plan.md
+
 ## Task Requirements
 ${task_text}
 
@@ -764,11 +769,12 @@ You MUST read the actual code and verify line by line. Do not take the
 implementer's word for what was built.
 
 ## Your Job
-1. Read the code that was actually committed.
-2. Compare actual implementation to requirements.
-3. Check for missing pieces.
-4. Check for extra work not requested.
-4. Check for misunderstandings.
+1. Read the design and plan documents first for full context.
+2. Read the code that was actually committed.
+3. Compare actual implementation to requirements and design intent.
+4. Check for missing pieces.
+5. Check for extra work not requested.
+6. Check for misunderstandings.
 
 ## Report Format
 - ✅ Spec compliant (if everything matches)
@@ -799,7 +805,12 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
 
     log "  Task ${task_n}: quality review..."
 
-    QUALITY_REVIEWER_PROMPT="You are reviewing the code quality of an implementation.
+    QUALITY_REVIEWER_PROMPT="You are reviewing the quality of an implementation.
+
+## Design Context
+Read these files for full context on what was intended:
+- Design: ./design.md
+- Implementation plan: ./plan.md
 
 ## Task Summary
 ${task_title}
@@ -812,11 +823,22 @@ Files changed (see git diff ${base_sha}..${head_sha})
 
 ## Your Job
 Run: git diff ${base_sha}..${head_sha}
-Review the diff for:
+
+First, check if the diff contains code changes (*.ts, *.tsx, *.js, *.jsx, *.py, etc.) or is documentation-only (*.md, *.txt, *.rst, etc.). Then review accordingly:
+
+**If the diff contains code changes**, review for:
 - Code cleanliness and maintainability
 - Proper testing
 - Following existing patterns
 - Single responsibility per file
+
+**If the diff is documentation-only**, review for:
+- Accuracy: do the changes correctly describe the system behavior?
+- Clarity: is the writing clear and unambiguous?
+- Consistency: do the changes align with other documentation and the actual codebase?
+- Formatting: proper markdown, no broken links or typos?
+
+Do NOT fail a documentation-only change for lacking tests, code patterns, or code-specific criteria. A documentation change that is accurate, clear, and consistent should get QUALITY_PASS.
 
 ## Report Format
 - Strengths: [what was done well]
