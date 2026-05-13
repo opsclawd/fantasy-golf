@@ -82,6 +82,12 @@ run_agent() {
 
 # ── Process reviews ────────────────────────────────────────────────────────
 process_reviews() {
+  PR_STATE=$(gh pr view "$PR_NUMBER" --json state,merged --jq '{state,merged}')
+  if echo "$PR_STATE" | jq -e '.merged == true or .state == "MERGED"' > /dev/null 2>&1; then
+    log "PR #${PR_NUMBER} is already merged. Exiting."
+    exit 0
+  fi
+
   log "Fetching PR review comments..."
 
   REVIEWS=$(gh api "repos/${OWNER_REPO}/pulls/${PR_NUMBER}/reviews" --jq '[.[] | select(.state == "CHANGES_REQUESTED" or .state == "COMMENT")]')
@@ -161,6 +167,7 @@ process_reviews() {
     echo '- If truly ambiguous, note the ambiguity, pick the safest default that preserves existing behavior, and explain your reasoning.'
     echo '- Do NOT expand scope beyond comments.'
     echo '- Do NOT create a new PR.'
+    echo '- Do NOT merge the PR (no gh pr merge). Only commit, push, and reply.'
   ) | run_agent "process-review-p${POLL_COUNT}" 600
 }
 
