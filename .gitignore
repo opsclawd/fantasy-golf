@@ -18,5 +18,16 @@ tsconfig.tsbuildinfo
 spec-review-task-*.md
 quality-review-task-*.md
 next-env.d.ts
+validation-status.txt
+processed-comment-ids.txt
+.env
+.env.local
 node_modules/
 .next/
+.ai-worktrees/
+.codex
+.opencode/
+.superpowers/
+.vercel/
+ai/
+supabase/.temp/

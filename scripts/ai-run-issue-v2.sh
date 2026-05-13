@@ -79,7 +79,6 @@ check_branch_after_agent() {
 }
 
 run_agent_raw() {
-  # Run agent with prompt from stdin, capture output to log file
   local phase="$1"
   local timeout_sec="$2"
   local output_log="${ISSUES_DIR}/${phase}.log"
@@ -99,19 +98,25 @@ run_agent_raw() {
 
   log "Running agent for phase '$phase' (timeout=${timeout_sec}s)..."
 
-  # Write prompt to temp file to avoid pipeline issues with SIGPIPE/tee
   local prompt_file
   prompt_file=$(mktemp)
   cat > "$prompt_file"
 
-  # Run agent: stdin from prompt file, stdout+stderr to log file AND console
+  # Use process substitution to avoid PIPESTATUS issues with || true.
+  # Capture agent exit code explicitly via a wrapper that writes to a temp file.
+  local ec_file
+  ec_file=$(mktemp)
   local ec=0
-  timeout "$timeout_sec" bash -c "$agent_cmd" < "$prompt_file" 2>&1 \
+
+  # Run agent with timeout; capture exit code via wrapper so it's not lost
+  # through the pipeline. The { ... ; } block writes the real exit code
+  # before any pipeline consumer can obscure it.
+  { timeout "$timeout_sec" bash -c "$agent_cmd" < "$prompt_file" 2>&1; echo $? > "$ec_file"; } \
     | tee -a "$output_log" \
     | grep -v "^\[0m$" | grep -v "^$" || true
-  ec=${PIPESTATUS[0]}
+  ec=$(cat "$ec_file")
 
-  rm -f "$prompt_file"
+  rm -f "$prompt_file" "$ec_file"
 
   if [[ $ec -eq 124 ]]; then
     orchestrator_fail "Phase '$phase' timed out after ${timeout_sec}s"
@@ -126,7 +131,11 @@ run_agent_raw() {
 }
 
 # ── setup ─────────────────────────────────────────────────────────────────────
+# Stage issue data in a temp directory outside the worktree, so it survives
+# the rm-rf that happens before worktree creation on fresh runs.
+ISSUE_STAGING_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}-staging"
 mkdir -p "${ISSUES_DIR}"
+mkdir -p "${ISSUE_STAGING_DIR}"
 echo "" > "${ISSUES_DIR}/orchestrator.log"
 
 log "=== Starting orchestrator for issue #${ISSUE_NUM} ==="
@@ -265,24 +274,24 @@ if [[ "$PHASE" == "read_issue" ]]; then
   log "=== Phase: read_issue ==="
   LAST_PHASE="read_issue"
 
-  # Fetch issue
+  # Fetch issue — write to staging dir (not worktree, which gets rm -rf'd below)
   gh issue view "$ISSUE_NUM" \
     --json number,title,body,url,labels,comments,state \
-    > "${ISSUES_DIR}/issue.json" \
+    > "${ISSUE_STAGING_DIR}/issue.json" \
     || orchestrator_fail "Failed to fetch issue #${ISSUE_NUM}"
 
   # Save issue body and comments
   gh issue view "$ISSUE_NUM" --json body --jq '.body' \
-    > "${ISSUES_DIR}/issue.md"
+    > "${ISSUE_STAGING_DIR}/issue.md"
 
   gh issue view "$ISSUE_NUM" --json comments --jq '.comments[].body' \
-    > "${ISSUES_DIR}/issue-comments.md"
+    > "${ISSUE_STAGING_DIR}/issue-comments.md"
 
   ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title --jq '.title')
   log "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
 
   # Validate required sections (flexible: any heading level, casing, or bold)
-  BODY=$(cat "${ISSUES_DIR}/issue.md")
+  BODY=$(cat "${ISSUE_STAGING_DIR}/issue.md")
   for section in "Goal" "Acceptance Criteria"; do
     if ! echo "$BODY" | grep -qiE "^#{1,4}\s+${section}|^\*\*${section}\*\*"; then
       orchestrator_fail "Issue body missing required section: $section"
@@ -322,6 +331,13 @@ if [[ "$PHASE" == "read_issue" ]]; then
     fi
   fi
 
+  # Copy staged issue data into the worktree (survived the rm -rf above)
+  cp "${ISSUE_STAGING_DIR}/issue.json" "${WORKTREE_DIR}/issue.json" 2>/dev/null || true
+  cp "${ISSUE_STAGING_DIR}/issue.md" "${WORKTREE_DIR}/issue.md" 2>/dev/null || true
+  cp "${ISSUE_STAGING_DIR}/issue-comments.md" "${WORKTREE_DIR}/issue-comments.md" 2>/dev/null || true
+  cp "${ISSUES_DIR}/orchestrator.log" "${WORKTREE_DIR}/orchestrator.log" 2>/dev/null || true
+  rm -rf "${ISSUE_STAGING_DIR}"
+
   # Copy prompts into worktree
   mkdir -p "${WORKTREE_DIR}/automation/prompts"
   cp -r "${REPO_ROOT}/${PROMPTS_DIR}"/*.md "${WORKTREE_DIR}/automation/prompts/" 2>/dev/null || true
@@ -330,8 +346,9 @@ if [[ "$PHASE" == "read_issue" ]]; then
 
   # Run artifacts (issue.json, issue.md, issue-comments.md) are written directly to worktree
 
-  # Write .gitignore to keep artifact files out of git commits
-  cat > "${WORKTREE_DIR}/.gitignore" << 'EOF'
+  # Use .git/info/exclude for worktree-local artifact exclusion (avoids
+  # overwriting the repo's tracked .gitignore, which would be committed by git add -A)
+  cat >> "${WORKTREE_DIR}/.git/info/exclude" << 'EOF'
 *.log
 code-review.md
 review.md
@@ -467,6 +484,15 @@ Write plan.md now."
   fi
   info "Plan saved to ${WORKTREE_DIR}/plan.md"
 
+  PHASE="implement"
+fi
+
+# ── Map resume phases into implement with correct resume stage ──────────────
+if [[ "$PHASE" == "spec-review" || "$PHASE" == "quality-review" ]]; then
+  # These phases are handled inside the implement block via RESUME_STAGE.
+  # Promote to "implement" so the task loop is entered.
+  info "Auto-resume: mapping phase '${PHASE}' to implement with resume stage"
+  RESUME_STAGE_OVERRIDE="$PHASE"
   PHASE="implement"
 fi
 
@@ -732,17 +758,12 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
 
   RESUME_TASK_NUM=0
   RESUME_STAGE=""
-  if [[ "$PHASE" == "implement" ]]; then
-    RESUME_TASK_NUM=$(find_first_incomplete_task)
+  RESUME_TASK_NUM=$(find_first_incomplete_task)
+  if [[ -n "${RESUME_STAGE_OVERRIDE:-}" ]]; then
+    RESUME_STAGE="$RESUME_STAGE_OVERRIDE"
+    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}' (from detected phase)"
+  else
     RESUME_STAGE="implement"
-    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
-  elif [[ "$PHASE" == "spec-review" ]]; then
-    RESUME_TASK_NUM=$(find_first_incomplete_task)
-    RESUME_STAGE="spec-review"
-    log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
-  elif [[ "$PHASE" == "quality-review" ]]; then
-    RESUME_TASK_NUM=$(find_first_incomplete_task)
-    RESUME_STAGE="quality-review"
     log "Auto-resume: task ${RESUME_TASK_NUM}, stage '${RESUME_STAGE}'"
   fi
 
@@ -916,9 +937,12 @@ if [[ "$PHASE" == "validate" ]]; then
 
   cp "${ISSUES_DIR}/validate.log" "${ISSUES_DIR}/validation.md"
 
+  # Record validation status for downstream phases
   if [[ $VALIDATE_EXIT -ne 0 ]]; then
+    echo "failed" > "${ISSUES_DIR}/validation-status.txt"
     warn "Validation had failures (check validation.md for details)"
   else
+    echo "passed" > "${ISSUES_DIR}/validation-status.txt"
     info "Validation passed"
   fi
 
@@ -1247,27 +1271,39 @@ EOF
 
   # Create PR
   PR_BODY=$(cat "${ISSUES_DIR}/pr-summary.md")
-  PR_URL=$(gh pr create \
+  PR_CREATE_OUT=$(gh pr create \
     --base "$BASE_BRANCH" \
     --head "$BRANCH" \
     --title "Issue #${ISSUE_NUM}: automated implementation" \
-    --body "$PR_BODY" 2>/dev/null) || {
-    # PR may already exist
-    PR_URL=$(gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url' 2>/dev/null || echo "")
-    if [[ -z "$PR_URL" || "$PR_URL" == "null" ]]; then
+    --body "$PR_BODY" --json number,url 2>/dev/null) || {
+    # PR may already exist — look it up
+    PR_CREATE_OUT=$(gh pr list --head "$BRANCH" --state open --json number,url --jq '.[0]' 2>/dev/null || echo "")
+    if [[ -z "$PR_CREATE_OUT" || "$PR_CREATE_OUT" == "null" ]]; then
       orchestrator_fail "Failed to create PR"
     fi
   }
 
-  PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$' || echo "unknown")
+  PR_NUM=$(echo "$PR_CREATE_OUT" | jq -r '.number // empty' 2>/dev/null || echo "")
+  PR_URL=$(echo "$PR_CREATE_OUT" | jq -r '.url // empty' 2>/dev/null || echo "")
+  # Fallback: try to extract from raw URL if jq fails
+  if [[ -z "$PR_NUM" ]]; then
+    PR_URL=$(echo "$PR_CREATE_OUT" | head -1)
+    PR_NUM=$(echo "$PR_URL" | grep -oE '[0-9]+$' || echo "unknown")
+  fi
   echo "$PR_URL" > "${ISSUES_DIR}/pr-url.txt"
   echo "$PR_NUM" > "${ISSUES_DIR}/pr-number.txt"
 
   log "PR created: ${PR_URL}"
 
-  # Update issue labels
+  # Update issue labels — gate ai:pr-ready on validation passing
   gh issue edit "$ISSUE_NUM" --remove-label "ai:in-progress" 2>/dev/null || true
-  gh issue edit "$ISSUE_NUM" --add-label "ai:pr-ready" 2>/dev/null || true
+  VALIDATION_STATUS=$(cat "${ISSUES_DIR}/validation-status.txt" 2>/dev/null || echo "unknown")
+  if [[ "$VALIDATION_STATUS" == "passed" ]]; then
+    gh issue edit "$ISSUE_NUM" --add-label "ai:pr-ready" 2>/dev/null || true
+  else
+    gh issue edit "$ISSUE_NUM" --add-label "ai:needs-human-review" 2>/dev/null || true
+    warn "Validation did not pass (status: ${VALIDATION_STATUS}). Labeling as ai:needs-human-review instead of ai:pr-ready."
+  fi
 
   # Comment on issue
   gh issue comment "$ISSUE_NUM" --body "PR created: ${PR_URL}" 2>/dev/null || true
@@ -1291,12 +1327,20 @@ if [[ "$PHASE" == "done" ]]; then
 
   # Start PR review poll loop in background
   log "Starting PR review poll loop (background)..."
-  PR_URL_VALUE=$(cat "${ISSUES_DIR}/pr-url.txt" 2>/dev/null || echo "")
-  PR_NUM_VALUE=$(echo "$PR_URL_VALUE" | grep -oE '[0-9]+$' || echo "")
-  if [[ -n "$PR_NUM_VALUE" ]]; then
+  PR_NUM_VALUE=$(cat "${ISSUES_DIR}/pr-number.txt" 2>/dev/null || echo "")
+  if [[ -n "$PR_NUM_VALUE" && "$PR_NUM_VALUE" != "unknown" ]]; then
     nohup "${REPO_ROOT}/scripts/ai-pr-review-poll.sh" "$PR_NUM_VALUE" "$ISSUE_NUM" 3 300 \
-      > "${ISSUES_DIR}/poll-pr.log" 2>&1 &
-    log "PR review poll PID: $!"
+      >> "${ISSUES_DIR}/poll-pr.log" 2>&1 &
+    POLL_PID=$!
+    disown "$POLL_PID" 2>/dev/null || true
+    log "PR review poll PID: ${POLL_PID}"
+    # Verify the process actually started
+    sleep 2
+    if kill -0 "$POLL_PID" 2>/dev/null; then
+      log "PR review poll confirmed running (PID ${POLL_PID})"
+    else
+      warn "PR review poll process exited immediately. Check ${ISSUES_DIR}/poll-pr.log"
+    fi
   else
     warn "Could not determine PR number, skipping review poll"
   fi
