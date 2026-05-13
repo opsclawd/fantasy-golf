@@ -1228,7 +1228,7 @@ if [[ "$PHASE" == "done" ]]; then
   PR_URL_VALUE=$(cat "${ISSUES_DIR}/pr-url.txt" 2>/dev/null || echo "")
   PR_NUM_VALUE=$(echo "$PR_URL_VALUE" | grep -oE '[0-9]+$' || echo "")
   if [[ -n "$PR_NUM_VALUE" ]]; then
-    nohup "${REPO_ROOT}/scripts/ai-pr-review-poll.sh" "$PR_NUM_VALUE" 3 300 "$ISSUE_NUM" \
+    nohup "${REPO_ROOT}/scripts/ai-pr-review-poll.sh" "$PR_NUM_VALUE" "$ISSUE_NUM" 3 300 \
       > "${ISSUES_DIR}/poll-pr.log" 2>&1 &
     log "PR review poll PID: $!"
   else

@@ -6,14 +6,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 PR_NUMBER="${1:-}"
-MAX_POLLS="${2:-3}"
-POLL_INTERVAL="${3:-300}"
+ISSUE_NUM="${2:-$(gh pr view "$PR_NUMBER" --json title --jq '.title' | grep -oE '[0-9]+' | head -1 || echo "$PR_NUMBER")}"
+MAX_POLLS="${3:-3}"
+POLL_INTERVAL="${4:-300}"
 AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
-ISSUE_NUM="${4:-$(gh pr view "$PR_NUMBER" --json title --jq '.title' | grep -oE '[0-9]+' | head -1 || echo "$PR_NUMBER")}"
 OWNER_REPO="opsclawd/fantasy-golf"
 
 if [[ -z "$PR_NUMBER" ]]; then
-  echo "Usage: $0 <PR_NUMBER> [max_polls=3] [interval_sec=300]"
+  echo "Usage: $0 <PR_NUMBER> [issue_num] [max_polls=3] [interval_sec=300]"
   exit 1
 fi
 
