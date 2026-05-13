@@ -108,6 +108,7 @@ PR Number: #${PR_NUMBER}
 Branch: ${PR_BRANCH}
 Repository: ${OWNER_REPO}
 Your working directory: ${REPO_ROOT}
+Issue Archive: ${REPO_ROOT}/ai/issues/${PR_NUMBER}/ (issue.md, design.md, plan.md)
 
 ## PR DIFF
 \`\`\`
@@ -119,16 +120,17 @@ ${COMMENT_TEXT}
 
 ## TASK
 For each review comment:
-1. Assess if technically valid for this codebase.
-2. For valid comments: fix the code, run git add -A and git commit -m 'fix: address PR review feedback', then git push origin ${PR_BRANCH}.
-3. For invalid comments: reply with technical reasoning explaining why.
-4. For fixed/actioned comments: reply in the thread using: gh api repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments/{comment_id}/replies --field body='Fixed: <brief description of what changed>'
+1. Read issue.md, design.md, and plan.md from the issue archive to understand the original requirements and design intent.
+2. Make a judgement call: is the comment technically valid against that design? If yes, implement the fix. If no, explain why the current approach is correct per the issue requirements.
+3. For valid comments: fix the code, run git add -A and git commit -m 'fix: address PR review feedback', then git push origin ${PR_BRANCH}.
+4. For invalid comments: reply with technical reasoning explaining why the current approach is correct per the design.
+5. For fixed/actioned comments: reply in the thread using: gh api repos/${OWNER_REPO}/pulls/${PR_NUMBER}/comments/{comment_id}/replies --field body='Chosen approach: <what was done>. Options considered: <other approaches and why not chosen>. Reasoning: <why this decision aligns with the design>'
 
 ## RULES
 - Follow the receiving-code-review skill strictly.
 - No performative agreement (no 'thanks', 'great point', etc.).
-- Reply factually: state what was fixed or why it won't be fixed.
-- Do NOT ask questions.
+- Reply factually: state the chosen approach, options considered, and reasoning.
+- If truly ambiguous, note the ambiguity, pick the safest default that preserves existing behavior, and explain your reasoning.
 - Do NOT expand scope beyond comments.
 - Do NOT create a new PR."
 
