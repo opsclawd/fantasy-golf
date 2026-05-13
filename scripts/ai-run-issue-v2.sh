@@ -262,10 +262,10 @@ if [[ "$PHASE" == "read_issue" ]]; then
   ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title --jq '.title')
   log "Issue #${ISSUE_NUM}: ${ISSUE_TITLE}"
 
-  # Validate required sections
+  # Validate required sections (flexible: any heading level, casing, or bold)
   BODY=$(cat "${ISSUES_DIR}/issue.md")
-  for section in "# Goal" "# Acceptance Criteria"; do
-    if ! echo "$BODY" | grep -q "$section"; then
+  for section in "Goal" "Acceptance Criteria"; do
+    if ! echo "$BODY" | grep -qiE "^#{1,4}\s+${section}|^\*\*${section}\*\*"; then
       orchestrator_fail "Issue body missing required section: $section"
     fi
   done

@@ -89,9 +89,9 @@ fi
 
 # ── validate required sections ─────────────────────────────────────────────
 BODY="${RUN_DIR}/issue.md"
-required_sections=("# Goal" "# Approved Design Direction" "# Acceptance Criteria" "# Non-Goals")
+required_sections=("Goal" "Approved Design Direction" "Acceptance Criteria" "Non-Goals")
 for section in "${required_sections[@]}"; do
-  if ! grep -q "$section" "$BODY"; then
+  if ! grep -qiE "^#{1,4}\s+${section}|^\*\*${section}\*\*" "$BODY"; then
     fail "Issue body missing required section: $section"
   fi
 done
