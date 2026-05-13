@@ -189,6 +189,7 @@ export async function refreshScoresForPool(
 
   // Step 3: Fetch scorecards for all golfers in tournament and persist hole data
   const allGolferIds = slashScores.map(s => s.golfer_id).filter(Boolean)
+  const scorecardFailures: string[] = []
 
   for (const golferId of allGolferIds) {
     try {
@@ -198,13 +199,21 @@ export async function refreshScoresForPool(
         await upsertTournamentHoles(supabase, holes)
       }
     } catch {
-      // Per-golfer scorecard errors are non-fatal; continue refresh cycle
+      scorecardFailures.push(golferId)
     }
   }
 
-  // Step 5: Build hole-level data from persisted tournament_holes
   const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)
+  const golfersWithHoles = allGolferIds.filter(id => (holesByGolfer.get(id)?.length ?? 0) > 0)
+  const coverageRatio = golfersWithHoles.length / allGolferIds.length
+  if (coverageRatio < 0.5 && scorecardFailures.length > 0) {
+    await supabase
+      .from('pools')
+      .update({ last_refresh_error: `Scorecard data incomplete for ${scorecardFailures.length} golfers` })
+      .eq('id', pool.id)
+  }
 
+  // Step 5: Build hole-level data from persisted tournament_holes
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)
   const completedRounds = deriveCompletedRounds(allScores)
 

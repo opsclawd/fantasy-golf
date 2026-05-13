@@ -108,6 +108,7 @@ export async function GET(
           isRefreshing,
           poolStatus: pool.status,
           lastRefreshError: pool.last_refresh_error,
+          scoringDataStatus: 'incomplete',
           golferStatuses: {},
           golferNames: {},
           golferCountries: {},
@@ -144,6 +145,12 @@ export async function GET(
 
     const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, Array.from(allGolferIds))
 
+    const rosteredGolferIds = Array.from(allGolferIds)
+    const hasHoleDataForRoster = rosteredGolferIds.every(id =>
+      holesByGolfer.has(id) && (holesByGolfer.get(id)?.length ?? 0) > 0
+    )
+    const scoringDataStatus = hasHoleDataForRoster ? 'complete' : 'incomplete'
+
     const golferStatuses: Map<string, GolferStatus> = new Map()
     for (const [golferId, score] of golferScoresMap.entries()) {
       if (score.status !== 'active') {
@@ -158,7 +165,7 @@ export async function GET(
       completedRounds
     )
 
-    return NextResponse.json({
+return NextResponse.json({
       data: {
         entries: ranked,
         completedRounds,
@@ -167,7 +174,8 @@ export async function GET(
         isRefreshing,
         poolStatus: pool.status,
         lastRefreshError: pool.last_refresh_error,
-golferStatuses: Object.fromEntries(golferStatuses),
+        scoringDataStatus,
+        golferStatuses: Object.fromEntries(golferStatuses),
         golferNames,
         golferCountries,
         golferScores: Object.fromEntries(golferScoresMap),
