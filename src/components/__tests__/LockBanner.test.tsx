@@ -95,7 +95,7 @@ describe('LockBanner warning tone near deadline', () => {
 
   it('renders with info tone when pool is open and deadline is more than 24 hours away', () => {
     const now = new Date()
-    const safeDeadline = new Date(now.getTime() + 60 * 60 * 60 * 1000)
+    const safeDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000)
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric',
@@ -116,21 +116,24 @@ describe('LockBanner warning tone near deadline', () => {
 
   it('shows secondary line with timezone when within 24 hours', () => {
     const now = new Date()
-    const warningDeadline = new Date(now.getTime() + 36 * 60 * 60 * 1000)
+    const safeDeadline = new Date(now.getTime() + 12 * 60 * 60 * 1000)
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
+      hour: '2-digit',
+      hour12: false,
     })
-    const parts = formatter.formatToParts(warningDeadline)
+    const parts = formatter.formatToParts(safeDeadline)
     const year = parts.find(p => p.type === 'year')!.value
     const month = parts.find(p => p.type === 'month')!.value
     const day = parts.find(p => p.type === 'day')!.value
-    const deadline = `${year}-${month}-${day}T00:00:00+00:00`
+    const hour = parts.find(p => p.type === 'hour')!.value
+    const deadline = `${year}-${month}-${day}T${hour}:00:00+00:00`
     const html = renderToStaticMarkup(
       <LockBanner isLocked={false} deadline={deadline} poolStatus="open" timezone="America/New_York" />
     )
-    expect(html).toContain('America/New_York')
+    expect(html).toMatch(/EDT|EST/)
   })
 })
