@@ -8,7 +8,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PR_NUMBER="${1:-}"
 MAX_POLLS="${2:-3}"
 POLL_INTERVAL="${3:-300}"
-AGENT_MODEL="${AGENT_MODEL:-MiniMax-M2.7}"
+AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
 OWNER_REPO="opsclawd/fantasy-golf"
 
 if [[ -z "$PR_NUMBER" ]]; then
