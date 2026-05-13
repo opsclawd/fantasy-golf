@@ -393,6 +393,31 @@ describe('getScorecard', () => {
     expect(scorecard.holes[17]).toMatchObject({ holeId: 9 })
   })
 
+  it('getScorecard normalizes cut status from per-round scorecards', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue([
+        { tournId: '014', playerId: '22405', roundId: 1, status: 'complete', holes: [{ holeId: 1, par: 4, strokes: 4, scoreToPar: 0 }] },
+        { tournId: '014', playerId: '22405', roundId: 2, status: 'cut', holes: [{ holeId: 1, par: 4, strokes: 5, scoreToPar: 1 }] },
+      ]),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.status).toBe('cut')
+  })
+
+  it('getScorecard with array fixture flattens all holes from all rounds', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(arrayScorecardsFixture),
+    }))
+
+    const scorecard = await getScorecard('014', '22405', 2026)
+    expect(scorecard.holes).toHaveLength(18)
+    expect(scorecard.holes[0]!.roundId).toBe(1)
+    expect(scorecard.holes[9]!.roundId).toBe(2)
+  })
+
   it('fixture: wrapped { scorecards: [...] } shape extracts scorecard', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
