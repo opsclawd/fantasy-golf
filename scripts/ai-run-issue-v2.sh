@@ -1223,6 +1223,18 @@ if [[ "$PHASE" == "done" ]]; then
   cp "${WORKTREE_DIR}/.git" "$ARCHIVE_DIR/.git-worktree" 2>/dev/null || true
   log "Worktree archived to ${ARCHIVE_DIR}/"
 
+  # Start PR review poll loop in background
+  log "Starting PR review poll loop (background)..."
+  PR_URL_VALUE=$(cat "${ISSUES_DIR}/pr-url.txt" 2>/dev/null || echo "")
+  PR_NUM_VALUE=$(echo "$PR_URL_VALUE" | grep -oE '[0-9]+$' || echo "")
+  if [[ -n "$PR_NUM_VALUE" ]]; then
+    nohup "${REPO_ROOT}/scripts/ai-pr-review-poll.sh" "$PR_NUM_VALUE" 3 300 \
+      > "${ISSUES_DIR}/poll-pr.log" 2>&1 &
+    log "PR review poll PID: $!"
+  else
+    warn "Could not determine PR number, skipping review poll"
+  fi
+
   echo ""
   echo "✅ Issue #${ISSUE_NUM} → PR ready"
   echo "   PR: $(cat "${ISSUES_DIR}/pr-url.txt")"
