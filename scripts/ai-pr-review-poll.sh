@@ -8,7 +8,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 PR_NUMBER="${1:-}"
 MAX_POLLS="${2:-3}"
 POLL_INTERVAL="${3:-300}"
-AGENT_MODEL="${AGENT_MODEL:-glm-5.1}"
+AGENT_MODEL="${AGENT_MODEL:-MiniMax-M2.7}"
 OWNER_REPO="opsclawd/fantasy-golf"
 
 if [[ -z "$PR_NUMBER" ]]; then
@@ -42,13 +42,28 @@ run_agent() {
   local phase="$1"
   local timeout_sec="$2"
   local output_log="${ISSUES_DIR}/${phase}.log"
+  local agent_cmd
   local prompt_file
   prompt_file=$(mktemp)
   cat > "$prompt_file"
 
+  case "${AGENT_CLI:-opencode}" in
+    claude|claude-minimax)
+      agent_cmd="~/bin/claude-minimax --settings ~/.claude/profiles/minimax.json --print --model $AGENT_MODEL"
+      ;;
+    opencode)
+      agent_cmd="opencode --model $AGENT_MODEL run"
+      ;;
+    *)
+      log "FAIL: Unsupported AGENT_CLI: ${AGENT_CLI:-opencode}"
+      rm -f "$prompt_file"
+      return 1
+      ;;
+  esac
+
   log "Running agent for '$phase' (timeout=${timeout_sec}s)..."
   local ec=0
-  timeout "$timeout_sec" opencode --model "$AGENT_MODEL" run < "$prompt_file" 2>&1 \
+  timeout "$timeout_sec" bash -c "$agent_cmd" < "$prompt_file" 2>&1 \
     | tee -a "$output_log" \
     | grep -v "^\[0m$" | grep -v "^$" || true
   ec=${PIPESTATUS[0]}
