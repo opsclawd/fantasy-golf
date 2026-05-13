@@ -59,6 +59,25 @@ orchestrator_fail() {
   exit 1
 }
 
+# Verify worktree is on the correct branch; checkout if needed
+ensure_branch() {
+  local current
+  current=$(git branch --show-current 2>/dev/null || echo "")
+  if [[ "$current" != "${BRANCH}" ]]; then
+    warn "Worktree on '${current}' (expected '${BRANCH}'), checking out..."
+    git checkout "${BRANCH}" 2>/dev/null || orchestrator_fail "Failed to checkout ${BRANCH} in worktree"
+  fi
+}
+
+# Verify worktree is still on the correct branch after agent execution
+check_branch_after_agent() {
+  local current
+  current=$(git branch --show-current 2>/dev/null || echo "")
+  if [[ "$current" != "${BRANCH}" ]]; then
+    orchestrator_fail "Agent switched branch from ${BRANCH} to ${current}"
+  fi
+}
+
 run_agent_raw() {
   # Run agent with prompt from stdin, capture output to log file
   local phase="$1"
@@ -384,6 +403,7 @@ Comments file: issue-comments.md (contains issue comments)
 ## CRITICAL RULES
 - Do NOT ask questions. Make reasonable assumptions and document them explicitly.
 - Do NOT rely on agent memory. Write everything to design.md.
+- Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 - Stop after writing design.md. Do not implement anything.
 
 Write design.md now."
@@ -435,6 +455,7 @@ The plan MUST include:
 ## CRITICAL RULES
 - Do NOT ask questions. Make reasonable assumptions and document them.
 - Do NOT rely on agent memory. Write everything to plan.md.
+- Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 - Stop after writing plan.md. Do not implement anything.
 
 Write plan.md now."
@@ -566,11 +587,12 @@ Report back with:
 - Self-review findings
 - Any questions or concerns
 
-Stop after reporting."
+Stop after reporting.
+
+CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$IMPLEMENTER_PROMPT" | run_agent_raw "implement-task-${task_n}" "$TIMEOUT_IMPLEMENT"
-
-    # Detect status from log
+    check_branch_after_agent
     if grep -qi "Status:.*BLOCKED" "$output_log" 2>/dev/null; then
       impl_status="BLOCKED"
     elif grep -qi "Status:.*NEEDS_CONTEXT" "$output_log" 2>/dev/null; then
@@ -619,11 +641,12 @@ implementer's word for what was built.
 - ✅ Spec compliant (if everything matches)
 - ❌ Issues found: [list specifically with file:line references]
 
-Stop after writing your review to ./spec-review-task-${task_n}.md."
+Stop after writing your review to ./spec-review-task-${task_n}.md.
+
+CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$SPEC_REVIEWER_PROMPT" | run_agent_raw "spec-review-task-${task_n}" "$TIMEOUT_REVIEW"
-
-    # Return pass/fail
+    check_branch_after_agent
     if grep -q "✅ Spec compliant" "$output_log" 2>/dev/null; then
       echo "SPEC_PASS"
     else
@@ -666,9 +689,12 @@ Review the diff for:
 - Issues: [Critical | Important | Minor]
 - Assessment: APPROVED | NEEDS_WORK
 
-Stop after writing your review to ./quality-review-task-${task_n}.md."
+Stop after writing your review to ./quality-review-task-${task_n}.md.
+
+CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
 
     echo "$QUALITY_REVIEWER_PROMPT" | run_agent_raw "quality-review-task-${task_n}" "$TIMEOUT_REVIEW"
+    check_branch_after_agent
 
     if grep -qi "Assessment:.*APPROVED" "$output_log" 2>/dev/null; then
       echo "QUALITY_PASS"
@@ -679,6 +705,7 @@ Stop after writing your review to ./quality-review-task-${task_n}.md."
 
   # ── main task loop ─────────────────────────────────────────────────────────
   cd "${WORKTREE_DIR}"
+  ensure_branch
 
   log "Installing dependencies in worktree..."
   {
@@ -784,10 +811,11 @@ ${SPEC_FINDINGS}
 Fix ONLY the issues identified above. Do not expand scope.
 
 Run: git add -A && git commit -m 'fix: task ${TASK_NUM} spec compliance'
+CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 Report status: DONE | BLOCKED"
 
         echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-fix" "$TIMEOUT_FIX"
-        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+        check_branch_after_agent
 
         IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}-fix.log" 2>/dev/null || echo "")
         SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
@@ -819,10 +847,11 @@ ${QUALITY_FINDINGS}
 Address the quality issues raised above. Do not expand scope.
 
 Run: git add -A && git commit -m 'fix: task ${TASK_NUM} quality'
+CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 Report status: DONE | BLOCKED"
 
         echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-quality-fix" "$TIMEOUT_FIX"
-        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+        check_branch_after_agent
 
         QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
         log "  Quality review after fix: ${QUALITY_RESULT}"
@@ -861,6 +890,7 @@ if [[ "$PHASE" == "validate" ]]; then
 
   log "Running pnpm build && pnpm lint && pnpm typecheck && pnpm test..."
   cd "${WORKTREE_DIR}"
+  ensure_branch
 
   mkdir -p "${ISSUES_DIR}"
 
@@ -935,6 +965,7 @@ Categorize findings:
 - Do NOT ask questions. If something is ambiguous, note it in the review.
 - Do NOT approve or request changes - just document findings.
 - Do NOT rely on agent memory.
+- Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 - Stop after writing code-review.md.
 
 Write code-review.md now."
@@ -998,6 +1029,7 @@ Rules:
 - Do NOT ask questions.
 - Do NOT rely on agent memory.
 - Do NOT create a PR.
+- Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 - Load the requesting-code-review skill first.
 - After fixing, run: git add -A && git commit -m 'fix: review findings for issue #${ISSUE_NUM} (loop ${FIX_LOOP_COUNT})'
 - Stop after fixing and committing.
@@ -1005,10 +1037,12 @@ Rules:
 Start now."
 
   echo "$FIX_PROMPT" | run_agent_raw "fix-review-${FIX_LOOP_COUNT}" "$TIMEOUT_FIX"
+  check_branch_after_agent
 
   # ── re-validate ────────────────────────────────────────────────────────────
   log "=== Re-validating after fix (loop $FIX_LOOP_COUNT) ==="
   cd "${WORKTREE_DIR}"
+  ensure_branch
 
   {
     echo "=== pnpm build ==="
@@ -1050,6 +1084,7 @@ Verify your assertions by reading actual file contents.
 - Do NOT ask questions.
 - Do NOT expand scope.
 - Do not flag new issues beyond the original review.
+- Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 - Stop after writing updated code-review.md.
 
 Write code-review.md now."
@@ -1111,6 +1146,7 @@ Rules:
 - Do NOT ask questions.
 - Write the document yourself. Do not delegate.
 - Do not create a PR or commit anything.
+- Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
 
 Start now."
 
@@ -1149,6 +1185,7 @@ if [[ "$PHASE" == "create-pr" ]]; then
   fi
 
   cd "${WORKTREE_DIR}"
+  ensure_branch
 
   # Validate branch has commits
   if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
@@ -1156,6 +1193,13 @@ if [[ "$PHASE" == "create-pr" ]]; then
   fi
 
   log "Branch ${BRANCH} HEAD: $(git rev-parse --short HEAD)"
+
+  # Check branch has diverged from base
+  LOCAL_SHA=$(git rev-parse HEAD)
+  BASE_SHA=$(git merge-base "origin/${BASE_BRANCH}" HEAD 2>/dev/null || echo "")
+  if [[ -n "$BASE_SHA" && "$LOCAL_SHA" == "$BASE_SHA" ]]; then
+    warn "Branch ${BRANCH} has no commits beyond ${BASE_BRANCH} — PR will be empty"
+  fi
 
   # Push branch (fail hard on error)
   log "Pushing branch..."
