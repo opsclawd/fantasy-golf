@@ -311,4 +311,78 @@ describe('GET /api/leaderboard/[poolId]', () => {
     expect(response.status).toBe(200)
     expect(fetchSpy).not.toHaveBeenCalled()
   })
+
+  it('returns scoringDataStatus incomplete when tournament_scores exist but tournament_holes is empty', async () => {
+    const pool = {
+      id: 'pool-1',
+      status: 'live',
+      refreshed_at: '2026-03-29T00:00:00.000Z',
+      last_refresh_error: null,
+      tournament_id: 'tournament-1',
+    }
+    const entries = [{ id: 'entry-1', pool_id: 'pool-1', golfer_ids: ['1', '2', '3', '4'], user_id: 'u1' }]
+    const rankedEntries = [
+      { id: 'entry-1', golfer_ids: ['1', '2', '3', '4'], user_id: 'u1', rank: 1, totalScore: 70, totalBirdies: 2 },
+    ]
+
+    vi.mocked(createClient).mockResolvedValue({
+      from: vi.fn().mockImplementation((table: string) => {
+        if (table === 'pools') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: pool, error: null }),
+              }),
+            }),
+          }
+        }
+
+        if (table === 'entries') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ data: entries }),
+            }),
+          }
+        }
+
+        if (table === 'tournament_scores') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({
+                data: [
+                  { golfer_id: '1', tournament_id: 'tournament-1', total_score: 70, round_id: 1 },
+                  { golfer_id: '2', tournament_id: 'tournament-1', total_score: 72, round_id: 1 },
+                ],
+              }),
+            }),
+          }
+        }
+
+        if (table === 'tournament_golfers') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockReturnValue({
+                  data: [],
+                }),
+              }),
+            }),
+          }
+        }
+
+        throw new Error(`Unexpected table ${table}`)
+      }),
+    } as never)
+
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map())
+    vi.mocked(rankEntriesWithHoles).mockReturnValue(rankedEntries as never)
+
+    const response = await GET(new Request('http://localhost/api/leaderboard/pool-1'), {
+      params: Promise.resolve({ poolId: 'pool-1' }),
+    })
+
+    const body = await response.json()
+    expect(response.status).toBe(200)
+    expect(body.data.scoringDataStatus).toBe('incomplete')
+  })
 })
