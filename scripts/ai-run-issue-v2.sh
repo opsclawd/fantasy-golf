@@ -1135,11 +1135,33 @@ if [[ "$PHASE" == "create-pr" ]]; then
 
   WORKTREE_DIR="${REPO_ROOT}/.ai-worktrees/issue-${ISSUE_NUM}"
 
-  # Push branch
-  log "Pushing branch..."
+  # Recover missing/stale worktree on resume
+  if [[ ! -d "${WORKTREE_DIR}" ]]; then
+    warn "Worktree missing, attempting recovery..."
+    cd "${REPO_ROOT}"
+    git worktree prune 2>/dev/null || true
+    git fetch origin "${BASE_BRANCH}" 2>/dev/null || true
+    if git fetch origin "${BRANCH}" 2>/dev/null; then
+      git worktree add "$WORKTREE_DIR" "$BRANCH"
+    else
+      orchestrator_fail "Worktree missing and no remote branch ${BRANCH} to recover from"
+    fi
+  fi
+
   cd "${WORKTREE_DIR}"
-  git push --force-with-lease -u origin "$BRANCH" 2>&1 | tee -a "${ISSUES_DIR}/orchestrator.log" || \
-    warn "Branch push had issues (may already be pushed)"
+
+  # Validate branch has commits
+  if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+    orchestrator_fail "Worktree has no commits — cannot create PR"
+  fi
+
+  log "Branch ${BRANCH} HEAD: $(git rev-parse --short HEAD)"
+
+  # Push branch (fail hard on error)
+  log "Pushing branch..."
+  if ! git push --force-with-lease -u origin "$BRANCH" 2>&1 | tee -a "${ISSUES_DIR}/orchestrator.log"; then
+    orchestrator_fail "Failed to push branch ${BRANCH}"
+  fi
 
   # Build pr-summary.md
   ISSUE_META=$(gh issue view "$ISSUE_NUM" --json title,url)
