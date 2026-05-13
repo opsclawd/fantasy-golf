@@ -165,7 +165,7 @@ export async function GET(
       completedRounds
     )
 
-return NextResponse.json({
+    return NextResponse.json({
       data: {
         entries: ranked,
         completedRounds,
