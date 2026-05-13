@@ -143,36 +143,32 @@ log "=== Starting orchestrator for issue #${ISSUE_NUM} ==="
 # ── auto-resume: task-level checkpoint detection ─────────────────────────────
 LAST_PHASE="start"
 
-get_task_completion_status() {
-  local task_n="$1"
-  local spec_log="${ISSUES_DIR}/spec-review-task-${task_n}.log"
-  local quality_log="${ISSUES_DIR}/quality-review-task-${task_n}.log"
+  get_task_completion_status() {
+    local task_n="$1"
+    local spec_result_file="${ISSUES_DIR}/spec-review-task-${task_n}.result"
+    local quality_result_file="${ISSUES_DIR}/quality-review-task-${task_n}.result"
 
-  if [[ ! -f "$spec_log" || ! -f "$quality_log" ]]; then
-    if [[ -f "${ISSUES_DIR}/implement-task-${task_n}.log" ]]; then
-      echo "implementing"
-    else
-      echo "pending"
+    if [[ ! -f "$spec_result_file" || ! -f "$quality_result_file" ]]; then
+      if [[ -f "${ISSUES_DIR}/implement-task-${task_n}.log" ]]; then
+        echo "implementing"
+      else
+        echo "pending"
+      fi
+      return
     fi
-    return
-  fi
 
-  local spec_failed=false quality_failed=false
-  if grep -q "❌ Issues found" "$spec_log" 2>/dev/null; then
-    spec_failed=true
-  fi
-  if grep -qi "Assessment:.*NEEDS_WORK" "$quality_log" 2>/dev/null; then
-    quality_failed=true
-  fi
+    local spec_result quality_result
+    spec_result=$(cat "$spec_result_file" 2>/dev/null || echo "SPEC_FAIL")
+    quality_result=$(cat "$quality_result_file" 2>/dev/null || echo "QUALITY_FAIL")
 
-  if $spec_failed; then
-    echo "spec-failed"
-  elif $quality_failed; then
-    echo "quality-failed"
-  else
-    echo "complete"
-  fi
-}
+    if [[ "$spec_result" == "SPEC_FAIL" ]]; then
+      echo "spec-failed"
+    elif [[ "$quality_result" == "QUALITY_FAIL" ]]; then
+      echo "quality-failed"
+    else
+      echo "complete"
+    fi
+  }
 
 find_first_incomplete_task() {
   local plan_file="plan.md"
@@ -491,10 +487,10 @@ fi
 
 # ── Map resume phases into implement with correct resume stage ──────────────
 if [[ "$PHASE" == "spec-review" || "$PHASE" == "quality-review" ]]; then
-  # These phases are handled inside the implement block via RESUME_STAGE.
-  # Promote to "implement" so the task loop is entered.
-  info "Auto-resume: mapping phase '${PHASE}' to implement with resume stage"
-  RESUME_STAGE_OVERRIDE="$PHASE"
+  # These phases are now handled inside the review-fix loop.
+  # Map to "implement" with resume stage "review" so the task loop re-enters correctly.
+  info "Auto-resume: mapping phase '${PHASE}' to implement with review stage"
+  RESUME_STAGE_OVERRIDE="review"
   PHASE="implement"
 fi
 
@@ -562,7 +558,7 @@ if [[ "$PHASE" == "implement" ]]; then
   # Get task number from title prefix
   task_num() { echo "$1" | cut -d. -f1; }
 
-  # Run implementer for a single task, returns status in IMPLEMENTER_STATUS
+  # Run implementer for a single task; writes status to file (not stdout)
   run_implementer() {
     local task_n="$1"
     local task_title="$2"
@@ -630,13 +626,13 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
     elif grep -qi "Status:.*DONE" "$output_log" 2>/dev/null; then
       impl_status="DONE"
     else
-      impl_status="DONE"  # assume done if no status found
+      impl_status="DONE"
     fi
 
-    echo "$impl_status"
+    echo "$impl_status" > "${ISSUES_DIR}/implement-task-${task_n}.result"
   }
 
-  # Run spec reviewer for a single task
+  # Run spec reviewer for a single task; writes result to file (not stdout)
   run_spec_reviewer() {
     local task_n="$1"
     local task_title="$2"
@@ -663,7 +659,7 @@ implementer's word for what was built.
 2. Compare actual implementation to requirements.
 3. Check for missing pieces.
 4. Check for extra work not requested.
-5. Check for misunderstandings.
+4. Check for misunderstandings.
 
 ## Report Format
 - ✅ Spec compliant (if everything matches)
@@ -675,14 +671,16 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
 
     echo "$SPEC_REVIEWER_PROMPT" | run_agent_raw "spec-review-task-${task_n}" "$TIMEOUT_REVIEW"
     check_branch_after_agent
+
+    local spec_result="SPEC_FAIL"
     if grep -q "✅ Spec compliant" "$output_log" 2>/dev/null; then
-      echo "SPEC_PASS"
-    else
-      echo "SPEC_FAIL"
+      spec_result="SPEC_PASS"
     fi
+    echo "$spec_result" > "${ISSUES_DIR}/spec-review-task-${task_n}.result"
+    log "  Task ${task_n} spec review: ${spec_result}"
   }
 
-  # Run quality reviewer for a single task
+  # Run quality reviewer for a single task; writes result to file (not stdout)
   run_quality_reviewer() {
     local task_n="$1"
     local task_title="$2"
@@ -713,7 +711,7 @@ Review the diff for:
 - Single responsibility per file
 
 ## Report Format
-- Strengths: [what was done well]
+- Strengths: [what was done done well]
 - Issues: [Critical | Important | Minor]
 - Assessment: APPROVED | NEEDS_WORK
 
@@ -724,11 +722,80 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
     echo "$QUALITY_REVIEWER_PROMPT" | run_agent_raw "quality-review-task-${task_n}" "$TIMEOUT_REVIEW"
     check_branch_after_agent
 
+    local quality_result="QUALITY_FAIL"
     if grep -qi "Assessment:.*APPROVED" "$output_log" 2>/dev/null; then
-      echo "QUALITY_PASS"
-    else
-      echo "QUALITY_FAIL"
+      quality_result="QUALITY_PASS"
     fi
+    echo "$quality_result" > "${ISSUES_DIR}/quality-review-task-${task_n}.result"
+    log "  Task ${task_n} quality review: ${quality_result}"
+  }
+
+  # Run fix-review: agent reads both review reports and fixes findings
+  run_fix_review() {
+    local task_n="$1"
+    local task_title="$2"
+    local task_text="$3"
+
+    log "  Task ${task_n}: fix review..."
+
+    SPEC_REVIEW_FILE="./spec-review-task-${task_n}.md"
+    QUALITY_REVIEW_FILE="./quality-review-task-${task_n}.md"
+
+    local spec_findings=""
+    local quality_findings=""
+
+    if [[ -f "$SPEC_REVIEW_FILE" ]]; then
+      spec_findings=$(cat "$SPEC_REVIEW_FILE")
+    fi
+    if [[ -f "$QUALITY_REVIEW_FILE" ]]; then
+      quality_findings=$(cat "$QUALITY_REVIEW_FILE")
+    fi
+
+    FIX_REVIEW_PROMPT="You are fixing review findings for Task ${task_n}: ${task_title}
+
+## Task Requirements
+${task_text}
+
+## Spec Review Findings
+${spec_findings}
+
+## Quality Review Findings
+${quality_findings}
+
+## Your Job
+1. Read both review reports above carefully.
+2. Read the actual source files referenced in the reviews.
+3. Fix ALL legitimate findings. Skip findings that are:
+   - Invalid (the reviewer was wrong)
+   - Pre-existing (not introduced by this task)
+   - Nitpicks that don't affect correctness
+4. If neither review has actionable findings, write 'Status: DONE_NO_FIXES_NEEDED' and stop.
+5. If you made fixes, run: git add -A && git commit -m 'fix: task ${task_n} review findings'
+6. Self-verify your fixes address the actual findings.
+
+## Report Format
+Report back with:
+- Status: DONE | DONE_NO_FIXES_NEEDED | BLOCKED
+- What you fixed (with file references)
+- What you intentionally skipped and why
+- Any remaining concerns
+
+Stop after reporting.
+
+CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}."
+
+    echo "$FIX_REVIEW_PROMPT" | run_agent_raw "fix-review-task-${task_n}" "$TIMEOUT_FIX"
+    check_branch_after_agent
+
+    local output_log="${ISSUES_DIR}/fix-review-task-${task_n}.log"
+    local fix_status="DONE"
+    if grep -qi "Status:.*BLOCKED" "$output_log" 2>/dev/null; then
+      fix_status="BLOCKED"
+    elif grep -qi "Status:.*DONE_NO_FIXES_NEEDED" "$output_log" 2>/dev/null; then
+      fix_status="DONE_NO_FIXES_NEEDED"
+    fi
+    echo "$fix_status" > "${ISSUES_DIR}/fix-review-task-${task_n}.result"
+    log "  Task ${task_n} fix review: ${fix_status}"
   }
 
   # ── main task loop ─────────────────────────────────────────────────────────
@@ -787,19 +854,18 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
 
     BASE_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
 
-    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "spec-review" ]]; then
-      log "  Resuming at spec-review for task ${TASK_NUM}"
-    elif [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "quality-review" ]]; then
-      log "  Resuming at quality-review for task ${TASK_NUM}"
+    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "review" ]]; then
+      log "  Resuming at review loop for task ${TASK_NUM}"
     fi
 
     IMPL_STATUS="DONE"
     HEAD_SHA=""
-    SPEC_RESULT="SPEC_PASS"
-    QUALITY_RESULT="QUALITY_PASS"
+    REVIEW_LOOPS=0
 
+    # Step 1: Implement
     if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" == "implement" || -z "$RESUME_STAGE" ]]; then
-      IMPL_STATUS=$(run_implementer "$TASK_NUM" "$task_title" "$TASK_TEXT")
+      run_implementer "$TASK_NUM" "$task_title" "$TASK_TEXT"
+      IMPL_STATUS=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}.result" 2>/dev/null || echo "DONE")
       log "  Implementer status: ${IMPL_STATUS}"
 
       if [[ "$IMPL_STATUS" == "BLOCKED" || "$IMPL_STATUS" == "NEEDS_CONTEXT" ]]; then
@@ -809,88 +875,66 @@ CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch)
       HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
     fi
 
-    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "quality-review" ]]; then
-      log "  Skipping spec review for resumed task ${TASK_NUM} (already complete)"
+    # Step 2: Initial spec + quality reviews, then fix loop (max 5 iterations)
+    if [[ "$TASK_NUM" -eq "$RESUME_TASK_NUM" && "$RESUME_STAGE" == "review" ]]; then
+      log "  Skipping initial reviews for resumed task ${TASK_NUM} (already complete)"
     else
       IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}.log" 2>/dev/null || echo "")
-      SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
-      log "  Spec review: ${SPEC_RESULT}"
+      run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT"
+      run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA"
 
-      SPEC_LOOP=0
-      while [[ "$SPEC_RESULT" == "SPEC_FAIL" && $SPEC_LOOP -lt 3 ]]; do
-        SPEC_LOOP=$((SPEC_LOOP + 1))
-        warn "  Spec review failures detected, re-running implementer (loop ${SPEC_LOOP})..."
+      # Fix-review loop: agent fixes findings, then re-reviews, up to 5 times
+      while [[ $REVIEW_LOOPS -lt 5 ]]; do
+        REVIEW_LOOPS=$((REVIEW_LOOPS + 1))
+        log "  Review-fix loop ${REVIEW_LOOPS}/5 for task ${TASK_NUM}"
 
-        SPEC_FINDINGS=$(cat "./spec-review-task-${TASK_NUM}.md" 2>/dev/null || echo "See spec review log for details")
-        FIX_PROMPT="You are fixing spec compliance issues for Task ${TASK_NUM}.
+        run_fix_review "$TASK_NUM" "$task_title" "$TASK_TEXT"
+        FIX_STATUS=$(cat "${ISSUES_DIR}/fix-review-task-${TASK_NUM}.result" 2>/dev/null || echo "DONE")
 
-## Task: ${task_title}
-## Original task text:
-${TASK_TEXT}
+        if [[ "$FIX_STATUS" == "BLOCKED" ]]; then
+          orchestrator_fail "Task ${TASK_NUM} fix review is blocked. Fix the blocker and re-run."
+        fi
 
-## Spec Review Findings:
-${SPEC_FINDINGS}
+        # Update HEAD_SHA after potential fixes
+        HEAD_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
 
-Fix ONLY the issues identified above. Do not expand scope.
+        # If agent says no fixes were needed, reviews are satisfied — done
+        if [[ "$FIX_STATUS" == "DONE_NO_FIXES_NEEDED" ]]; then
+          log "  Task ${TASK_NUM}: all reviews satisfied (no fixes needed)"
+          REVIEW_LOOPS=0
+          break
+        fi
 
-Run: git add -A && git commit -m 'fix: task ${TASK_NUM} spec compliance'
-CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
-Report status: DONE | BLOCKED"
+        # Fixes were made — re-run reviews to verify
+        log "  Task ${TASK_NUM}: fixes committed, re-running reviews..."
+        IMPL_REPORT=$(cat "${ISSUES_DIR}/fix-review-task-${TASK_NUM}.log" 2>/dev/null || echo "")
+        run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT"
+        run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA"
 
-        echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-fix" "$TIMEOUT_FIX"
-        check_branch_after_agent
+        # Check if reviews now pass — read result files
+        SPEC_STATUS=$(cat "${ISSUES_DIR}/spec-review-task-${TASK_NUM}.result" 2>/dev/null || echo "SPEC_FAIL")
+        QUALITY_STATUS=$(cat "${ISSUES_DIR}/quality-review-task-${TASK_NUM}.result" 2>/dev/null || echo "QUALITY_FAIL")
 
-        IMPL_REPORT=$(cat "${ISSUES_DIR}/implement-task-${TASK_NUM}-fix.log" 2>/dev/null || echo "")
-        SPEC_RESULT=$(run_spec_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$IMPL_REPORT")
-        log "  Spec review after fix: ${SPEC_RESULT}"
+        if [[ "$SPEC_STATUS" == "SPEC_PASS" && "$QUALITY_STATUS" == "QUALITY_PASS" ]]; then
+          log "  Task ${TASK_NUM}: both reviews pass after fixes"
+          break
+        fi
       done
 
-      if [[ "$SPEC_RESULT" == "SPEC_FAIL" ]]; then
-        warn "Spec review failed after ${SPEC_LOOP} loops. Proceeding with caution."
+      if [[ $REVIEW_LOOPS -eq 5 ]]; then
+        warn "Review loop hit max 5 iterations for task ${TASK_NUM}. Proceeding with caution."
       fi
-    fi
-
-    if [[ $TASK_NUM -gt $RESUME_TASK_NUM || "$RESUME_STAGE" != "quality-review" ]]; then
-      QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
-      log "  Quality review: ${QUALITY_RESULT}"
-
-      QUALITY_LOOP=0
-      while [[ "$QUALITY_RESULT" == "QUALITY_FAIL" && $QUALITY_LOOP -lt 3 ]]; do
-        QUALITY_LOOP=$((QUALITY_LOOP + 1))
-        warn "  Quality issues detected, re-running implementer (loop ${QUALITY_LOOP})..."
-
-        QUALITY_FINDINGS=$(cat "./quality-review-task-${TASK_NUM}.md" 2>/dev/null || echo "See quality review log for details")
-        FIX_PROMPT="You are fixing code quality issues for Task ${TASK_NUM}.
-
-## Task: ${task_title}
-
-## Quality Review Findings:
-${QUALITY_FINDINGS}
-
-Address the quality issues raised above. Do not expand scope.
-
-Run: git add -A && git commit -m 'fix: task ${TASK_NUM} quality'
-CRITICAL: Do NOT switch branches (no git checkout, git switch, git stash branch). All work must stay on branch ${BRANCH}.
-Report status: DONE | BLOCKED"
-
-        echo "$FIX_PROMPT" | run_agent_raw "implement-task-${TASK_NUM}-quality-fix" "$TIMEOUT_FIX"
-        check_branch_after_agent
-
-        QUALITY_RESULT=$(run_quality_reviewer "$TASK_NUM" "$task_title" "$TASK_TEXT" "$BASE_SHA" "$HEAD_SHA")
-        log "  Quality review after fix: ${QUALITY_RESULT}"
-      done
     fi
 
     {
       echo ""
       echo "## Task ${TASK_NUM}: ${task_title}"
       echo "- Status: ${IMPL_STATUS}"
-      echo "- Spec: ${SPEC_RESULT}"
-      echo "- Quality: ${QUALITY_RESULT}"
+      echo "- Review loops: ${REVIEW_LOOPS}"
       echo "- Commit: ${HEAD_SHA}"
     } >> "$IMPLEMENTATION_LOG"
 
-    log "  Task ${TASK_NUM} complete (impl=${IMPL_STATUS}, spec=${SPEC_RESULT}, quality=${QUALITY_RESULT})"
+    log "  Task ${TASK_NUM} complete (impl=${IMPL_STATUS}, review_loops=${REVIEW_LOOPS})"
 
   done <<< "$TASKS"
 
