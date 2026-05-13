@@ -9,6 +9,7 @@ PR_NUMBER="${1:-}"
 MAX_POLLS="${2:-3}"
 POLL_INTERVAL="${3:-300}"
 AGENT_MODEL="${AGENT_MODEL:-minimax-coding-plan/MiniMax-M2.7}"
+ISSUE_NUM="${4:-$(gh pr view "$PR_NUMBER" --json title --jq '.title' | grep -oE '[0-9]+' | head -1 || echo "$PR_NUMBER")}"
 OWNER_REPO="opsclawd/fantasy-golf"
 
 if [[ -z "$PR_NUMBER" ]]; then
@@ -108,7 +109,7 @@ PR Number: #${PR_NUMBER}
 Branch: ${PR_BRANCH}
 Repository: ${OWNER_REPO}
 Your working directory: ${REPO_ROOT}
-Issue Archive: ${REPO_ROOT}/ai/issues/${PR_NUMBER}/ (issue.md, design.md, plan.md)
+Issue Archive: ${REPO_ROOT}/ai/issues/${ISSUE_NUM}/ (issue.md, design.md, plan.md)
 
 ## PR DIFF
 \`\`\`
