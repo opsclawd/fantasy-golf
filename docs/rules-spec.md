@@ -24,12 +24,18 @@
 
 ### 2.1 Core Algorithm: Best Ball, Hole-by-Hole
 
-For each round, the entry's score is the **lowest `scoreToPar`** among all **active** golfers in the entry.
+For each regulation hole in each counted round:
+1. Look at the selected golfers in the entry who are still active.
+2. Use the lowest score-to-par among selected golfers with a valid score for that hole.
+3. Add that best-hole score to the entry total.
+4. Count a best-ball birdie when the best-hole scoreToPar is less than 0.
 
 ```
-Entry round score = min(scoreToPar of active golfers)
-Entry total score = sum(Entry round score for each completed round)
+Entry hole score = min(scoreToPar of active golfers with valid hole score)
+Entry total score = sum(Entry hole score for each completed hole across completed rounds)
 ```
+
+A "completed round" requires all 4 golfers to have `isComplete: true` for that round.
 
 **Source:** `src/lib/scoring/domain.ts:computeEntryScore`
 

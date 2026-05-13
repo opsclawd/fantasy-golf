@@ -77,7 +77,7 @@ pnpm start
 
 ### Scoring Model
 
-- **Round-based** best-ball (lowest score among 4 golfers per completed round)
+- **Hole-by-hole** best-ball (lowest score among 4 golfers per hole, summed across completed rounds)
 - Lower total score is better
 - Tiebreaker: total birdies across all 4 golfers (higher is better)
 - Cut and withdrawn golfers excluded after they occur
