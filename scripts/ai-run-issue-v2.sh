@@ -285,7 +285,7 @@ LAST_PHASE="start"
   }
 
 find_first_incomplete_task() {
-  local plan_file="plan.md"
+  local plan_file="${ISSUES_DIR}/plan.md"
   if [[ ! -f "$plan_file" ]]; then
     echo "0"
     return
@@ -328,7 +328,7 @@ detect_resume_point() {
   case "$status" in
     complete)
       local task_count
-      task_count=$(awk '/^#{2,3} Task [0-9]+:/ {n++} END{print n+0}' "plan.md")
+      task_count=$(awk '/^#{2,3} Task [0-9]+:/ {n++} END{print n+0}' "${ISSUES_DIR}/plan.md")
       if [[ $first_incomplete -gt $task_count ]]; then
         echo "validate"
       else
@@ -383,6 +383,11 @@ fi
 if [[ "$PHASE" == "read_issue" ]]; then
   log "=== Phase: read_issue ==="
   LAST_PHASE="read_issue"
+
+  # Guard: don't destroy existing progress on accidental re-entry
+  if [[ -f "${ISSUES_DIR}/design.md" || -f "${ISSUES_DIR}/plan.md" ]]; then
+    orchestrator_fail "read_issue phase reached but progress artifacts exist (design.md/plan.md). Likely a resume-detection bug. Use ORCHESTRATOR_PHASE=implement to force resume."
+  fi
 
   # Fetch issue — write to staging dir (not worktree, which gets rm -rf'd below)
   gh issue view "$ISSUE_NUM" \
