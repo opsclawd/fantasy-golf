@@ -346,9 +346,11 @@ if [[ "$PHASE" == "read_issue" ]]; then
 
   # Run artifacts (issue.json, issue.md, issue-comments.md) are written directly to worktree
 
-  # Use .git/info/exclude for worktree-local artifact exclusion (avoids
-  # overwriting the repo's tracked .gitignore, which would be committed by git add -A)
-  cat >> "${WORKTREE_DIR}/.git/info/exclude" << 'EOF'
+  # Resolve the actual git directory (in worktrees, .git is a file, not a dir)
+  WORKTREE_GIT_DIR=$(cd "$WORKTREE_DIR" && git rev-parse --git-dir)
+  mkdir -p "${WORKTREE_GIT_DIR}/info"
+
+  cat >> "${WORKTREE_GIT_DIR}/info/exclude" << 'EOF'
 *.log
 code-review.md
 review.md
