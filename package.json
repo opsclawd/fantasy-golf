@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ai:run-issue": "bash scripts/ai-run-issue-v2.sh"
+    "ai:run-issue": "bash scripts/ai-run-issue-v2.sh",
+    "ai:poll-pr": "bash scripts/ai-pr-review-poll.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
