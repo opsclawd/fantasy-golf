@@ -25,6 +25,7 @@ processed-comment-ids.txt
 node_modules/
 .next/
 .ai-worktrees/
+.worktrees/
 .codex
 .opencode/
 .superpowers/
