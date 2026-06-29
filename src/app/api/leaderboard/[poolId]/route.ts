@@ -144,6 +144,12 @@ export async function GET(
 
     const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, Array.from(allGolferIds))
 
+    // Handle missing hole data safely (Requirement C)
+    // If we have tournament_scores but no tournament_holes, the leaderboard would be silently blank.
+    // We want to fail visibly or mark as degraded.
+    const hasHoleData = holesByGolfer.size > 0
+    const isDegraded = allScores.length > 0 && !hasHoleData
+
     const golferStatuses: Map<string, GolferStatus> = new Map()
     for (const [golferId, score] of golferScoresMap.entries()) {
       if (score.status !== 'active') {
@@ -165,9 +171,10 @@ export async function GET(
         refreshedAt: pool.refreshed_at,
         freshness,
         isRefreshing,
+        isDegraded,
         poolStatus: pool.status,
-        lastRefreshError: pool.last_refresh_error,
-golferStatuses: Object.fromEntries(golferStatuses),
+        lastRefreshError: pool.last_refresh_error || (isDegraded ? 'Hole-by-hole scoring data missing' : null),
+        golferStatuses: Object.fromEntries(golferStatuses),
         golferNames,
         golferCountries,
         golferScores: Object.fromEntries(golferScoresMap),

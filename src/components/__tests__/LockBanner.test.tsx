@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
 import { LockBanner } from '../LockBanner'
 
@@ -72,20 +72,21 @@ describe('LockBanner token migration', () => {
 })
 
 describe('LockBanner warning tone near deadline', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders with warning tone when pool is open and deadline is within 24 hours', () => {
-    const now = new Date()
-    const warningDeadline = new Date(now.getTime() + 36 * 60 * 60 * 1000)
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })
-    const parts = formatter.formatToParts(warningDeadline)
-    const year = parts.find(p => p.type === 'year')!.value
-    const month = parts.find(p => p.type === 'month')!.value
-    const day = parts.find(p => p.type === 'day')!.value
-    const deadline = `${year}-${month}-${day}T00:00:00+00:00`
+    // Set fixed "now" to 2026-04-08 12:00:00 ET
+    const now = new Date('2026-04-08T16:00:00.000Z')
+    vi.setSystemTime(now)
+
+    // Deadline: 2026-04-09 00:00:00 ET (8 hours from now)
+    const deadline = '2026-04-09T00:00:00+00:00'
     const html = renderToStaticMarkup(
       <LockBanner isLocked={false} deadline={deadline} poolStatus="open" timezone="America/New_York" />
     )
@@ -94,19 +95,12 @@ describe('LockBanner warning tone near deadline', () => {
   })
 
   it('renders with info tone when pool is open and deadline is more than 24 hours away', () => {
-    const now = new Date()
-    const safeDeadline = new Date(now.getTime() + 48 * 60 * 60 * 1000)
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    })
-    const parts = formatter.formatToParts(safeDeadline)
-    const year = parts.find(p => p.type === 'year')!.value
-    const month = parts.find(p => p.type === 'month')!.value
-    const day = parts.find(p => p.type === 'day')!.value
-    const deadline = `${year}-${month}-${day}T00:00:00+00:00`
+    // Set fixed "now" to 2026-04-07 12:00:00 ET
+    const now = new Date('2026-04-07T16:00:00.000Z')
+    vi.setSystemTime(now)
+
+    // Deadline: 2026-04-09 00:00:00 ET (36 hours from now)
+    const deadline = '2026-04-09T00:00:00+00:00'
     const html = renderToStaticMarkup(
       <LockBanner isLocked={false} deadline={deadline} poolStatus="open" timezone="America/New_York" />
     )
@@ -115,22 +109,12 @@ describe('LockBanner warning tone near deadline', () => {
   })
 
   it('shows secondary line with timezone when within 24 hours', () => {
-    const now = new Date()
-    const safeDeadline = new Date(now.getTime() + 12 * 60 * 60 * 1000)
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      hour12: false,
-    })
-    const parts = formatter.formatToParts(safeDeadline)
-    const year = parts.find(p => p.type === 'year')!.value
-    const month = parts.find(p => p.type === 'month')!.value
-    const day = parts.find(p => p.type === 'day')!.value
-    const hour = parts.find(p => p.type === 'hour')!.value
-    const deadline = `${year}-${month}-${day}T${hour}:00:00+00:00`
+    // Set fixed "now" to 2026-04-08 12:00:00 ET
+    const now = new Date('2026-04-08T16:00:00.000Z')
+    vi.setSystemTime(now)
+
+    // Deadline: 2026-04-09 00:00:00 ET (12 hours from now)
+    const deadline = '2026-04-09T00:00:00+00:00'
     const html = renderToStaticMarkup(
       <LockBanner isLocked={false} deadline={deadline} poolStatus="open" timezone="America/New_York" />
     )

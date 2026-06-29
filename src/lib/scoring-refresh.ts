@@ -205,6 +205,28 @@ export async function refreshScoresForPool(
   // Step 5: Build hole-level data from persisted tournament_holes
   const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)
 
+  // Requirement C: Prevent refresh from being marked successful unless required hole rows exist
+  // We check if we have any hole data at all if there are scores.
+  if (allGolferIds.length > 0 && holesByGolfer.size === 0) {
+    const holeErrorMessage = 'Failed to fetch hole-by-hole data for any golfer'
+
+    await updatePoolRefreshMetadata(supabase, pool.id, {
+      last_refresh_error: holeErrorMessage,
+    })
+
+    await insertAuditEvent(supabase, {
+      pool_id: pool.id,
+      user_id: null,
+      action: 'scoreRefreshFailed',
+      details: { error: holeErrorMessage },
+    })
+
+    return {
+      data: null,
+      error: { code: 'UPSERT_FAILED', message: holeErrorMessage },
+    }
+  }
+
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)
   const completedRounds = deriveCompletedRounds(allScores)
 

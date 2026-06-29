@@ -103,7 +103,7 @@ describe('refreshScoresForPool', () => {
       tournId: 't-1', playerId: 'g1', roundId: 1, year: '2026', status: 'active', currentRound: 1, holes: [],
     } as never)
     vi.mocked(upsertTournamentHoles).mockResolvedValue({ error: null })
-    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([['g1', []]]) as never)
     vi.mocked(rankEntriesWithHoles).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
       completedRounds: 1,

@@ -8,12 +8,14 @@ import {
   getPoolsByTournament,
   getEntriesForPool,
   updatePoolRefreshMetadata,
+  updatePoolRefreshTelemetry,
   insertAuditEvent,
 } from '@/lib/pool-queries'
 import {
   upsertTournamentScore,
   getScoresForTournament,
   getTournamentScoreRounds,
+  getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -37,6 +39,7 @@ vi.mock('@/lib/pool-queries', () => ({
   getPoolsByTournament: vi.fn(),
   getEntriesForPool: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
+  updatePoolRefreshTelemetry: vi.fn(),
   insertAuditEvent: vi.fn(),
 }))
 
@@ -44,6 +47,7 @@ vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
   getTournamentScoreRounds: vi.fn(),
+  getTournamentHolesForGolfers: vi.fn(),
 }))
 
 describe('scoring refresh edge cases', () => {
@@ -75,6 +79,7 @@ describe('scoring refresh edge cases', () => {
     vi.mocked(getScoresForTournament).mockResolvedValue([] as never)
     vi.mocked(getTournamentScores).mockResolvedValue([])
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(updatePoolRefreshTelemetry).mockResolvedValue({ error: null })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
 
     const result = await refreshScoresForPool(mockSupabase, pool)
@@ -129,8 +134,11 @@ describe('scoring refresh edge cases', () => {
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata)
       .mockResolvedValueOnce({ error: 'connection refused' })
+    vi.mocked(updatePoolRefreshTelemetry).mockResolvedValue({ error: null })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
     vi.mocked(getTournamentScoreRounds).mockResolvedValue([] as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([['g1', []]]))
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([['g1', []]]))
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -162,8 +170,10 @@ describe('scoring refresh edge cases', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(updatePoolRefreshTelemetry).mockResolvedValue({ error: null })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: 'insert failed' })
     vi.mocked(getTournamentScoreRounds).mockResolvedValue([] as never)
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([['g1', []]]))
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -197,6 +207,7 @@ describe('scoring refresh edge cases', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(updatePoolRefreshTelemetry).mockResolvedValue({ error: null })
     vi.mocked(getEntriesForPool).mockResolvedValue([])
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -209,6 +220,7 @@ describe('scoring refresh edge cases', () => {
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
     vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([['g1', []]]))
     vi.mocked(deriveCompletedRounds).mockReturnValue(1)
 
     const result = await refreshScoresForPool(mockSupabase, pool)
@@ -232,6 +244,7 @@ describe('scoring refresh edge cases', () => {
     ] as never)
     vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
     vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(updatePoolRefreshTelemetry).mockResolvedValue({ error: null })
     vi.mocked(getEntriesForPool).mockResolvedValue([{ id: 'entry-1' }] as never)
     vi.mocked(rankEntries).mockReturnValue([])
     vi.mocked(buildRefreshAuditDetails).mockReturnValue({
@@ -244,6 +257,7 @@ describe('scoring refresh edge cases', () => {
     })
     vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
     vi.mocked(getTournamentScoreRounds).mockResolvedValue([])
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map([['g1', []]]))
     vi.mocked(deriveCompletedRounds).mockReturnValue(0)
 
     const result = await refreshScoresForPool(mockSupabase, pool)

@@ -24,12 +24,11 @@
 
 ### 2.1 Core Algorithm: Best Ball, Hole-by-Hole
 
-For each round, the entry's score is the **lowest `scoreToPar`** among all **active** golfers in the entry.
-
-```
-Entry round score = min(scoreToPar of active golfers)
-Entry total score = sum(Entry round score for each completed round)
-```
+For each regulation hole in each counted round:
+1. Look at the selected golfers in the entry.
+2. Use the lowest `scoreToPar` among selected golfers with a valid score for that hole.
+3. Add that best-hole score to the entry total.
+4. Count a best-ball birdie when the selected best-hole `scoreToPar` is less than 0.
 
 **Source:** `src/lib/scoring/domain.ts:computeEntryScore`
 
@@ -46,11 +45,11 @@ Entry total score = sum(Entry round score for each completed round)
 
 ### 2.3 Score Accumulation Rules
 
-1. **Round completion gating:** A round only counts toward the entry total if **all golfers** in the entry have `isComplete: true` for that round.
-2. **Partial rounds:** If any golfer in the entry has `isComplete: false` for a round, that round is skipped entirely.
-3. **Golfer drop after status change:** A golfer who is `cut` or `withdrawn` is excluded from best-ball calculation for all subsequent rounds, but their completed rounds still count.
+1. **Hole completion gating:** A hole only counts toward the entry total if **all active golfers** in the entry have a valid score (and `isComplete: true` for that round).
+2. **Partial rounds:** If any golfer in the entry has `isComplete: false` for a round, holes for that round are not yet final and may be excluded from the total until the round is complete for all rostered golfers.
+3. **Golfer drop after status change:** A golfer who is `cut` or `withdrawn` is excluded from best-ball calculation for all subsequent holes, but their completed holes still count.
 
-**Source:** `src/lib/scoring/domain.ts:computeEntryScore` (round-level `isComplete` gating at lines 90–95)
+**Source:** `src/lib/scoring/domain.ts:computeEntryScore`
 
 ### 2.4 Tiebreaker Order
 
@@ -157,8 +156,7 @@ Commissioner picks are subject to the same locking rules as player picks.
 ### 5.4 Incomplete Round (Thru < 18)
 
 - When a golfer has `thru < 18` (round in progress), `isComplete: false`
-- Per round-gating rule (2.3), incomplete rounds do not contribute to the entry score
-- This means a round where any entry golfer is mid-round does not count
+- Per hole-gating rule (2.3), holes from an incomplete round do not contribute to the entry total until the round is complete for all golfers in the entry.
 
 ---
 
@@ -215,7 +213,7 @@ This is a Board-authorized rule to prevent circular dependencies with leaderboar
 
 | Scenario | Entry Golfers | Round 1 | Round 2 | Expected Score | Birdies | Notes |
 |----------|--------------|---------|---------|----------------|---------|-------|
-| Normal | g1(-1), g2(-1), g3(0), g4(+1) | Complete | Complete | -2 | 2 | Best ball each round |
+| Normal | g1(-1), g2(-1), g3(0), g4(+1) | Complete | Complete | -2 | 2 | Best ball each hole |
 | Cut mid-tournament | g1(-1,cut), g2(-1,+1), g3(0,+1), g4(+1,0) | Complete | Complete | -1 | 1 | g1 post-cut excluded from R2 |
 | WD mid-tournament | g1(-1,wd), g2(-1,-1), g3(0,0), g4(+1,+1) | Complete | Complete | -2 | 2 | g1 post-WD excluded from R2 |
 | Partial round | g1(-1, incomplete), g2(-1,+1), g3(0,+1), g4(+1,0) | R1 only | — | -1 | 1 | R2 skipped (not all complete) |

@@ -9,7 +9,7 @@ import {
 } from '../scoring/domain'
 
 function makePlayerHoleScore(roundId: number, scoreToPar: number, status: GolferStatus, isComplete: boolean): PlayerHoleScore {
-  return { roundId, scoreToPar: scoreToPar as number, status, isComplete }
+  return { roundId, holeId: 1, scoreToPar: scoreToPar as number, status, isComplete }
 }
 
 function makeGolferRoundScoresMapentries(entries: [string, PlayerHoleScore[]][]): GolferRoundScoresMap {
@@ -28,7 +28,7 @@ describe('scoring edge cases', () => {
 
       const result = computeEntryScore(scores, ['g1', 'g2', 'g3', 'g4'])
 
-      expect(result.totalScore).toBe(0)
+      expect(result.totalScore).toBe(null)
       expect(result.completedHoles).toBe(0)
       expect(result.totalBirdies).toBe(0)
     })
@@ -70,7 +70,7 @@ describe('scoring edge cases', () => {
       expect(ranked).toEqual([])
     })
 
-    it('empty golferRoundScores map → all entries get totalScore 0', () => {
+    it('empty golferRoundScores map → all entries get totalScore null', () => {
       const entries: Entry[] = [
         { id: 'e1', pool_id: 'p1', user_id: 'u1', golfer_ids: ['g1', 'g2', 'g3', 'g4'], total_birdies: 0, created_at: '', updated_at: '' },
       ]
@@ -78,7 +78,7 @@ describe('scoring edge cases', () => {
       const ranked = rankEntries(entries, new Map(), 1)
 
       expect(ranked).toHaveLength(1)
-      expect(ranked[0].totalScore).toBe(0)
+      expect(ranked[0].totalScore).toBe(null)
       expect(ranked[0].rank).toBe(1)
     })
   })

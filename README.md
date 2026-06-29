@@ -1,12 +1,12 @@
 # Fantasy Golf Pool
 
-A commissioner-first web app for running private golf pools with live round-by-round scoring.
+A commissioner-first web app for running private golf pools with live hole-by-hole scoring.
 
 ## Features
 
 - **Commissioner Dashboard** — Create pools, select tournaments, manage pool lifecycle
 - **Participant Picks** — Submit 4-golfer best-ball entries with autocomplete search
-- **Live Leaderboard** — Real-time updates via Supabase, scoring from Slash Golf API
+- **Live Leaderboard** — Real-time updates via Supabase, scoring from Slash Golf API (hole-by-hole)
 - **Spectator View** — Public leaderboard visible without sign-in
 
 ## Tech Stack
@@ -77,10 +77,11 @@ pnpm start
 
 ### Scoring Model
 
-- **Round-based** best-ball (lowest score among 4 golfers per completed round)
-- Lower total score is better
-- Tiebreaker: total birdies across all 4 golfers (higher is better)
-- Cut and withdrawn golfers excluded after they occur
+- **Hole-by-hole** best-ball (lowest score among 4 golfers per hole)
+- For each regulation hole, the entry score is the lowest score-to-par among selected golfers.
+- Lower total score is better.
+- Tiebreaker: total birdies across all 4 golfers (higher is better).
+- Cut and withdrawn golfers excluded from best-ball calculation after they occur.
 
 ### Scoring Cron
 
