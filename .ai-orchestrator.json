@@ -1,0 +1,6 @@
+{
+  "validation": {
+    "commands": ["pnpm build", "pnpm lint", "pnpm test"],
+    "timeout": 600
+  }
+}
