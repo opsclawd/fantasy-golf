@@ -37,6 +37,7 @@ vi.mock('@/lib/pool-queries', () => ({
   getPoolsByTournament: vi.fn(),
   getEntriesForPool: vi.fn(),
   updatePoolRefreshMetadata: vi.fn(),
+  updatePoolRefreshTelemetry: vi.fn(),
   insertAuditEvent: vi.fn(),
 }))
 
@@ -44,6 +45,8 @@ vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
   getTournamentScoreRounds: vi.fn(),
+  upsertTournamentHoles: vi.fn().mockResolvedValue({ error: null }),
+  getTournamentHolesForGolfers: vi.fn().mockResolvedValue(new Map()),
 }))
 
 describe('scoring refresh edge cases', () => {

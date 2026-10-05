@@ -60,6 +60,8 @@ vi.mock('@/lib/scoring-queries', () => ({
   upsertTournamentScore: vi.fn(),
   getScoresForTournament: vi.fn(),
   getTournamentScoreRounds: vi.fn(),
+  upsertTournamentHoles: vi.fn().mockResolvedValue({ error: null }),
+  getTournamentHolesForGolfers: vi.fn().mockResolvedValue(new Map()),
 }))
 
 const originalEnv = { ...process.env }

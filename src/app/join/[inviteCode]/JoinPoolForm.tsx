@@ -2,6 +2,7 @@
 
 import { useFormState } from 'react-dom'
 import { useFormStatus } from 'react-dom'
+import { Button } from '@/components/ui/Button'
 import { joinPool, type JoinPoolState } from './actions'
 
 const initialState: JoinPoolState = null
@@ -26,12 +27,12 @@ function SubmitButton() {
   const { pending } = useFormStatus()
 
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
-      className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full"
     >
       {pending ? 'Joining...' : 'Join pool'}
-    </button>
+    </Button>
   )
 }
