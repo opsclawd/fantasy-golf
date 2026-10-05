@@ -7,6 +7,15 @@ vi.mock('../actions', () => ({
   joinPool: vi.fn(),
 }))
 
+vi.mock('react-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-dom')>()
+  return {
+    ...actual,
+    useFormState: vi.fn(() => [null, vi.fn()]),
+    useFormStatus: vi.fn(() => ({ pending: false })),
+  }
+})
+
 import JoinPoolForm from '../JoinPoolForm'
 
 describe('JoinPoolForm', () => {

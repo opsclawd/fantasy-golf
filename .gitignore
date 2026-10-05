@@ -24,10 +24,16 @@ processed-comment-ids.txt
 .env.local
 node_modules/
 .next/
+.ai-runs/
 .ai-worktrees/
+.ai-tmp/
+.worktrees/
 .codex
 .opencode/
 .superpowers/
+.smallcode/
+.code-graph/
+.memory/
 .vercel/
 ai/
 supabase/.temp/

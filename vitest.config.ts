@@ -14,10 +14,15 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
     },
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
       '**/.worktrees/**',
+      '**/.ai-worktrees/**',
+      '**/.ai-runs/**',
+      '**/.ai-tmp/**',
+      '**/ai/**',
       '**/cypress/**',
       '**/.{idea,git,output,temp}/**',
     ],
