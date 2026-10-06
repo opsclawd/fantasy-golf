@@ -20,7 +20,7 @@ describe('LeaderboardRow', () => {
         entry: baseEntry,
         isTied: false,
         golferNames: { g1: 'A. golfer', g2: 'B. golfer', g3: 'C. golfer', g4: 'D. golfer' },
-        withdrawnGolferIds: new Set(),
+        withdrawnGolferIds: new Set<string>(),
         onSelectGolfer: vi.fn(),
         rowIndex: 0,
       })
@@ -34,7 +34,7 @@ describe('LeaderboardRow', () => {
         entry: baseEntry,
         isTied: true,
         golferNames: { g1: 'A. golfer', g2: 'B. golfer', g3: 'C. golfer', g4: 'D. golfer' },
-        withdrawnGolferIds: new Set(),
+        withdrawnGolferIds: new Set<string>(),
         onSelectGolfer: vi.fn(),
         rowIndex: 0,
       })
@@ -48,7 +48,7 @@ describe('LeaderboardRow', () => {
         entry: baseEntry,
         isTied: false,
         golferNames: { g1: 'A. golfer', g2: 'B. golfer', g3: 'C. golfer', g4: 'D. golfer' },
-        withdrawnGolferIds: new Set(),
+        withdrawnGolferIds: new Set<string>(),
         onSelectGolfer: vi.fn(),
         rowIndex: 0,
       })

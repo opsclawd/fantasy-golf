@@ -134,10 +134,25 @@ docs/
 
 ```bash
 pnpm dev          # Start development server
-pnpm build        # Production build
+pnpm typecheck    # TypeScript compiler check (tsc --noEmit)
 pnpm lint         # ESLint
 pnpm test         # Run tests (Vitest)
+pnpm build        # Production build
 ```
+
+### Local Handoff Validation Sequence
+
+Before submitting changes or handing off for release, run the canonical validation sequence:
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+```
+
+> **Note on `pnpm approve-builds`:** If pnpm v9+ restricts dependency build scripts during `pnpm install`, run `pnpm approve-builds` to grant permission for required dependency build scripts.
 
 ## Key Documentation
 

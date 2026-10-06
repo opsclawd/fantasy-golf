@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import tailwindConfig from '../../../tailwind.config.js'
 
-const colors = tailwindConfig.theme.extend.colors
-const spacing = tailwindConfig.theme.extend.spacing
+const extend = (tailwindConfig.theme?.extend ?? {}) as {
+  colors: Record<string, any>
+  spacing: Record<string, string>
+  fontSize: Record<string, any>
+  fontFamily: Record<string, any>
+}
+const colors = extend.colors
+const spacing = extend.spacing
 
 describe('tailwind config color tokens', () => {
   it('defines primary color tokens', () => {
@@ -40,17 +46,17 @@ describe('tailwind config spacing tokens', () => {
 
 describe('tailwind config typography tokens', () => {
   it('defines label font size', () => {
-    const fontSize = tailwindConfig.theme.extend.fontSize
+    const fontSize = extend.fontSize
     expect(fontSize.label[0]).toBe('0.875rem')
   })
 
   it('defines sans font family with Inter first', () => {
-    const fontFamily = tailwindConfig.theme.extend.fontFamily
+    const fontFamily = extend.fontFamily
     expect(fontFamily.sans[0]).toBe('Inter')
   })
 
   it('defines mono font family', () => {
-    const fontFamily = tailwindConfig.theme.extend.fontFamily
+    const fontFamily = extend.fontFamily
     expect(fontFamily.mono).toBeDefined()
   })
 })

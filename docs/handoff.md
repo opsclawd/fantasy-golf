@@ -141,10 +141,25 @@ open → (deadline passes) → live → (commissioner closes) → complete → (
 |---|---|
 | Push migrations | `npx supabase db push` |
 | Run dev server | `pnpm dev` |
+| Typecheck | `pnpm typecheck` |
+| Lint | `pnpm lint` |
 | Run tests | `pnpm test` |
 | Production build | `pnpm build` |
-| Lint | `pnpm lint` |
 | Trigger score refresh | `curl -X POST /api/scoring/refresh -H 'Authorization: Bearer CRON_SECRET' -d '{"poolId":"..."}'` |
+
+### Required Local Handoff Validation Sequence
+
+Before release sign-off or handing off between engineers, execute the full validation pipeline:
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+```
+
+If pnpm v9+ prompts regarding blocked lifecycle scripts during `pnpm install`, run `pnpm approve-builds` to authorize required dependency build scripts.
 
 ---
 

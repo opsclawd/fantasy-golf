@@ -2,6 +2,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { TournamentScore, TournamentScoreRound, TournamentHole } from './supabase/types'
 import type { GolferScore, GolferScoreRound } from './slash-golf/types'
 
+export type { TournamentHole } from './supabase/types'
+
 export async function upsertTournamentScoreRound(
   supabase: SupabaseClient,
   score: Omit<TournamentScoreRound, 'id'>
