@@ -25,7 +25,7 @@ echo "Using $PKG_MGR"
 echo "Installing dependencies..."
 $INSTALL_CMD
 
-SCRIPTS=$(jq -r 'keys[]' "$PACKAGE_JSON" 2>/dev/null || echo "")
+SCRIPTS=$(jq -r '.scripts // {} | keys[]' "$PACKAGE_JSON" 2>/dev/null || echo "")
 
 for cmd in typecheck lint test build; do
   if echo "$SCRIPTS" | grep -q "^${cmd}$"; then

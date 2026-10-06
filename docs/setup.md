@@ -114,13 +114,19 @@ npx supabase db diff
 
 No pending migrations = schema matches migrations.
 
-### Run the Test Suite
+### Run the Validation Suite
+
+Run the canonical validation sequence to verify your setup:
 
 ```bash
+pnpm install
+pnpm typecheck
+pnpm lint
 pnpm test
+pnpm build
 ```
 
-All tests should pass. See [docs/operations.md](./operations.md) if tests fail.
+All checks should pass cleanly. If pnpm v9+ blocks dependency build scripts during `pnpm install`, run `pnpm approve-builds` to grant required build permissions. See [docs/operations.md](./operations.md) if checks fail.
 
 ---
 

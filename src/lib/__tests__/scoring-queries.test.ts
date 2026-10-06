@@ -242,9 +242,9 @@ describe('upsertTournamentScore', () => {
 
 describe('upsertTournamentHoles', () => {
   it('persists hole records', async () => {
-    const upserts: unknown[] = []
+    const upserts: TournamentHole[][] = []
     const builder: any = {
-      upsert: vi.fn((value: unknown) => {
+      upsert: vi.fn((value: TournamentHole[]) => {
         upserts.push(value)
         return builder
       }),
