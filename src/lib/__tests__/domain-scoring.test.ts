@@ -290,6 +290,22 @@ describe('domain scoring', () => {
       expect(result.totalScore).toBe(-1)
       expect(result.completedHoles).toBe(1)
     })
+
+    it('includes golfers with complete status in best-ball scoring calculations', () => {
+      const scores = new Map<string, PlayerHoleScore[]>([
+        ['g1', [
+          makePlayerHoleScore(1, 1, -1, 'complete', true),
+        ]],
+        ['g2', [
+          makePlayerHoleScore(1, 1, 0, 'complete', true),
+        ]],
+      ])
+
+      const result = computeEntryScore(scores, ['g1', 'g2'])
+      expect(result.totalScore).toBe(-1)
+      expect(result.completedHoles).toBe(1)
+      expect(result.totalBirdies).toBe(1)
+    })
   })
 
   describe('deriveCompletedRounds', () => {

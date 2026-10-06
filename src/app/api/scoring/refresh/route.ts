@@ -60,10 +60,11 @@ export async function POST(request: Request) {
         UPSERT_FAILED: 500,
         INTERNAL_ERROR: 500,
         NO_SCORES: 200,
+        INCOMPLETE_HOLE_DATA: 502,
       }
       return NextResponse.json(
         { data: null, error: result.error },
-        { status: statusMap[result.error.code] }
+        { status: statusMap[result.error.code] || 500 }
       )
     }
 
