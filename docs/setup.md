@@ -44,6 +44,7 @@ Fill in all required values:
 | `SLASH_GOLF_API_KEY` | RapidAPI dashboard → Slash Golf subscription |
 | `CRON_SECRET` | Generate a strong random string: `openssl rand -base64 32` |
 | `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` for local dev |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Settings → API (service_role secret) |
 
 ---
 
@@ -67,19 +68,19 @@ You can find your project ref in Supabase Dashboard → Settings → General.
 ### 3.3 Push Migrations
 
 ```bash
-pnpm supabase db push
+npx supabase db push
 ```
 
-This applies all timestamped SQL migrations in `supabase/migrations/` to your linked project.
+This applies all timestamped SQL migrations in `supabase/migrations/` sequentially to your linked project, bootstrapping cleanly from the baseline migration.
 
 ### 3.4 Configure Vault Secrets
 
-The app uses Supabase Vault for production secrets. In development, these are also in `.env.local`, but the Vault entries are required for production:
+The app uses Supabase Vault for production secrets (read by `pg_cron` / `pg_net`). Note the argument order (`secret_value`, `secret_name`):
 
 ```sql
 -- In Supabase SQL Editor:
-select vault.create_secret('app_url', 'https://your-app-url.com');
-select vault.create_secret('cron_secret', 'your-cron-secret-value');
+select vault.create_secret('https://your-app-url.com', 'app_url');
+select vault.create_secret('your-cron-secret-value', 'cron_secret');
 ```
 
 ### 3.5 Enable pg_cron Extension

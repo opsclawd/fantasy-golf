@@ -60,8 +60,8 @@ npx supabase db push  # Push migrations to remote DB
 
 ## Scoring Rules
 
-- **Format**: Best-ball (lowest score among 4 golfers per round)
-- **Tiebreaker**: Total birdies across all 4 golfers
+- **Format**: Best-ball, hole-by-hole (lowest `scoreToPar` among 4 golfers per hole, summed per round)
+- **Tiebreaker**: Total birdies across all 4 golfers in entry
 - **Tournament round**: Round ID 1-4 maps to Thu/Fri/Sat/Sun
 
 ## Critical Rules
@@ -71,7 +71,7 @@ These are the non-negotiable rules for the MVP. The full authoritative specifica
 ### Game Rules
 
 - [ ] **Entry size**: Exactly `picks_per_entry` golfers (default: 4). No duplicates within an entry.
-- [ ] **Best-ball scoring**: Lowest `scoreToPar` among active golfers per round, summed across completed rounds.
+- [ ] **Best-ball scoring**: Lowest `scoreToPar` among active golfers per hole, summed per round, and summed across completed rounds.
 - [ ] **Tiebreaker**: Total score (lower is better) → total birdies (higher is better) → shared rank.
 - [ ] **Active golfers only**: `cut` and `withdrawn` golfers are excluded from best-ball calculation after they occur.
 - [ ] **Round completion gating**: A round only counts if ALL golfers in the entry have `isComplete: true`.
