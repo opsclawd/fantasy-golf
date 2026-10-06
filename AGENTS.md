@@ -99,23 +99,34 @@ tournament_score_rounds    # Immutable archive (one row per round)
 ├── strokes, score_to_par, course_id, course_name
 ├── round_status, position, total_score
 └── ... full round snapshot from API
+
+tournament_holes           # Hole-by-hole scores (one row per golfer/round/hole)
+├── golfer_id, tournament_id, round_id, hole_id (unique)
+├── strokes, par, score_to_par
+└── updated_at
+
+refresh_locks              # Tournament refresh mutex (TTL: 5 minutes)
+├── tournament_id (primary key)
+├── locked_by, locked_at, expires_at
 ```
 
 ### Scoring Flow
 
-1. Cron calls `/api/scoring` → fetches from Slash Golf API
-2. API returns `rounds[]` array with per-round stroke data
+1. Cron calls `/api/scoring` or commissioner calls `/api/scoring/refresh` → acquires mutex in `refresh_locks`
+2. Fetches leaderboard from Slash Golf API `/leaderboard`
 3. Each round written to `tournament_score_rounds` (append-only)
 4. Latest round data written to `tournament_scores` (upsert)
-5. Leaderboard ranked by `total_score` (lower = better)
-6. Tiebreaker: `total_birdies` (higher = better)
+5. Fetches scorecards from Slash Golf API `/scorecard` and upserts into `tournament_holes`
+6. Hole completeness validated across rostered golfers (`validateHoleDataCompleteness`) before advancing success metadata
+7. Leaderboard ranked by true hole-by-hole best-ball (`rankEntriesWithHoles`)
+8. Tiebreaker: `total_birdies` across entry golfers (higher = better)
 
 ### Key Functions (`src/lib/scoring.ts`)
 
-- `calculateEntryTotalScore()` — best-ball total across golfers
-- `calculateEntryBirdies()` — sum of birdies for tiebreaker
+- `rankEntriesWithHoles()` — full ranking with hole-by-hole best-ball and tie handling
+- `validateHoleDataCompleteness()` — ensures all required rostered golfers have 18 holes per round
+- `getLatestCompleteRound()` — determines latest round with complete hole data for stale fallback
 - `deriveCompletedRounds()` — max round_id from scores
-- `rankEntries()` — full ranking with tie handling
 
 ---
 
@@ -289,7 +300,7 @@ If neither statement fits the task, the loop was probably skipped. Don't skip it
 ## Current Project State
 
 - **Branch:** `main` (6 commits ahead of `origin/main`)
-- **Recent work:** Migrated from hole-by-hole to round-based scoring model
+- **Recent work:** Enforced true hole-by-hole best-ball scoring model with scorecard persistence and completeness validation
 - **Pending:** `git push` to sync local commits
 
 ---
