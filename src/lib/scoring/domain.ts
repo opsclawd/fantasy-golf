@@ -81,7 +81,9 @@ export function computeEntryScore(
     const roundId = parseInt(holeKey.split('-')[0])
     if (!roundCompleteness.get(roundId)) continue
 
-    const activeEntries = entries.filter(e => activeSet.has(e.golferId) && e.status === 'active')
+    const activeEntries = entries.filter(
+      e => activeSet.has(e.golferId) && (e.status === 'active' || e.status === 'complete')
+    )
     if (activeEntries.length === 0) continue
 
     const validScores = activeEntries

@@ -157,3 +157,146 @@ export function rankEntriesWithHoles(
   const golferRoundScoresMap = buildGolferRoundScoresMap(holesByGolfer, golferStatuses)
   return domainRankEntries(entries, golferRoundScoresMap, completedRounds) as (Entry & { totalScore: number | null; totalBirdies: number; rank: number; isTied: boolean })[]
 }
+
+export interface HoleDataValidationResult {
+  isValid: boolean
+  missingGolferIds: string[]
+  requiredGolferIds: string[]
+  reason?: string
+}
+
+export function isScoringRelevantGolfer(status?: GolferStatus | null): boolean {
+  if (!status) return true
+  return status !== 'cut' && status !== 'withdrawn' && status !== 'dq'
+}
+
+export function getRequiredScoringGolferIds(
+  entries: Array<{ golfer_ids?: string[] }>,
+  golferStatuses: Map<string, GolferStatus>
+): Set<string> {
+  const required = new Set<string>()
+  for (const entry of entries) {
+    for (const golferId of entry.golfer_ids ?? []) {
+      if (!golferId) continue
+      const status = golferStatuses.get(golferId) ?? 'active'
+      if (isScoringRelevantGolfer(status)) {
+        required.add(golferId)
+      }
+    }
+  }
+  return required
+}
+
+export function validateHoleDataCompleteness(
+  requiredGolferIds: Iterable<string>,
+  holesByGolfer: Map<string, TournamentHole[]>,
+  completedRounds: number = 0
+): HoleDataValidationResult {
+  const required = Array.from(new Set(requiredGolferIds))
+
+  if (required.length === 0) {
+    return {
+      isValid: true,
+      missingGolferIds: [],
+      requiredGolferIds: [],
+    }
+  }
+
+  if (holesByGolfer.size === 0) {
+    return {
+      isValid: false,
+      missingGolferIds: required,
+      requiredGolferIds: required,
+      reason: 'No hole data found for any golfer',
+    }
+  }
+
+  const missingGolferIds: string[] = []
+  for (const golferId of required) {
+    const golferHoles = holesByGolfer.get(golferId)
+    if (!golferHoles || golferHoles.length === 0) {
+      missingGolferIds.push(golferId)
+      continue
+    }
+
+    if (completedRounds > 0) {
+      const golferRoundIds = new Set(golferHoles.map(h => h.round_id))
+      let hasAllRounds = true
+      for (let r = 1; r <= completedRounds; r++) {
+        if (!golferRoundIds.has(r)) {
+          hasAllRounds = false
+          break
+        }
+      }
+      if (!hasAllRounds) {
+        missingGolferIds.push(golferId)
+      }
+    }
+  }
+
+  if (missingGolferIds.length > 0) {
+    return {
+      isValid: false,
+      missingGolferIds,
+      requiredGolferIds: required,
+      reason: `Missing hole data for required golfer(s): ${missingGolferIds.join(', ')}`,
+    }
+  }
+
+  return {
+    isValid: true,
+    missingGolferIds: [],
+    requiredGolferIds: required,
+  }
+}
+
+export function getLatestCompleteRound(
+  requiredGolferIds: Iterable<string>,
+  holesByGolfer: Map<string, TournamentHole[]>,
+  completedRounds: number
+): number {
+  const required = Array.from(new Set(requiredGolferIds))
+  if (required.length === 0 || completedRounds <= 0) return 0
+
+  for (let r = completedRounds; r >= 1; r--) {
+    let roundValid = true
+    for (const golferId of required) {
+      const golferHoles = holesByGolfer.get(golferId) ?? []
+      const hasRoundHoles = golferHoles.some(h => h.round_id === r)
+      if (!hasRoundHoles) {
+        roundValid = false
+        break
+      }
+    }
+    if (roundValid) {
+      let allPrecedingValid = true
+      for (let prev = 1; prev < r; prev++) {
+        for (const golferId of required) {
+          const golferHoles = holesByGolfer.get(golferId) ?? []
+          if (!golferHoles.some(h => h.round_id === prev)) {
+            allPrecedingValid = false
+            break
+          }
+        }
+        if (!allPrecedingValid) break
+      }
+      if (allPrecedingValid) return r
+    }
+  }
+
+  return 0
+}
+
+export function filterHolesByRound(
+  holesByGolfer: Map<string, TournamentHole[]>,
+  maxRound: number
+): Map<string, TournamentHole[]> {
+  const result = new Map<string, TournamentHole[]>()
+  for (const [golferId, holes] of holesByGolfer.entries()) {
+    result.set(
+      golferId,
+      holes.filter(h => h.round_id <= maxRound)
+    )
+  }
+  return result
+}

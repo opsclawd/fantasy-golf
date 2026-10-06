@@ -141,4 +141,35 @@ describe('POST /api/scoring/refresh', () => {
     const body = await response.json()
     expect(body.error.code).toBe('REFRESH_LOCKED')
   })
+
+  it('returns 502 when refresh fails with INCOMPLETE_HOLE_DATA', async () => {
+    const pool = { id: 'pool-1', tournament_id: 't-1', year: 2026, status: 'live' }
+    vi.mocked(createAdminClient).mockReturnValue({} as never)
+    vi.mocked(getPoolById).mockResolvedValue(pool as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({ acquired: true, lockId: 'lock-1' })
+    vi.mocked(releaseRefreshLock).mockResolvedValue({ error: null })
+    vi.mocked(refreshScoresForPool).mockResolvedValue({
+      data: null,
+      error: {
+        code: 'INCOMPLETE_HOLE_DATA',
+        message: 'Missing hole data for required golfer(s): g2',
+        missingGolfers: ['g2'],
+      },
+    })
+
+    const request = new Request('http://localhost/api/scoring/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer secret',
+      },
+      body: JSON.stringify({ poolId: 'pool-1' }),
+    })
+
+    const response = await POST(request)
+    const body = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(body.error.code).toBe('INCOMPLETE_HOLE_DATA')
+  })
 })

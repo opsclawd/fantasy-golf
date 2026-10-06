@@ -20,6 +20,7 @@ import {
   getScoresForTournament,
   upsertTournamentScore,
   getTournamentScoreRounds,
+  getTournamentHolesForGolfers,
 } from '@/lib/scoring-queries'
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -238,14 +239,22 @@ describe('POST /api/scoring', () => {
     expect(getTournamentScores).toHaveBeenCalledWith('t-1', 2026)
     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-1')
     expect(getEntriesForPool).toHaveBeenCalledWith(expect.anything(), 'pool-2')
-    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anything(), 'pool-1', {
-      refreshed_at: expect.any(String),
-      last_refresh_error: null,
-    })
-    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(expect.anything(), 'pool-2', {
-      refreshed_at: expect.any(String),
-      last_refresh_error: null,
-    })
+    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(
+      expect.anything(),
+      'pool-1',
+      expect.objectContaining({
+        refreshed_at: expect.any(String),
+        last_refresh_error: null,
+      })
+    )
+    expect(updatePoolRefreshMetadata).toHaveBeenCalledWith(
+      expect.anything(),
+      'pool-2',
+      expect.objectContaining({
+        refreshed_at: expect.any(String),
+        last_refresh_error: null,
+      })
+    )
     expect(insertAuditEvent).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ pool_id: 'pool-1' }))
     expect(insertAuditEvent).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ pool_id: 'pool-2' }))
   })
@@ -330,5 +339,46 @@ describe('POST /api/scoring', () => {
       expect.anything(),
       expect.objectContaining({ action: 'scoreRefreshCompleted' })
     )
+  })
+
+  it('maps INCOMPLETE_HOLE_DATA error to HTTP 502', async () => {
+    vi.mocked(getOpenPoolsPastDeadline).mockResolvedValue([])
+    vi.mocked(getActivePool).mockResolvedValue({
+      id: 'pool-1',
+      tournament_id: 't-1',
+      year: 2026,
+      status: 'live',
+    } as never)
+    vi.mocked(acquireRefreshLock).mockResolvedValue({ acquired: true, lockId: 'lock-1' })
+    vi.mocked(releaseRefreshLock).mockResolvedValue({ error: null })
+    vi.mocked(getPoolsByTournament).mockResolvedValue([
+      { id: 'pool-1', tournament_id: 't-1', status: 'live' },
+    ] as never)
+    vi.mocked(getEntriesForPool).mockResolvedValue([
+      { id: 'entry-1', golfer_ids: ['g1', 'g2'] },
+    ] as never)
+    vi.mocked(getScoresForTournament).mockResolvedValue([
+      { golfer_id: 'g1', round_id: 1, total_score: -1, total_birdies: 1, status: 'active' },
+      { golfer_id: 'g2', round_id: 1, total_score: 0, total_birdies: 0, status: 'active' },
+    ] as never)
+    vi.mocked(getTournamentScores).mockResolvedValue([
+      { golfer_id: 'g1', round_id: 1, total_score: -1, total_birdies: 1, status: 'active', current_round: 1 },
+      { golfer_id: 'g2', round_id: 1, total_score: 0, total_birdies: 0, status: 'active', current_round: 1 },
+    ] as never)
+    vi.mocked(upsertTournamentScore).mockResolvedValue({ error: null })
+    vi.mocked(getTournamentHolesForGolfers).mockResolvedValue(new Map() as never)
+    vi.mocked(updatePoolRefreshMetadata).mockResolvedValue({ error: null })
+    vi.mocked(insertAuditEvent).mockResolvedValue({ error: null })
+
+    const request = new Request('http://localhost/api/scoring', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer secret' },
+    })
+
+    const response = await POST(request)
+    const body = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(body.error.code).toBe('INCOMPLETE_HOLE_DATA')
   })
 })

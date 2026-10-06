@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { deriveCompletedRounds } from '@/lib/scoring'
-import { rankEntriesWithHoles } from '@/lib/scoring'
+import {
+  deriveCompletedRounds,
+  rankEntriesWithHoles,
+  getRequiredScoringGolferIds,
+  validateHoleDataCompleteness,
+  getLatestCompleteRound,
+  filterHolesByRound,
+} from '@/lib/scoring'
 import { classifyFreshness } from '@/lib/freshness'
 import type { TournamentScore } from '@/lib/supabase/types'
 import type { GolferStatus } from '@/lib/supabase/types'
@@ -145,29 +151,50 @@ export async function GET(
     const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, Array.from(allGolferIds))
 
     const golferStatuses: Map<string, GolferStatus> = new Map()
+    const nonActiveGolferStatuses: Map<string, GolferStatus> = new Map()
     for (const [golferId, score] of golferScoresMap.entries()) {
+      golferStatuses.set(golferId, score.status)
       if (score.status !== 'active') {
-        golferStatuses.set(golferId, score.status)
+        nonActiveGolferStatuses.set(golferId, score.status)
+      }
+    }
+
+    const requiredGolferIds = getRequiredScoringGolferIds(entries as Entry[], golferStatuses)
+    const validation = validateHoleDataCompleteness(requiredGolferIds, holesByGolfer, completedRounds)
+
+    let effectiveHoles = holesByGolfer
+    let effectiveCompletedRounds = completedRounds
+    let effectiveFreshness = freshness
+
+    if (!validation.isValid) {
+      effectiveFreshness = 'stale'
+      const validRound = getLatestCompleteRound(requiredGolferIds, holesByGolfer, completedRounds)
+      if (validRound > 0) {
+        effectiveHoles = filterHolesByRound(holesByGolfer, validRound)
+        effectiveCompletedRounds = validRound
+      } else {
+        effectiveHoles = new Map()
+        effectiveCompletedRounds = 0
       }
     }
 
     const ranked = rankEntriesWithHoles(
       entries as Entry[],
-      holesByGolfer,
+      effectiveHoles,
       golferStatuses,
-      completedRounds
+      effectiveCompletedRounds
     )
 
     return NextResponse.json({
       data: {
         entries: ranked,
-        completedRounds,
+        completedRounds: effectiveCompletedRounds,
         refreshedAt: pool.refreshed_at,
-        freshness,
+        freshness: effectiveFreshness,
         isRefreshing,
         poolStatus: pool.status,
-        lastRefreshError: pool.last_refresh_error,
-golferStatuses: Object.fromEntries(golferStatuses),
+        lastRefreshError: pool.last_refresh_error || (!validation.isValid ? (validation.reason || null) : null),
+        golferStatuses: Object.fromEntries(nonActiveGolferStatuses),
         golferNames,
         golferCountries,
         golferScores: Object.fromEntries(golferScoresMap),
