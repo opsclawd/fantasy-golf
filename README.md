@@ -1,6 +1,6 @@
 # Fantasy Golf Pool
 
-A commissioner-first web app for running private golf pools with live round-by-round scoring.
+A commissioner-first web app for running private golf pools with live hole-by-hole best-ball scoring.
 
 ## Features
 
@@ -46,6 +46,7 @@ For detailed setup instructions, see [docs/setup.md](./docs/setup.md).
 | `SLASH_GOLF_API_KEY` | Slash Golf API key |
 | `CRON_SECRET` | Bearer token for scoring cron endpoint |
 | `NEXT_PUBLIC_APP_URL` | App URL (e.g., http://localhost:3000) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (server-only, bypasses RLS for scoring refresh and admin tasks) |
 
 ## Database Setup
 
@@ -77,9 +78,9 @@ pnpm start
 
 ### Scoring Model
 
-- **Round-based** best-ball (lowest score among 4 golfers per completed round)
+- **Hole-by-hole** best-ball (lowest `scoreToPar` among active golfers per hole, summed per round, summed across completed rounds)
 - Lower total score is better
-- Tiebreaker: total birdies across all 4 golfers (higher is better)
+- Tiebreaker: total birdies across all 4 golfers in entry (higher is better)
 - Cut and withdrawn golfers excluded after they occur
 
 ### Scoring Cron
@@ -134,10 +135,25 @@ docs/
 
 ```bash
 pnpm dev          # Start development server
-pnpm build        # Production build
+pnpm typecheck    # TypeScript compiler check (tsc --noEmit)
 pnpm lint         # ESLint
 pnpm test         # Run tests (Vitest)
+pnpm build        # Production build
 ```
+
+### Local Handoff Validation Sequence
+
+Before submitting changes or handing off for release, run the canonical validation sequence:
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+```
+
+> **Note on `pnpm approve-builds`:** If pnpm v9+ restricts dependency build scripts during `pnpm install`, run `pnpm approve-builds` to grant permission for required dependency build scripts.
 
 ## Key Documentation
 
@@ -148,4 +164,5 @@ pnpm test         # Run tests (Vitest)
 | [docs/incidents.md](./docs/incidents.md) | Incident response |
 | [docs/handoff.md](./docs/handoff.md) | Role transfer and onboarding |
 | [docs/rules-spec.md](./docs/rules-spec.md) | Scoring rules reference |
-| [docs/runbooks/fantasy-golf-ops.md](./docs/runbooks/fantasy-golf-ops.md) | Detailed ops runbook |
+| [docs/runbooks/fantasy-golf-ops.md](./docs/runbooks/fantasy-golf-ops.md) | Authoritative operations runbook |
+| [docs/checklists/pre-major-mvp-checklist.md](./docs/checklists/pre-major-mvp-checklist.md) | Pre-major tournament operational checklist |

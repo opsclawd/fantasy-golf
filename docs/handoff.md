@@ -70,19 +70,21 @@
 
 | Table | Purpose |
 |---|---|
-| `pools` | Tournament pools created by commissioners |
+| `pools` | Tournament pools created by commissioners (with refresh telemetry) |
 | `pool_members` | Links users to pools with roles (commissioner/player) |
 | `entries` | Participant picks (array of golfer IDs) |
-| `golfers` | Golfer catalog with sync metadata |
-| `tournament_scores` | Current scoring state (one row per golfer) |
+| `tournament_golfers` | Active golfer roster synced for tournament |
+| `tournament_scores` | Current scoring state snapshot (one row per golfer) |
 | `tournament_score_rounds` | Per-round archive (append-only) |
+| `tournament_holes` | Hole-by-hole scores (strokes, par, score_to_par) |
+| `refresh_locks` | Tournament refresh mutex (TTL: 5 minutes) |
 | `audit_events` | Audit trail for all pool mutations |
 
 ### Scoring Model
 
-- **Round-based** (not hole-by-hole)
-- Best-ball = lowest `scoreToPar` among 4 golfers per completed round
-- Tiebreaker = total birdies (higher is better)
+- **Hole-by-hole** best-ball
+- Best-ball = lowest `scoreToPar` among active golfers per hole, summed per round, summed across completed rounds
+- Tiebreaker = total birdies across all 4 golfers in entry (higher is better)
 - Cut and withdrawn golfers excluded after they occur
 
 ---
@@ -141,10 +143,25 @@ open → (deadline passes) → live → (commissioner closes) → complete → (
 |---|---|
 | Push migrations | `npx supabase db push` |
 | Run dev server | `pnpm dev` |
+| Typecheck | `pnpm typecheck` |
+| Lint | `pnpm lint` |
 | Run tests | `pnpm test` |
 | Production build | `pnpm build` |
-| Lint | `pnpm lint` |
 | Trigger score refresh | `curl -X POST /api/scoring/refresh -H 'Authorization: Bearer CRON_SECRET' -d '{"poolId":"..."}'` |
+
+### Required Local Handoff Validation Sequence
+
+Before release sign-off or handing off between engineers, execute the full validation pipeline:
+
+```bash
+pnpm install
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+```
+
+If pnpm v9+ prompts regarding blocked lifecycle scripts during `pnpm install`, run `pnpm approve-builds` to authorize required dependency build scripts.
 
 ---
 
@@ -189,6 +206,8 @@ When a new Implementation Engineer joins:
 4. **Essential files to understand:**
    - `AGENTS.md` — agent rules and procedures
    - `CLAUDE.md` — project conventions and scoring rules
+   - `docs/runbooks/fantasy-golf-ops.md` — authoritative operations runbook
+   - `docs/checklists/pre-major-mvp-checklist.md` — pre-major tournament checklist
    - `src/lib/scoring.ts` — pure scoring domain logic
    - `src/lib/supabase/types.ts` — TypeScript types
 

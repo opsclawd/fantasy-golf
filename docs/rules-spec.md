@@ -24,14 +24,25 @@
 
 ### 2.1 Core Algorithm: Best Ball, Hole-by-Hole
 
-For each round, the entry's score is the **lowest `scoreToPar`** among all **active** golfers in the entry.
+For each completed hole $h \in \{1 \dots 18\}$ in completed round $r \in \{1 \dots 4\}$, the entry's hole score is the **lowest `scoreToPar`** among all **active** golfers in the entry on that hole:
+
+$$\text{score}(E, r, h) = \min_{g \in \text{active}(E)} \text{score\_to\_par}(g, r, h)$$
+
+The entry's round score is the sum of its hole best-ball scores across all 18 regulation holes in that round:
+
+$$\text{round\_score}(E, r) = \sum_{h=1}^{18} \text{score}(E, r, h)$$
+
+The entry's tournament total score is the sum of round best-ball scores across all completed rounds:
+
+$$\text{total\_score}(E) = \sum_{r \in \text{completed}} \text{round\_score}(E, r)$$
 
 ```
-Entry round score = min(scoreToPar of active golfers)
-Entry total score = sum(Entry round score for each completed round)
+Entry hole score  = min(scoreToPar of active golfers on that hole)
+Entry round score = sum(Entry hole scores for holes 1 to 18)
+Entry total score = sum(Entry round scores for completed rounds)
 ```
 
-**Source:** `src/lib/scoring/domain.ts:computeEntryScore`
+**Source:** `src/lib/scoring/domain.ts:computeEntryScore`, `src/lib/scoring.ts:rankEntriesWithHoles`
 
 ### 2.2 Golfer Status Filtering
 
@@ -215,11 +226,11 @@ This is a Board-authorized rule to prevent circular dependencies with leaderboar
 
 | Scenario | Entry Golfers | Round 1 | Round 2 | Expected Score | Birdies | Notes |
 |----------|--------------|---------|---------|----------------|---------|-------|
-| Normal | g1(-1), g2(-1), g3(0), g4(+1) | Complete | Complete | -2 | 2 | Best ball each round |
-| Cut mid-tournament | g1(-1,cut), g2(-1,+1), g3(0,+1), g4(+1,0) | Complete | Complete | -1 | 1 | g1 post-cut excluded from R2 |
-| WD mid-tournament | g1(-1,wd), g2(-1,-1), g3(0,0), g4(+1,+1) | Complete | Complete | -2 | 2 | g1 post-WD excluded from R2 |
+| Normal | g1(-1), g2(-1), g3(0), g4(+1) | Complete | Complete | -2 | 2 | Best ball per hole across 18 holes each round |
+| Cut mid-tournament | g1(-1,cut), g2(-1,+1), g3(0,+1), g4(+1,0) | Complete | Complete | -1 | 1 | g1 post-cut excluded from R2 holes |
+| WD mid-tournament | g1(-1,wd), g2(-1,-1), g3(0,0), g4(+1,+1) | Complete | Complete | -2 | 2 | g1 post-WD excluded from R2 holes |
 | Partial round | g1(-1, incomplete), g2(-1,+1), g3(0,+1), g4(+1,0) | R1 only | — | -1 | 1 | R2 skipped (not all complete) |
-| All cut after R1 | g1(cut), g2(cut), g3(cut), g4(cut) | Complete | — | 0 | 0 | No valid R2, score is 0 |
+| All cut after R1 | g1(cut), g2(cut), g3(cut), g4(cut) | Complete | — | 0 | 0 | No valid R2 holes, score is 0 |
 | Entry has no active golfers | all withdrawn/cut | Complete | Complete | null | 0 | totalScore is null, ranks last |
 | Tie score, tie birdies | e1: -2 total, 2 birdies; e2: -2 total, 2 birdies | — | — | -2 each | 2 each | Shared rank 1 |
 

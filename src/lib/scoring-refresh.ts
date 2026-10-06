@@ -17,7 +17,11 @@ import {
 } from '@/lib/scoring-queries'
 import type { TournamentScore } from '@/lib/supabase/types'
 import { deriveCompletedRounds } from '@/lib/scoring/domain'
-import { rankEntriesWithHoles } from '@/lib/scoring'
+import {
+  rankEntriesWithHoles,
+  getRequiredScoringGolferIds,
+  validateHoleDataCompleteness,
+} from '@/lib/scoring'
 
 interface RefreshablePool {
   id: string
@@ -32,8 +36,9 @@ export interface RefreshResult {
 }
 
 export interface RefreshError {
-  code: 'NO_SCORES' | 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR'
+  code: 'NO_SCORES' | 'FETCH_FAILED' | 'UPSERT_FAILED' | 'INTERNAL_ERROR' | 'INCOMPLETE_HOLE_DATA'
   message: string
+  missingGolfers?: string[]
 }
 
 function scorecardToTournamentHoles(
@@ -174,19 +179,6 @@ export async function refreshScoresForPool(
     }
   }
 
-  // Step 3: Update refresh metadata (success)
-  const metadataResult = await updatePoolRefreshMetadata(supabase, pool.id, {
-    refreshed_at: refreshedAt,
-    last_refresh_success_at: refreshedAt,
-    last_refresh_error: null,
-  })
-  if (metadataResult.error) {
-    return {
-      data: null,
-      error: { code: 'INTERNAL_ERROR', message: metadataResult.error },
-    }
-  }
-
   // Step 3: Fetch scorecards for all golfers in tournament and persist hole data
   const allGolferIds = slashScores.map(s => s.golfer_id).filter(Boolean)
 
@@ -202,7 +194,7 @@ export async function refreshScoresForPool(
     }
   }
 
-  // Step 5: Build hole-level data from persisted tournament_holes
+  // Step 4: Build hole-level data from persisted tournament_holes
   const holesByGolfer = await getTournamentHolesForGolfers(supabase, pool.tournament_id, allGolferIds)
 
   const allScores = await getScoresForTournament(supabase, pool.tournament_id)
@@ -213,6 +205,53 @@ export async function refreshScoresForPool(
     golferStatuses.set(score.golfer_id, score.status)
   }
 
+  // Step 5: Gather entries for affected pools and determine required scoring golfers
+  const poolsToProcess = livePools.some((p) => p.id === pool.id)
+    ? livePools
+    : [pool, ...livePools]
+
+  const entriesByPool = new Map<string, Entry[]>()
+  for (const p of poolsToProcess) {
+    const poolEntries = (await getEntriesForPool(supabase, p.id)) as Entry[]
+    entriesByPool.set(p.id, poolEntries || [])
+  }
+  const allEntries = Array.from(entriesByPool.values()).flat()
+  const requiredGolferIds = getRequiredScoringGolferIds(allEntries, golferStatuses)
+
+  // Step 6: Validate hole data completeness before updating success metadata or broadcasting
+  const validation = validateHoleDataCompleteness(requiredGolferIds, holesByGolfer, completedRounds)
+
+  if (!validation.isValid) {
+    const errorMessage = validation.reason || 'Missing hole data for required golfers'
+
+    for (const p of poolsToProcess) {
+      await updatePoolRefreshMetadata(supabase, p.id, {
+        last_refresh_error: errorMessage,
+      })
+
+      await insertAuditEvent(supabase, {
+        pool_id: p.id,
+        user_id: null,
+        action: 'scoreRefreshFailed',
+        details: {
+          error: errorMessage,
+          missingGolfers: validation.missingGolferIds,
+          requiredGolfers: validation.requiredGolferIds,
+        },
+      })
+    }
+
+    return {
+      data: null,
+      error: {
+        code: 'INCOMPLETE_HOLE_DATA',
+        message: errorMessage,
+        missingGolfers: validation.missingGolferIds,
+      },
+    }
+  }
+
+  // Step 7: Update success metadata, broadcast scores, and log completion audit events
   const refreshDetails = buildRefreshAuditDetails(
     oldScoresMap,
     allScores,
@@ -220,8 +259,8 @@ export async function refreshScoresForPool(
     allScores.length
   )
 
-  for (const tournamentPool of livePools) {
-    const entries = await getEntriesForPool(supabase, tournamentPool.id) as Entry[]
+  for (const tournamentPool of poolsToProcess) {
+    const entries = entriesByPool.get(tournamentPool.id) || []
     const ranked = rankEntriesWithHoles(entries, holesByGolfer, golferStatuses, completedRounds)
 
     await supabase.channel('pool_updates').send({
@@ -232,6 +271,7 @@ export async function refreshScoresForPool(
 
     const poolMetaResult = await updatePoolRefreshMetadata(supabase, tournamentPool.id, {
       refreshed_at: refreshedAt,
+      last_refresh_success_at: refreshedAt,
       last_refresh_error: null,
     })
     if (poolMetaResult.error) {
@@ -247,7 +287,7 @@ export async function refreshScoresForPool(
       action: 'scoreRefreshCompleted',
       details: {
         ...refreshDetails,
-        entryCount: (entries || []).length,
+        entryCount: entries.length,
       },
     })
     if (auditResult.error) {
